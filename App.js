@@ -5,12 +5,11 @@ import Toast from "react-native-toast-message";
 import { AuthProvider } from "./context"; // Ensure correct import path for AuthProvider
 
 // Import your screens
-import Landing from "./pages/Landing";
-// import Join from './pages/auth/Join';
+import Landing from "./pages/Landing"; // import Join from './pages/auth/Join';
 // import Register from './pages/auth/Register';
 // import Signin from './pages/auth/Signin';
 import Home from "./pages/Home";
-import Settings from "./pages/Settings";
+import Settings from "./pages/Setting";
 // Add other imports...
 
 const Stack = createNativeStackNavigator();
