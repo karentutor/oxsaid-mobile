@@ -1,7 +1,7 @@
 // useTailwindResponsive.js
 import { useState, useEffect } from "react";
 import { Dimensions } from "react-native";
-import tw from "./tailwind";
+import tw from "../tailwind";
 
 // Manually define screen sizes as per your Tailwind configuration
 const screens = {
