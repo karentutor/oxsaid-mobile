@@ -8,7 +8,11 @@ export default function Home() {
 
   return (
     <View style={styles.indexGrid}>
-      <Text style={tw`text-xl font-bold`}>Welcome to the Home Page</Text>
+      <View style={tw`flex-1 justify-center items-center bg-background`}>
+        <Text style={tw`text-xl font-rubik text-primary`}>
+          Welcome to the Landing Page
+        </Text>
+      </View>
     </View>
   );
 }
