@@ -1,55 +1,79 @@
 // tailwind.js
-import { create } from 'twrnc';
+import { create } from "twrnc";
 
 // Create the tw instance
 const tw = create({
   theme: {
     extend: {
       colors: {
-        // Define your color palette
-        background: 'hsl(0, 0%, 100%)',
-        foreground: 'hsl(0, 25%, 3%)',
-        card: 'hsl(0, 0%, 100%)',
-        'card-foreground': 'hsl(0, 25%, 3%)',
-        primary: 'hsl(239, 40%, 26%)',
-        'primary-foreground': 'hsl(0, 0%, 100%)',
-        secondary: 'hsl(143, 22%, 72%)',
-        'secondary-foreground': 'hsl(0, 25%, 3%)',
-        muted: 'hsl(0, 0%, 20%)',
-        'muted-foreground': 'hsl(0, 25%, 70%)',
-        accent: 'hsl(187, 79%, 29%)',
-        'accent-foreground': 'hsl(0, 0%, 100%)',
-        destructive: 'hsl(0, 85%, 60%)',
-        'destructive-foreground': 'hsl(0, 25%, 3%)',
-        border: 'hsl(0, 0%, 90%)',
-        input: 'hsl(0, 0%, 20%)',
-        ring: 'hsl(187, 79%, 40%)',
-        // Add more colors as needed
+        background: "hsl(0, 0%, 100%)",
+        foreground: "hsl(0, 25%, 3%)",
+        card: "hsl(0, 0%, 100%)",
+        "card-foreground": "hsl(0, 25%, 3%)",
+        popover: "hsl(0, 0%, 100%)",
+        "popover-foreground": "hsl(0, 25%, 3%)",
+        primary: {
+          DEFAULT: "hsl(239, 40%, 26%)",
+          foreground: "hsl(0, 0%, 100%)",
+        },
+        secondary: {
+          DEFAULT: "hsl(143, 22%, 72%)",
+          foreground: "hsl(0, 25%, 3%)",
+        },
+        destructive: {
+          DEFAULT: "hsl(0, 85%, 60%)",
+          foreground: "hsl(0, 25%, 3%)",
+        },
+        muted: {
+          DEFAULT: "hsl(0, 0%, 20%)",
+          foreground: "hsl(0, 25%, 70%)",
+        },
+        accent: {
+          DEFAULT: "hsl(187, 79%, 29%)",
+          foreground: "hsl(0, 0%, 100%)",
+        },
+        border: "hsl(0, 0%, 90%)",
+        input: "hsl(0, 0%, 20%)",
+        ring: "hsl(187, 79%, 40%)",
+        lightBlue: {
+          DEFAULT: "#e0f7fa",
+        },
       },
       borderRadius: {
-        DEFAULT: '0.5rem', // Default border radius
+        lg: 12, // Converted 0.5rem to px for React Native
+        md: 8, // Adjusted based on original CSS calculations
+        sm: 4,
+      },
+      fontFamily: {
+        rubik: ["Rubik-Regular", "sans-serif"], // Define your Rubik font
       },
       backgroundImage: {
         pattern:
           "url('data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' width='8' height='8' fill='none' stroke='rgb(0 0 0 / 0.1)'%3e%3cpath d='M0 .5H31.5V32'/%3e%3c/svg%3e')",
       },
-      fontFamily: {
-        rubik: ['Rubik-Regular', 'sans-serif'], // Define your Rubik font
+      keyframes: {
+        // Placeholder for keyframe animations (Handled differently in React Native)
+        astronaut: {
+          from: { transform: "translateY(-50px) rotate(0deg)" },
+          to: { transform: "translateY(10px) rotate(2deg)" },
+        },
+      },
+      animation: {
+        astronaut: "astronaut infinite 3.4s alternate ease-in-out", // Custom animations placeholder
       },
       screens: {
-        sm: '640px',
-        md: '768px',
-        lg: '1024px',
-        xl: '1280px',
+        sm: 640,
+        md: 768,
+        lg: 1024,
+        xl: 1280,
+        "2xl": 1400, // Adjusted for responsive design
       },
     },
   },
-  plugins: [],
   corePlugins: {
     preflight: false, // Disable base styles
   },
+  plugins: [],
 });
 
-// Export the tw instance
 export default tw;
-
