@@ -2,14 +2,14 @@ import React from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import Toast from "react-native-toast-message";
-import { AuthProvider } from "context"; // Ensure correct import path for AuthProvider
+import { AuthProvider } from "./context"; // Ensure correct import path for AuthProvider
 
 // Import your screens
 import Landing from "./pages/Landing"; // import Join from './pages/auth/Join';
 // import Register from './pages/auth/Register';
 // import Signin from './pages/auth/Signin';
 import Home from "./pages/Home";
-import Settings from "./pages/Setting";
+import Settings from "./pages/Settings";
 // Add other imports...
 
 const Stack = createNativeStackNavigator();
