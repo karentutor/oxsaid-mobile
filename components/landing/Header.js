@@ -9,7 +9,7 @@ import {
 } from "../ui/navigation-menu";
 import { navLinks } from "../../data";
 import tw from "twrnc";
-import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons"; // Correct import
+import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 
 export default function Header() {
   const navigation = useNavigation();
