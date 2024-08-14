@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import tw from "twrnc";
-import Icon from "react-native-vector-icons/MaterialCommunityIcons";
+import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 
 const NavigationMenu = React.forwardRef(
   ({ style, children, ...props }, ref) => (
@@ -40,7 +40,7 @@ const NavigationMenuTrigger = React.forwardRef(
       {...props}
     >
       {children}
-      <Icon name="chevron-down" size={16} style={tw`ml-1`} />
+      <MaterialCommunityIcons name="chevron-down" size={16} style={tw`ml-1`} />
     </TouchableOpacity>
   )
 );
