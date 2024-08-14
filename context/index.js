@@ -1,4 +1,4 @@
-import { createContext, useMemo, useState } from "react";
+import React, { createContext, useMemo, useState } from "react";
 
 export const AuthContext = createContext();
 
@@ -14,13 +14,13 @@ export const AuthProvider = ({ children }) => {
           user = JSON.parse(userJson);
         }
       } catch (jsonError) {
-        // Silently handle the error
+        // Handle the error silently
       }
 
       try {
         access_token = localStorage.getItem("token");
       } catch (error) {
-        // Silently handle the error
+        // Handle the error silently
       }
 
       return { user, access_token };
