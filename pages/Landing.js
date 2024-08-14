@@ -3,7 +3,7 @@ import { View, Text } from "react-native";
 import tw from "../tailwind";
 import useTailwindResponsive from "../utils/useTailwindResponsive";
 
-export default function Home() {
+export default function Landing() {
   const styles = useTailwindResponsive();
 
   return (
