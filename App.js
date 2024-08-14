@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createDrawerNavigator } from "@react-navigation/drawer";
-import Header from "./components/Header";
+import Header from "./components/landing/Header";
 import { navLinks } from "./data";
 import Toast from "react-native-toast-message";
 import * as Font from "expo-font";
