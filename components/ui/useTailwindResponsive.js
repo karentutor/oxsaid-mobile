@@ -1,7 +1,6 @@
-// useTailwindResponsive.js
 import { useState, useEffect } from "react";
 import { Dimensions } from "react-native";
-import tw from "../tailwind";
+import tw from "twrnc";
 
 // Manually define screen sizes as per your Tailwind configuration
 const screens = {
@@ -21,10 +20,12 @@ export default function useTailwindResponsive() {
       setScreenWidth(Dimensions.get("window").width);
     };
 
-    Dimensions.addEventListener("change", handleResize);
+    const subscription = Dimensions.addEventListener("change", handleResize);
 
     return () => {
-      Dimensions.removeEventListener("change", handleResize);
+      if (subscription?.remove) {
+        subscription.remove(); // Correct way to remove the event listener
+      }
     };
   }, []);
 
