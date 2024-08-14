@@ -9,7 +9,7 @@ import {
 } from "../ui/navigation-menu";
 import { navLinks } from "../../data";
 import tw from "twrnc";
-import Icon from "react-native-vector-icons/MaterialCommunityIcons";
+import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons"; // Correct import
 
 export default function Header() {
   const navigation = useNavigation();
@@ -43,7 +43,7 @@ export default function Header() {
             style={tw`md:hidden px-2`}
             onPress={() => navigation.toggleDrawer()}
           >
-            <Icon name="menu" size={24} />
+            <MaterialCommunityIcons name="menu" size={24} />
           </TouchableOpacity>
 
           {/* Desktop Menu */}
