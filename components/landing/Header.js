@@ -9,7 +9,7 @@ import {
 } from "../ui/navigation-menu";
 import { navLinks } from "../../data";
 import tw from "twrnc";
-import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
+import { MaterialIcons } from "@expo/vector-icons"; // Using Expo's Material Icons
 
 export default function Header() {
   const navigation = useNavigation();
@@ -43,7 +43,7 @@ export default function Header() {
             style={tw`md:hidden px-2`}
             onPress={() => navigation.toggleDrawer()}
           >
-            <MaterialCommunityIcons name="menu" size={24} />
+            <MaterialIcons name="menu" size={24} />
           </TouchableOpacity>
 
           {/* Desktop Menu */}
