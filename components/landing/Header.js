@@ -6,7 +6,7 @@ import {
   NavigationMenuItem,
   NavigationMenuList,
   NavigationMenuTrigger,
-} from "./ui/navigation-menu";
+} from "../ui/navigation-menu";
 import { navLinks } from "../../data";
 import tw from "twrnc";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
