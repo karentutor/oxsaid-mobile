@@ -1,8 +1,15 @@
 import { useState } from "react";
-import { Alert, StyleSheet, View } from "react-native";
+import {
+  Alert,
+  StyleSheet,
+  View,
+  ScrollView,
+  KeyboardAvoidingView,
+  TouchableWithoutFeedback,
+  Keyboard,
+} from "react-native";
 import { useNavigation } from "@react-navigation/native";
 
-import FlatButton from "../ui/FlatButton";
 import AuthForm from "./AuthForm";
 import { Colors } from "../../constants/styles";
 
@@ -15,14 +22,6 @@ function AuthContent({ isLogin, onAuthenticate }) {
     confirmEmail: false,
     confirmPassword: false,
   });
-
-  function switchAuthModeHandler() {
-    if (isLogin) {
-      navigation.replace("Signup");
-    } else {
-      navigation.replace("Login");
-    }
-  }
 
   function submitHandler(credentials) {
     let { email, confirmEmail, password, confirmPassword } = credentials;
@@ -49,32 +48,40 @@ function AuthContent({ isLogin, onAuthenticate }) {
       });
       return;
     }
+
     onAuthenticate({ email, password });
   }
 
   return (
-    <View style={styles.authContent}>
-      <AuthForm
-        isLogin={isLogin}
-        onSubmit={submitHandler}
-        credentialsInvalid={credentialsInvalid}
-      />
-      {/* <View style={styles.buttons}>
-        <FlatButton onPress={switchAuthModeHandler}>
-          {isLogin ? "Create a new user" : "Log in instead"}
-        </FlatButton>
-      </View> */}
-    </View>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior="padding"
+      keyboardVerticalOffset={50} // Adjust if necessary
+    >
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <ScrollView contentContainerStyle={styles.authContent}>
+          <AuthForm
+            isLogin={isLogin}
+            onSubmit={submitHandler}
+            credentialsInvalid={credentialsInvalid}
+          />
+        </ScrollView>
+      </TouchableWithoutFeedback>
+    </KeyboardAvoidingView>
   );
 }
 
 export default AuthContent;
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
   authContent: {
-    marginTop: 64,
-    marginHorizontal: 32,
-    padding: 16,
+    marginTop: -10,
+    marginHorizontal: 50,
+    paddingVertical: 10,
+    paddingHorizontal: 50,
     borderRadius: 8,
     backgroundColor: Colors.primary800,
     elevation: 2,
@@ -82,8 +89,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 1, height: 1 },
     shadowOpacity: 0.35,
     shadowRadius: 4,
-  },
-  buttons: {
-    marginTop: 8,
+    width: "130%", // Adjust width as needed
+    alignSelf: "center",
   },
 });

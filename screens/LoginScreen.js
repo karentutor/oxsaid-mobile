@@ -1,5 +1,13 @@
 import { useContext, useState } from "react";
-import { Alert } from "react-native";
+import {
+  Alert,
+  View,
+  Image,
+  StyleSheet,
+  KeyboardAvoidingView,
+  TouchableWithoutFeedback,
+  Keyboard,
+} from "react-native";
 
 import AuthContent from "../components/auth/AuthContent";
 import LoadingOverlay from "../components/ui/LoadingOverlay";
@@ -8,7 +16,6 @@ import { login } from "../utils/auth";
 
 function LoginScreen() {
   const [isAuthenticating, setIsAuthenticating] = useState(false);
-
   const authCtx = useContext(AuthContext);
 
   async function loginHandler({ email, password }) {
@@ -29,7 +36,34 @@ function LoginScreen() {
     return <LoadingOverlay message="Logging you in..." />;
   }
 
-  return <AuthContent isLogin onAuthenticate={loginHandler} />;
+  return (
+    <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <View style={styles.container}>
+          <Image
+            source={require("../assets/oxsaid-logo-cropped.png")}
+            style={styles.image}
+            resizeMode="contain"
+          />
+          <AuthContent isLogin onAuthenticate={loginHandler} />
+        </View>
+      </TouchableWithoutFeedback>
+    </KeyboardAvoidingView>
+  );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "flex-start",
+    padding: 0,
+  },
+  image: {
+    width: 250,
+    height: 250,
+    margin: 20,
+  },
+});
 
 export default LoginScreen;

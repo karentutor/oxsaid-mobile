@@ -25,9 +25,20 @@ async function authenticate(email, password) {
   }
 }
 
-export function login(email, password) {
-  return authenticate(email, password);
+// Making the login function async and handling errors properly
+export async function login(email, password) {
+  try {
+    const token = await authenticate(email, password);
+    return token; // Return the token if the login is successful
+  } catch (error) {
+    console.error("Login failed:", error);
+    throw error; // Re-throw the error so it can be handled by the calling code
+  }
 }
+
+// export function login(email, password) {
+//   return authenticate(email, password);
+// }
 
 // import axios from "axios";
 
