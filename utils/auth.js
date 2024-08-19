@@ -1,7 +1,7 @@
 import axios from "axios";
 
 async function authenticate(email, password) {
-  const url = `http://10.0.0.99:8000/api/auth/login`; // Correct endpoint
+  const url = `${process.env.EXPO_PUBLIC_API_URL}/login`; // Correct endpoint
 
   try {
     const response = await axios.post(url, {
@@ -35,31 +35,3 @@ export async function login(email, password) {
     throw error; // Re-throw the error so it can be handled by the calling code
   }
 }
-
-// export function login(email, password) {
-//   return authenticate(email, password);
-// }
-
-// import axios from "axios";
-
-// // const API_KEY = "AIzaSyDCYasArcOwcALFhIj2szug5aD2PgUQu1E";
-
-// async function authenticate(email, password) {
-//   const url = `http://10.0.0.99:8000/api/auth/login`; // Updated to the correct endpoint
-
-//   console.log("hit");
-//   const response = await axios.post(url, {
-//     email: email,
-//     password: password,
-//   });
-//   console.log("response", response);
-
-//   // const token = "123";
-//   const token = response.token;
-
-//   return token;
-// }
-
-// export function login(email, password) {
-//   return authenticate(email, password);
-// }
