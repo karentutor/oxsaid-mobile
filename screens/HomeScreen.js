@@ -1,25 +1,17 @@
 import axios from "axios";
 import { useContext, useEffect, useState } from "react";
-
 import { StyleSheet, Text, View } from "react-native";
-import { AuthContext } from "../context/auth-context";
+import useAuth from "../hooks/useAuth";
 
 function WelcomeScreen() {
-  const [fetchedMessage, setFetchedMesssage] = useState("");
-
-  const authCtx = useContext(AuthContext);
-  const token = authCtx.token;
-
-  useEffect(() => {
-    axios.get("http://localhost:8000" + token).then((response) => {
-      setFetchedMesssage(response.data);
-    });
-  }, [token]);
+  const [fetchedMessage, setFetchedMessage] = useState("");
+  const { auth } = useAuth();
+  const { access_token, user } = auth;
 
   return (
     <View style={styles.rootContainer}>
       <Text style={styles.title}>Home!</Text>
-      <Text>You authenticated successfully!</Text>
+      <Text>{user ? JSON.stringify(user) : "No User ID"}</Text>
       <Text>{fetchedMessage}</Text>
     </View>
   );

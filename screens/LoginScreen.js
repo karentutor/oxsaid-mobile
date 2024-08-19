@@ -16,13 +16,13 @@ import { login } from "../utils/auth";
 
 function LoginScreen() {
   const [isAuthenticating, setIsAuthenticating] = useState(false);
-  const authCtx = useContext(AuthContext);
+  const auth = useContext(AuthContext);
 
   async function loginHandler({ email, password }) {
     setIsAuthenticating(true);
     try {
-      const token = await login(email, password);
-      authCtx.authenticate(token);
+      const { token, user } = await login(email, password); // Handle both token and user
+      auth.authenticate(token, user); // Pass both token and user to the context's authenticate function
     } catch (error) {
       Alert.alert(
         "Authentication failed!",

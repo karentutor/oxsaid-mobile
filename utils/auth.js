@@ -1,7 +1,7 @@
 import axios from "axios";
 
 async function authenticate(email, password) {
-  const url = `${process.env.EXPO_PUBLIC_API_URL}/login`; // Correct endpoint
+  const url = `${process.env.EXPO_PUBLIC_API_URL}/auth/login`; // Correct endpoint
 
   try {
     const response = await axios.post(url, {
@@ -9,9 +9,9 @@ async function authenticate(email, password) {
       password: password,
     });
 
-    const token = response.data.token; // Corrected to access data.token
+    const data = response.data; // Corrected to access data.token
 
-    return token;
+    return data;
   } catch (error) {
     console.error("Error during API call:", error);
     if (error.response) {
@@ -28,10 +28,15 @@ async function authenticate(email, password) {
 // Making the login function async and handling errors properly
 export async function login(email, password) {
   try {
-    const token = await authenticate(email, password);
-    return token; // Return the token if the login is successful
+    const { token, user, isSuccess, msg } = await authenticate(email, password);
+
+    if (isSuccess) {
+      return { token, user }; // Return both token and user
+    } else {
+      throw new Error(msg || "Login failed."); // Handle any error messages from the backend
+    }
   } catch (error) {
     console.error("Login failed:", error);
-    throw error; // Re-throw the error so it can be handled by the calling code
+    throw error;
   }
 }

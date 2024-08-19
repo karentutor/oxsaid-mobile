@@ -34,9 +34,12 @@ const UserSearch = () => {
   // useEffect(() => {
   //   const fetchFriends = async () => {
   //     try {
-  //       const response = await axios.get(`/users/${auth.user._id}/friends`, {
-  //         headers: { Authorization: `Bearer ${auth.access_token}` },
-  //       });
+  //       const response = await axiosBase.get(
+  //         `/users/${auth.user._id}/friends`,
+  //         {
+  //           headers: { Authorization: `Bearer ${auth.access_token}` },
+  //         }
+  //       );
   //       setFriends(response.data);
   //     } catch (error) {
   //       console.error("Error fetching friends:", error);
@@ -45,7 +48,6 @@ const UserSearch = () => {
 
   //   fetchFriends();
   // }, [auth.user._id, auth.access_token]);
-
   return <Text>hi</Text>;
   // useEffect(() => {
   //   const searchByKeyword = async () => {
