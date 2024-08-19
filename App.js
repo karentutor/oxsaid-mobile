@@ -1,22 +1,17 @@
 import React, { useContext, useState, useEffect } from "react";
-import { StyleSheet, View, ActivityIndicator } from "react-native";
+import { StatusBar } from "expo-status-bar";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createDrawerNavigator } from "@react-navigation/drawer";
-import { StatusBar } from "expo-status-bar";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import AppLoading from "expo-app-loading";
+import AuthContextProvider, { AuthContext } from "./context/auth-context";
 
 import LoginScreen from "./screens/LoginScreen";
 import HomeScreen from "./screens/HomeScreen";
 import UserSearchScreen from "./screens/UserSearchScreen";
 import { Colors } from "./constants/styles";
-import AuthContextProvider, { AuthContext } from "./context/auth-context";
 import IconButton from "./components/ui/IconButton";
-
-import Landing from "./screens/Landing";
-// import UserScreen from "./screens/Home";
-import * as Font from "expo-font";
 
 const Stack = createNativeStackNavigator();
 const Drawer = createDrawerNavigator();
@@ -36,19 +31,29 @@ function AuthStack() {
 }
 
 function DrawerNavigator() {
+  const auth = useContext(AuthContext);
+
   return (
     <Drawer.Navigator
-      screenOptions={{
+      screenOptions={({ navigation, route }) => ({
         headerStyle: { backgroundColor: Colors.primary500 },
         headerTintColor: "white",
+        headerRight: ({ tintColor }) => (
+          <IconButton
+            icon="exit"
+            color={tintColor}
+            size={24}
+            onPress={auth.logout}
+          />
+        ),
         drawerContentStyle: {
           backgroundColor: Colors.primary800,
           paddingTop: 30,
-        }, // Updated to Colors.primary800
+        },
         drawerInactiveTintColor: "#FFD700",
         drawerActiveTintColor: Colors.primary500,
         drawerActiveBackgroundColor: Colors.primary100,
-      }}
+      })}
     >
       <Drawer.Screen name="Home" component={HomeScreen} />
       <Drawer.Screen name="User Search" component={UserSearchScreen} />
@@ -88,7 +93,6 @@ function Navigation() {
 
 function Root() {
   const [isTryingLogin, setIsTryingLogin] = useState(true);
-
   const authCtx = useContext(AuthContext);
 
   useEffect(() => {

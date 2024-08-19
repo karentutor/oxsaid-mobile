@@ -18,7 +18,7 @@ function WelcomeScreen() {
 
   return (
     <View style={styles.rootContainer}>
-      <Text style={styles.title}>Welcome!</Text>
+      <Text style={styles.title}>Home!</Text>
       <Text>You authenticated successfully!</Text>
       <Text>{fetchedMessage}</Text>
     </View>
