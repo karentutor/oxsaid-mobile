@@ -1,10 +1,10 @@
 import { useContext, useState } from "react";
 import { Alert } from "react-native";
 
-import AuthContent from "../components/Auth/AuthContent";
+import AuthContent from "../components/auth/AuthContent";
 import LoadingOverlay from "../components/ui/LoadingOverlay";
-import { AuthContext } from "../store/auth-context";
-import { login } from "../util/auth";
+import { AuthContext } from "../context/auth-context";
+import { login } from "../utils/auth";
 
 function LoginScreen() {
   const [isAuthenticating, setIsAuthenticating] = useState(false);
