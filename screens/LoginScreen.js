@@ -3,7 +3,6 @@ import {
   Alert,
   View,
   Image,
-  StyleSheet,
   KeyboardAvoidingView,
   TouchableWithoutFeedback,
   Keyboard,
@@ -12,6 +11,7 @@ import {
 import AuthContent from "../components/auth/AuthContent";
 import LoadingOverlay from "../components/ui/LoadingOverlay";
 import { AuthContext } from "../context/auth-context";
+import tw from "twrnc";
 import { login } from "../utils/auth";
 
 function LoginScreen() {
@@ -37,12 +37,12 @@ function LoginScreen() {
   }
 
   return (
-    <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
+    <KeyboardAvoidingView style={tw`flex-1`} behavior="padding">
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <View style={styles.container}>
+        <View style={tw`flex-1 items-center justify-start p-0`}>
           <Image
             source={require("../assets/oxsaid-logo-cropped.png")}
-            style={styles.image}
+            style={tw`w-62 h-62 m-5`}
             resizeMode="contain"
           />
           <AuthContent isLogin onAuthenticate={loginHandler} />
@@ -51,19 +51,5 @@ function LoginScreen() {
     </KeyboardAvoidingView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "flex-start",
-    padding: 0,
-  },
-  image: {
-    width: 250,
-    height: 250,
-    margin: 20,
-  },
-});
 
 export default LoginScreen;
