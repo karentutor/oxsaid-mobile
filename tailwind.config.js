@@ -1,4 +1,27 @@
-// // tailwind.config.js
+// tailwind.config.js
+
+module.exports = {
+  content: [
+    "./App.{js,jsx,ts,tsx}",
+    "./components/**/*.{js,jsx,ts,tsx}",
+    "./screens/**/*.{js,jsx,ts,tsx}",
+    // Add other paths as needed
+  ],
+  theme: {
+    extend: {
+      colors: {
+        primary100: "#e6ebf2", // Very light, almost white navy
+        primary500: "#334a6e", // Medium navy
+        primary800: "#1a2a40", // Dark navy
+        error100: "#fcdcbf", // Light peach
+        error500: "#f37c13", // Bright orange
+        secondary500: "#ffd700", // Bright yellow (secondary color)
+      },
+    },
+  },
+  plugins: [],
+};
+
 // module.exports = {
 //   theme: {
 //     extend: {

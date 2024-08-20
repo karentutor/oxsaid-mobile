@@ -4,4 +4,5 @@ export const Colors = {
   primary800: "#1a2a40", // Dark navy
   error100: "#fcdcbf", // Light peach (unchanged)
   error500: "#f37c13", // Bright orange (unchanged)
+  secondary500: "#ffd700",
 };

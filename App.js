@@ -50,7 +50,7 @@ function DrawerNavigator() {
           backgroundColor: Colors.primary800,
           paddingTop: 30,
         },
-        drawerInactiveTintColor: "#FFD700",
+        drawerInactiveTintColor: Colors.secondary500,
         drawerActiveTintColor: Colors.primary500,
         drawerActiveBackgroundColor: Colors.primary100,
       })}
