@@ -1,10 +1,8 @@
-import axios from "axios";
+import { axiosBase } from "../services/BaseService";
 
 async function authenticate(email, password) {
-  const url = `${process.env.EXPO_PUBLIC_API_URL}/auth/login`; // Correct endpoint
-
   try {
-    const response = await axios.post(url, {
+    const response = await axiosBase.post("auth/login", {
       email: email,
       password: password,
     });
