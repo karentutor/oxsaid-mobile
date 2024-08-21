@@ -1,128 +1,110 @@
-import React, { useEffect, useState } from "react";
-import {
-  Text,
-  View,
-  TouchableWithoutFeedback,
-  Keyboard,
-  ScrollView,
-  Alert,
-  Image,
-} from "react-native";
+import React, { useState, useEffect } from "react";
+import { View, Text, Image, TouchableOpacity } from "react-native";
+import { axiosBase } from "../services/BaseService";
 import useAuth from "../hooks/useAuth";
-import tw from "twrnc";
-import PostBox from "../components/ui/PostBox";
-import PostCard from "../components/ui/PostCard";
-import { axiosBase } from "../services/BaseService"; // Updated import
+import tw from "../lib/tailwind";
 
-function HomeScreen() {
+const UserProfileScreen = ({ route }) => {
+  const { user } = route.params;
   const { auth } = useAuth();
-  const { access_token, user } = auth;
-  const [posts, setPosts] = useState([]); // Ensure posts is initialized as an array
+  const [isConnected, setIsConnected] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchPosts(); // Fetch both own and friends' posts
-  }, []);
-
-  const fetchPosts = async () => {
-    try {
-      const ownPostsResponse = await axiosBase.get("/posts/own", {
-        headers: { Authorization: `Bearer ${access_token}` },
-      });
-
-      const friendsPostsResponse = await axiosBase.get("/posts/followed", {
-        headers: { Authorization: `Bearer ${access_token}` },
-      });
-
-      // Combine both own posts and friends' posts
-      const combinedPosts = [
-        ...ownPostsResponse.data,
-        ...friendsPostsResponse.data,
-      ];
-
-      // Sort combined posts by createdAt date
-      combinedPosts.sort(
-        (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
-      );
-
-      setPosts(combinedPosts);
-    } catch (err) {
-      console.error("Error fetching posts:", err.message);
-      Alert.alert("Error fetching posts", err.message);
-    }
-  };
-
-  const handlePost = async ({ text, image }) => {
-    try {
-      const formData = new FormData();
-      formData.append("userId", user._id);
-      formData.append("description", text);
-
-      if (image) {
-        const fileName = image.split("/").pop();
-        const fileType = fileName.split(".").pop();
-        formData.append("picture", {
-          uri: image,
-          name: fileName,
-          type: `image/${fileType}`,
-        });
+    const checkConnection = async () => {
+      try {
+        const response = await axiosBase.get(
+          `/users/${auth.user._id}/friends`,
+          {
+            headers: { Authorization: `Bearer ${auth.access_token}` },
+          }
+        );
+        const friendIds = response.data;
+        setIsConnected(friendIds.includes(user._id));
+        setLoading(false);
+      } catch (error) {
+        console.error("Error checking connection status:", error);
+        setLoading(false);
       }
+    };
 
-      const response = await axiosBase.post("/posts", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-          Authorization: `Bearer ${access_token}`,
-        },
-      });
+    checkConnection();
+  }, [auth.user._id, auth.access_token, user._id]);
 
-      fetchPosts(); // Re-fetch posts after creating a new one
-    } catch (err) {
-      Alert.alert("Error creating post", err.message);
+  const handleConnect = async () => {
+    try {
+      await axiosBase.post(
+        `/users/follow/${user._id}`,
+        {},
+        {
+          headers: { Authorization: `Bearer ${auth.access_token}` },
+        }
+      );
+      setIsConnected(true);
+    } catch (error) {
+      console.error("Error connecting with user:", error);
     }
   };
 
-  const handleCancel = () => {
-    Alert.alert("Post creation canceled");
+  const handleDisconnect = async () => {
+    try {
+      await axiosBase.post(
+        `/users/unfollow/${user._id}`,
+        {},
+        {
+          headers: { Authorization: `Bearer ${auth.access_token}` },
+        }
+      );
+      setIsConnected(false);
+    } catch (error) {
+      console.error("Error disconnecting from user:", error);
+    }
   };
 
   return (
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-      <ScrollView style={tw`flex-1 p-8 bg-white`}>
-        <Text style={tw`text-2xl font-bold mb-4 text-center`}>Home!</Text>
+    <View style={tw`flex-1 items-center justify-center p-4`}>
+      {/* User Profile Header */}
+      <Text style={tw`text-3xl font-bold mb-4`}>User Profile</Text>
 
-        {/* User Information */}
-        {user ? (
-          <View style={tw`items-center mb-8`}>
-            {/* User Photo */}
-            <Image
-              source={{ uri: user.picturePath }}
-              style={tw`w-24 h-24 rounded-full mb-4`}
-            />
+      {/* User Picture */}
+      {user.picturePath ? (
+        <Image
+          source={{ uri: user.picturePath }}
+          style={tw`w-32 h-32 rounded-full mb-4`}
+        />
+      ) : (
+        <View style={tw`w-32 h-32 rounded-full bg-gray-300 mb-4`} />
+      )}
 
-            {/* User Details */}
-            <Text style={tw`text-xl font-bold`}>
-              {user.firstName} {user.lastName}
-            </Text>
-            <Text style={tw`text-sm text-gray-500`}>{user.email}</Text>
-            <Text style={tw`text-sm text-gray-500 mb-4`}>
-              {user.occupation}
-            </Text>
-          </View>
-        ) : (
-          <Text>No User ID</Text>
-        )}
+      {/* User Details */}
+      <View style={tw`items-center`}>
+        <Text style={tw`text-xl font-bold text-black`}>
+          {user.firstName} {user.lastName}
+        </Text>
+        <Text style={tw`text-base text-gray-700 mt-2`}>
+          College: {user.college || "N/A"}
+        </Text>
+        <Text style={tw`text-base text-gray-700 mt-2`}>
+          Matriculation Year: {user.matriculationYear || "N/A"}
+        </Text>
+        <Text style={tw`text-base text-gray-700 mt-2`}>
+          Industry: {user.occupation || "N/A"}
+        </Text>
+      </View>
 
-        {/* PostBox Component */}
-        <PostBox onPost={handlePost} onCancel={handleCancel} />
-
-        {/* Display Posts */}
-        {Array.isArray(posts) && posts.length > 0 ? (
-          posts.map((post) => <PostCard key={post._id} post={post} />)
-        ) : (
-          <Text>No posts to display</Text>
-        )}
-      </ScrollView>
-    </TouchableWithoutFeedback>
+      {/* Connect Button */}
+      {!loading && (
+        <TouchableOpacity
+          style={tw`mt-6 bg-primary500 px-4 py-2 rounded-lg`}
+          onPress={isConnected ? handleDisconnect : handleConnect}
+        >
+          <Text style={tw`text-white text-lg font-bold`}>
+            {isConnected ? "In My Network" : "Connect"}
+          </Text>
+        </TouchableOpacity>
+      )}
+    </View>
   );
-}
+};
 
-export default HomeScreen;
+export default UserProfileScreen;

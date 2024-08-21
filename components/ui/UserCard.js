@@ -44,7 +44,7 @@ const UserCard = ({ user }) => {
           Matriculation Year: {user.matriculationYear || "N/A"}
         </Text>
         <Text style={tw`text-base text-gray-700`}>
-          Industry: {user.occupation || "N/A"} {/* Display Industry */}
+          Industry: {user.occupation || "N/A"}
         </Text>
       </View>
     </TouchableOpacity>

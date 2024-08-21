@@ -58,7 +58,7 @@ function DrawerNavigator() {
     >
       <Drawer.Screen name="Home" component={HomeScreen} />
       <Drawer.Screen name="User Search" component={UserSearchScreen} />
-      {/* Add more drawer items here */}
+      {/* Add more drawer items here if needed */}
     </Drawer.Navigator>
   );
 }
@@ -75,12 +75,12 @@ function AuthenticatedStack() {
       <Stack.Screen
         name="Drawer"
         component={DrawerNavigator}
-        options={{ headerShown: false }} // Hide the header to avoid double nav bars
+        options={{ headerShown: false }} // Hide the header for the drawer
       />
       <Stack.Screen
         name="UserProfile"
         component={UserProfileScreen}
-        options={{ title: "User Profile" }} // Set a title for the profile screen
+        options={{ title: "User Profile" }} // Title for the UserProfile screen
       />
     </Stack.Navigator>
   );
