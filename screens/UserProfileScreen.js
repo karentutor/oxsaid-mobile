@@ -20,16 +20,31 @@ function HomeScreen() {
   const [posts, setPosts] = useState([]); // Ensure posts is initialized as an array
 
   useEffect(() => {
-    fetchOwnPosts();
+    fetchPosts(); // Fetch both own and friends' posts
   }, []);
 
-  const fetchOwnPosts = async () => {
+  const fetchPosts = async () => {
     try {
-      const response = await axiosBase.get("/posts/own", {
+      const ownPostsResponse = await axiosBase.get("/posts/own", {
         headers: { Authorization: `Bearer ${access_token}` },
       });
-      console.log("Fetched posts:", response.data);
-      setPosts(response.data); // Assuming response.data is an array
+
+      const friendsPostsResponse = await axiosBase.get("/posts/followed", {
+        headers: { Authorization: `Bearer ${access_token}` },
+      });
+
+      // Combine both own posts and friends' posts
+      const combinedPosts = [
+        ...ownPostsResponse.data,
+        ...friendsPostsResponse.data,
+      ];
+
+      // Sort combined posts by createdAt date
+      combinedPosts.sort(
+        (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+      );
+
+      setPosts(combinedPosts);
     } catch (err) {
       console.error("Error fetching posts:", err.message);
       Alert.alert("Error fetching posts", err.message);
@@ -52,12 +67,6 @@ function HomeScreen() {
         });
       }
 
-      // Log the FormData object to inspect its contents
-      console.log("FormData content:");
-      for (let pair of formData.entries()) {
-        console.log(`${pair[0]}: ${pair[1]}`);
-      }
-
       const response = await axiosBase.post("/posts", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
@@ -65,14 +74,8 @@ function HomeScreen() {
         },
       });
 
-      // Log the response from the server
-      console.log("Post created successfully:", response.data);
-
-      // Re-fetch posts after a new one is created
-      fetchOwnPosts();
+      fetchPosts(); // Re-fetch posts after creating a new one
     } catch (err) {
-      // Log the error response
-      console.error("Error creating post:", err.message);
       Alert.alert("Error creating post", err.message);
     }
   };
