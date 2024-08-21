@@ -20,7 +20,7 @@ const UserCard = ({ user }) => {
           elevation: 5,
         },
       ]}
-      activeOpacity={0.7} // Adjust the opacity when pressed
+      activeOpacity={0.7}
     >
       {/* User Picture */}
       {user.picturePath ? (
@@ -42,6 +42,9 @@ const UserCard = ({ user }) => {
         </Text>
         <Text style={tw`text-base text-gray-700`}>
           Matriculation Year: {user.matriculationYear || "N/A"}
+        </Text>
+        <Text style={tw`text-base text-gray-700`}>
+          Industry: {user.occupation || "N/A"} {/* Display Industry */}
         </Text>
       </View>
     </TouchableOpacity>

@@ -11,6 +11,11 @@ import { axiosBase } from "../services/BaseService";
 import useAuth from "../hooks/useAuth";
 import tw from "../lib/tailwind";
 import FilterModal from "../components/ui/FilterModal";
+import {
+  OCCUPATION_DATA,
+  COLLEGE_DATA,
+  MATRICULATION_YEAR_DATA,
+} from "../data";
 import UserCard from "../components/ui/UserCard"; // Import the UserCard component
 
 const UserSearchScreen = () => {
@@ -49,11 +54,17 @@ const UserSearchScreen = () => {
 
       const queryParams = new URLSearchParams();
 
+      // Determine what to send based on the search and filters
+      if (search) {
+        queryParams.append("search", search);
+      } else if (!college && !matriculationYear && !industry) {
+        queryParams.append("search", "all"); // Only send 'all' if no filters are selected
+      }
+
       if (college) queryParams.append("college", college);
       if (matriculationYear)
         queryParams.append("matriculationYear", matriculationYear);
       if (industry) queryParams.append("occupation", industry);
-      queryParams.append("search", search || "all");
 
       const queryString = queryParams.toString();
 
@@ -98,31 +109,12 @@ const UserSearchScreen = () => {
     setOptions([]);
   };
 
-  const searchAllUsers = async () => {
-    setLoading(true);
-
-    try {
-      const response = await axiosBase.get(`/users/query?search=all`, {
-        headers: { Authorization: `Bearer ${auth.access_token}` },
-      });
-
-      if (response) {
-        const filteredData = response.data.filter(
-          (item) => item._id !== auth.user._id
-        );
-        // Simulate 90 users by repeating the filtered data
-        const repeatedData = Array(30).fill(filteredData).flat();
-        const updatedOptions = repeatedData.map((option) => ({
-          ...option,
-          isFollowed: friends.includes(option._id),
-        }));
-        setOptions(updatedOptions);
-      }
-    } catch (error) {
-      console.error("Search all error:", error);
-    }
-
-    setLoading(false);
+  const searchAllUsers = () => {
+    // Clear the search term and reset filters before triggering the effect
+    setSearch("");
+    setCollege("");
+    setMatriculationYear("");
+    setIndustry("");
   };
 
   const openFilterModal = (filterType) => {
