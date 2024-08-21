@@ -65,7 +65,6 @@ function HomeScreen() {
 
       fetchOwnPosts();
     } catch (err) {
-      // Log the entire error response to understand the conflict
       if (err.response) {
         console.error(
           "Server responded with a 409 status code:",
@@ -75,6 +74,24 @@ function HomeScreen() {
         console.error("Error creating post:", err.message);
       }
       Alert.alert("Error creating post", err.message);
+    }
+  };
+
+  const handleDeletePost = async (postId) => {
+    try {
+      const response = await axiosBase.delete(`/posts/${postId}`, {
+        headers: { Authorization: `Bearer ${access_token}` },
+      });
+
+      if (response.data.isSuccess) {
+        setPosts(posts.filter((post) => post._id !== postId));
+        Alert.alert("Post deleted", "Your post was deleted successfully.");
+      } else {
+        Alert.alert("Error", response.data.msg);
+      }
+    } catch (err) {
+      console.error("Error deleting post:", err.message);
+      Alert.alert("Error deleting post", err.message);
     }
   };
 
@@ -117,7 +134,9 @@ function HomeScreen() {
         <PostBox onPost={handlePost} onCancel={handleCancel} />
 
         {Array.isArray(posts) && posts.length > 0 ? (
-          posts.map((post) => <PostCard key={post._id} post={post} />)
+          posts.map((post) => (
+            <PostCard key={post._id} post={post} onDelete={handleDeletePost} />
+          ))
         ) : (
           <Text>No posts to display</Text>
         )}

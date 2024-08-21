@@ -3,7 +3,7 @@ import {
   View,
   Text,
   TextInput,
-  ScrollView,
+  FlatList,
   ActivityIndicator,
   TouchableOpacity,
 } from "react-native";
@@ -77,7 +77,7 @@ const UserSearchScreen = () => {
             (item) => item._id !== auth.user._id
           );
           // Simulate 90 users by repeating the filtered data
-          const repeatedData = Array(30).fill(filteredData).flat();
+          const repeatedData = Array(1).fill(filteredData).flat();
           const updatedOptions = repeatedData.map((option) => ({
             ...option,
             isFollowed: friends.includes(option._id),
@@ -143,15 +143,15 @@ const UserSearchScreen = () => {
   };
 
   return (
-    <View style={tw`flex-1 items-center justify-start pt-5`}>
-      <View style={tw`w-full px-6`}>
+    <View style={tw`flex-1 items-center justify-start pt-10`}>
+      <View style={tw`w-full px-6 flex-1`}>
+        {/* Add flex-1 here */}
         <TextInput
           placeholder="Search"
           value={search}
           onChangeText={(text) => setSearch(text)}
           style={tw`border border-gray-300 rounded-lg p-2 focus:outline-none focus:border-blue-500 w-full mb-4`}
         />
-
         <View style={tw`flex flex-wrap justify-start items-center mb-4`}>
           <TouchableOpacity
             style={tw`border border-gray-300 rounded-lg p-2 mb-2 w-full flex-row items-center justify-between`}
@@ -183,7 +183,6 @@ const UserSearchScreen = () => {
             {!industry && <Text style={tw`text-black`}>▼</Text>}
           </TouchableOpacity>
         </View>
-
         <View style={tw`flex flex-row justify-start items-center mb-4`}>
           <TouchableOpacity
             style={tw`border border-gray-300 rounded-lg p-2 mb-2 w-1/2 bg-secondary500 mr-2`}
@@ -198,16 +197,17 @@ const UserSearchScreen = () => {
             <Text style={tw`text-black text-center`}>Reset Filters</Text>
           </TouchableOpacity>
         </View>
-
-        <ScrollView style={tw`mt-4`}>
-          {loading ? (
-            <ActivityIndicator size="large" color="#0000ff" />
-          ) : (
-            options.map((option, index) => (
-              <UserCard key={index} user={option} />
-            ))
-          )}
-        </ScrollView>
+        <FlatList
+          data={options}
+          keyExtractor={(item, index) => index.toString()} // Generate a unique key for each item
+          renderItem={({ item }) => <UserCard user={item} />} // Render each item using the UserCard component
+          ListHeaderComponent={
+            loading ? <ActivityIndicator size="large" color="#0000ff" /> : null
+          } // Show ActivityIndicator if loading
+          contentContainerStyle={tw`pb-1`} // Ensure padding at the bottom
+          style={tw`mt-4 flex-grow`} // Style for FlatList container
+          showsVerticalScrollIndicator={false} // Optional: hide the vertical scroll indicator
+        />
       </View>
 
       <FilterModal

@@ -99,7 +99,7 @@ const UserProfileScreen = ({ route }) => {
           onPress={isConnected ? handleDisconnect : handleConnect}
         >
           <Text style={tw`text-white text-lg font-bold`}>
-            {isConnected ? "In My Network" : "Connect"}
+            {isConnected ? "Following" : "Follow"}
           </Text>
         </TouchableOpacity>
       )}

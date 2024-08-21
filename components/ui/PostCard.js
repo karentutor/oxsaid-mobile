@@ -1,8 +1,28 @@
 import React from "react";
-import { View, Text, Image } from "react-native";
+import { View, Text, Image, TouchableOpacity, Alert } from "react-native";
+import Icon from "react-native-vector-icons/FontAwesome";
 import tw from "twrnc";
 
-const PostCard = ({ post }) => {
+const PostCard = ({ post, onDelete }) => {
+  const handleDelete = () => {
+    Alert.alert(
+      "Delete Post",
+      "Are you sure you want to delete this post?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: () => onDelete(post._id),
+        },
+      ],
+      { cancelable: true }
+    );
+  };
+
   return (
     <View
       style={tw`w-full mb-4 border border-gray-300 rounded-lg shadow-sm p-4`}
@@ -12,12 +32,15 @@ const PostCard = ({ post }) => {
           source={{ uri: post.userPicturePath }}
           style={tw`w-10 h-10 rounded-full mr-2`}
         />
-        <View>
+        <View style={tw`flex-1`}>
           <Text style={tw`text-lg font-bold`}>
             {post.firstName} {post.lastName}
           </Text>
           <Text style={tw`text-sm text-gray-500`}>{post.location}</Text>
         </View>
+        <TouchableOpacity onPress={handleDelete}>
+          <Icon name="trash" size={20} color="red" />
+        </TouchableOpacity>
       </View>
 
       <Text style={tw`text-base mb-2`}>{post.description}</Text>
