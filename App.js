@@ -7,6 +7,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import AppLoading from "expo-app-loading";
 import AuthContextProvider, { AuthContext } from "./context/auth-context";
 
+import FriendsListScreen from "./screens/FriendsListScreen";
 import LoginScreen from "./screens/LoginScreen";
 import HomeScreen from "./screens/HomeScreen";
 import UserSearchScreen from "./screens/UserSearchScreen";
@@ -58,6 +59,7 @@ function DrawerNavigator() {
     >
       <Drawer.Screen name="Home" component={HomeScreen} />
       <Drawer.Screen name="User Search" component={UserSearchScreen} />
+      <Drawer.Screen name="Friends List" component={FriendsListScreen} />
       {/* Add more drawer items here if needed */}
     </Drawer.Navigator>
   );
