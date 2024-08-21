@@ -20,16 +20,31 @@ function HomeScreen() {
   const [posts, setPosts] = useState([]);
 
   useEffect(() => {
-    fetchOwnPosts();
+    fetchPosts();
   }, []);
 
-  const fetchOwnPosts = async () => {
+  const fetchPosts = async () => {
     try {
-      const response = await axiosBase.get("/posts/own", {
+      // Fetch logged-in user's own posts
+      const ownPostsResponse = await axiosBase.get("/posts/own", {
         headers: { Authorization: `Bearer ${access_token}` },
       });
-      console.log("Fetched posts:", response.data);
-      setPosts(response.data);
+
+      // Fetch posts from users the logged-in user is following
+      const followedPostsResponse = await axiosBase.get("/posts/followed", {
+        headers: { Authorization: `Bearer ${access_token}` },
+      });
+
+      // Combine the posts
+      const allPosts = [
+        ...ownPostsResponse.data,
+        ...followedPostsResponse.data,
+      ];
+
+      // Sort posts by creation date (if needed)
+      allPosts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+      setPosts(allPosts);
     } catch (err) {
       console.error("Error fetching posts:", err.message);
       Alert.alert("Error fetching posts", err.message);
@@ -63,7 +78,7 @@ function HomeScreen() {
 
       console.log("Post created successfully:", response.data);
 
-      fetchOwnPosts();
+      fetchPosts(); // Refresh the posts after creating a new one
     } catch (err) {
       if (err.response) {
         console.error(

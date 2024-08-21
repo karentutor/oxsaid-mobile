@@ -2,8 +2,11 @@ import React from "react";
 import { View, Text, Image, TouchableOpacity, Alert } from "react-native";
 import Icon from "react-native-vector-icons/FontAwesome";
 import tw from "twrnc";
+import useAuth from "../../hooks/useAuth";
 
 const PostCard = ({ post, onDelete }) => {
+  const { auth } = useAuth();
+
   const handleDelete = () => {
     Alert.alert(
       "Delete Post",
@@ -38,9 +41,13 @@ const PostCard = ({ post, onDelete }) => {
           </Text>
           <Text style={tw`text-sm text-gray-500`}>{post.location}</Text>
         </View>
-        <TouchableOpacity onPress={handleDelete}>
-          <Icon name="trash" size={20} color="red" />
-        </TouchableOpacity>
+
+        {/* Render delete button only if the post belongs to the logged-in user */}
+        {post.userId === auth.user._id && (
+          <TouchableOpacity onPress={handleDelete}>
+            <Icon name="trash" size={20} color="red" />
+          </TouchableOpacity>
+        )}
       </View>
 
       <Text style={tw`text-base mb-2`}>{post.description}</Text>
