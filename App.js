@@ -2,21 +2,16 @@ import React, { useContext, useState, useEffect } from "react";
 import { StatusBar } from "expo-status-bar";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import { createDrawerNavigator } from "@react-navigation/drawer";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import AppLoading from "expo-app-loading";
 import AuthContextProvider, { AuthContext } from "./context/auth-context";
-
-import FriendsListScreen from "./screens/FriendsListScreen";
+import ChatContextProvider from "./context/chat-context";
+import MainDrawerNavigator from "./navigators/MainDrawerNavigator";
 import LoginScreen from "./screens/LoginScreen";
-import HomeScreen from "./screens/HomeScreen";
-import UserSearchScreen from "./screens/UserSearchScreen";
-import UserProfileScreen from "./screens/UserProfileScreen"; // Import UserProfileScreen
+import UserProfileScreen from "./screens/UserProfileScreen";
 import { Colors } from "./constants/styles";
-import IconButton from "./components/ui/IconButton";
 
 const Stack = createNativeStackNavigator();
-const Drawer = createDrawerNavigator();
 
 function AuthStack() {
   return (
@@ -32,39 +27,6 @@ function AuthStack() {
   );
 }
 
-function DrawerNavigator() {
-  const auth = useContext(AuthContext);
-
-  return (
-    <Drawer.Navigator
-      screenOptions={({ navigation, route }) => ({
-        headerStyle: { backgroundColor: Colors.primary500 },
-        headerTintColor: "white",
-        headerRight: ({ tintColor }) => (
-          <IconButton
-            icon="exit"
-            color={tintColor}
-            size={24}
-            onPress={auth.logout}
-          />
-        ),
-        drawerContentStyle: {
-          backgroundColor: Colors.primary800,
-          paddingTop: 30,
-        },
-        drawerInactiveTintColor: Colors.secondary500,
-        drawerActiveTintColor: Colors.primary500,
-        drawerActiveBackgroundColor: Colors.primary100,
-      })}
-    >
-      <Drawer.Screen name="Home" component={HomeScreen} />
-      <Drawer.Screen name="User Search" component={UserSearchScreen} />
-      <Drawer.Screen name="Friends List" component={FriendsListScreen} />
-      {/* Add more drawer items here if needed */}
-    </Drawer.Navigator>
-  );
-}
-
 function AuthenticatedStack() {
   return (
     <Stack.Navigator
@@ -75,9 +37,9 @@ function AuthenticatedStack() {
       }}
     >
       <Stack.Screen
-        name="Drawer"
-        component={DrawerNavigator}
-        options={{ headerShown: false }} // Hide the header for the drawer
+        name="MainDrawer"
+        component={MainDrawerNavigator}
+        options={{ headerShown: false }} // Hide the header for the main drawer
       />
       <Stack.Screen
         name="UserProfile"
@@ -129,7 +91,9 @@ export default function App() {
     <>
       <StatusBar style="light" />
       <AuthContextProvider>
-        <Root />
+        <ChatContextProvider>
+          <Root />
+        </ChatContextProvider>
       </AuthContextProvider>
     </>
   );

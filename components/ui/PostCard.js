@@ -31,10 +31,19 @@ const PostCard = ({ post, onDelete }) => {
       style={tw`w-full mb-4 border border-gray-300 rounded-lg shadow-sm p-4`}
     >
       <View style={tw`flex-row items-center mb-2`}>
-        <Image
-          source={{ uri: post.userPicturePath }}
-          style={tw`w-10 h-10 rounded-full mr-2`}
-        />
+        {post.userPicturePath ? (
+          <Image
+            source={{ uri: post.userPicturePath }}
+            style={tw`w-10 h-10 rounded-full mr-2`}
+          />
+        ) : (
+          <View
+            style={tw`w-10 h-10 rounded-full mr-2 bg-gray-300 flex items-center justify-center`}
+          >
+            <Text style={tw`text-xs text-gray-500`}>No Image</Text>
+          </View>
+        )}
+
         <View style={tw`flex-1`}>
           <Text style={tw`text-lg font-bold`}>
             {post.firstName} {post.lastName}
