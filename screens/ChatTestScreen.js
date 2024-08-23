@@ -3,7 +3,6 @@ import {
   View,
   Text,
   TextInput,
-  Button,
   FlatList,
   TouchableOpacity,
 } from "react-native";
@@ -34,6 +33,7 @@ function ChatTestScreen() {
 
   useEffect(() => {
     socket.on("users", (users) => {
+      console.log("Updated users list:", users); // Log the updated users list
       setUsers(users);
     });
 
@@ -87,28 +87,32 @@ function ChatTestScreen() {
         </View>
       )}
 
-      <View style={tw`flex-2`}>
-        <FlatList
-          data={messages}
-          renderItem={({ item }) => (
-            <View style={tw`bg-gray-300 p-3 rounded mb-3`}>
-              <Text>{item}</Text>
-            </View>
-          )}
-          keyExtractor={(item, index) => index.toString()}
-        />
-      </View>
+      <View style={tw`flex-row`}>
+        {/* Messages on the left */}
+        <View style={tw`flex-3`}>
+          <FlatList
+            data={messages}
+            renderItem={({ item }) => (
+              <View style={tw`bg-gray-300 p-3 rounded mb-3`}>
+                <Text style={tw`text-sm text-left`}>{item}</Text>
+              </View>
+            )}
+            keyExtractor={(item, index) => index.toString()}
+          />
+        </View>
 
-      <View style={tw`flex-1 mt-5`}>
-        <FlatList
-          data={users}
-          renderItem={({ item }) => (
-            <View style={tw`bg-blue-300 p-3 rounded mb-3`}>
-              <Text>{item}</Text>
-            </View>
-          )}
-          keyExtractor={(item, index) => index.toString()}
-        />
+        {/* Users on the right */}
+        <View style={tw`flex-1 ml-3`}>
+          <FlatList
+            data={users}
+            renderItem={({ item }) => (
+              <View style={tw`p-3 rounded mb-3`}>
+                <Text style={tw`text-sm text-right text-blue-500`}>{item}</Text>
+              </View>
+            )}
+            keyExtractor={(item, index) => index.toString()}
+          />
+        </View>
       </View>
     </View>
   );
