@@ -9,16 +9,21 @@ import {
 import tw from "twrnc"; // Tailwind CSS for React Native
 import socket, { connectSocket } from "../services/socket"; // Import the socket and connect function
 import { useRoute } from "@react-navigation/native"; // Import useRoute to access navigation parameters
+import useAuth from "../hooks/useAuth"; // Import useAuth hook for current user
 
 export default function ChatTestScreen() {
   const [connected, setConnected] = useState(false);
   const [messages, setMessages] = useState([]); // State to store chat messages
   const [inputMessage, setInputMessage] = useState(""); // State for the input message
 
+  const { auth } = useAuth(); // Get the current user from useAuth hook
   const route = useRoute(); // Access route parameters
-  const user = route.params?.user; // Safely get the user data from route parameters
-  const currentUsername = user.firstName; // Replace this with the actual username of the logged-in user
-  const currentUserId = user._id; // Replace this with the actual user ID of the logged-in user
+  const recipientUser = route.params?.user; // Safely get the recipient user data from route parameters
+
+  const currentUsername = auth.user.firstName; // Current user's first name
+  const currentUserId = auth.user._id; // Current user's ID
+  const recipientUsername = recipientUser.firstName; // Recipient's first name
+  const recipientUserId = recipientUser._id; // Recipient's ID
 
   useEffect(() => {
     console.log("Attempting to connect socket..."); // Debugging log
@@ -37,14 +42,14 @@ export default function ChatTestScreen() {
       setConnected(true);
     });
 
-    // Listen for incoming messages from the server
-    socket.on("broadcastMessage", (data) => {
-      console.log("Received message from server:", data);
+    // Listen for incoming private messages from the server
+    socket.on("privateMessage", (data) => {
+      console.log("Received private message from server:", data);
       setMessages((prevMessages) => [
         {
           text: data.message,
-          from: data.from,
-          isSentByCurrentUser: data.from === currentUsername,
+          from: data.fromName,
+          isSentByCurrentUser: data.fromId === currentUserId,
         },
         ...prevMessages,
       ]); // Add new message at the top
@@ -60,20 +65,23 @@ export default function ChatTestScreen() {
     return () => {
       console.log("Cleaning up socket events..."); // Debugging log
       socket.off("connect");
-      socket.off("broadcastMessage");
+      socket.off("privateMessage");
       socket.off("connect_error");
       socket.disconnect(); // Disconnect socket when component unmounts
     };
   }, []);
 
   const sendMessage = () => {
-    if (inputMessage.trim()) {
+    if (inputMessage.trim() && recipientUserId) {
       const newMessage = {
         message: inputMessage,
-        from: currentUsername,
+        fromName: currentUsername, // Sender's first name
+        fromId: currentUserId, // Sender's ID
+        toId: recipientUserId, // Recipient's ID
+        toName: recipientUsername, // Recipient's first name (optional for display purposes)
       };
 
-      // Emit message to the server to broadcast to everyone
+      // Emit message to the server to send to the specific user
       socket.emit("sendMessage", newMessage);
 
       // Add the sent message locally with the sender's name
@@ -91,8 +99,8 @@ export default function ChatTestScreen() {
     }
   };
 
-  if (!user) {
-    // Early return if user is undefined
+  if (!auth.user || !recipientUser) {
+    // Early return if auth user or recipientUser is undefined
     return (
       <View style={tw`flex-1 items-center justify-center bg-white`}>
         <Text style={tw`text-2xl font-bold text-red-500`}>
