@@ -6,6 +6,8 @@ import {
   KeyboardAvoidingView,
   TouchableWithoutFeedback,
   Keyboard,
+  Platform,
+  ScrollView,
 } from "react-native";
 
 import AuthContent from "../components/auth/AuthContent";
@@ -37,16 +39,25 @@ function LoginScreen() {
   }
 
   return (
-    <KeyboardAvoidingView style={tw`flex-1`} behavior="padding">
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <View style={tw`flex-1 items-center justify-start p-0`}>
-          <Image
-            source={require("../assets/oxsaid-logo-cropped.png")}
-            style={tw`w-62 h-62 m-5`}
-            resizeMode="contain"
-          />
-          <AuthContent isLogin onAuthenticate={loginHandler} />
-        </View>
+    <KeyboardAvoidingView
+      style={tw`flex-1`}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+    >
+      {/* Dismiss keyboard only when tapping outside the scrollable content */}
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+        <ScrollView
+          contentContainerStyle={tw`flex-grow`}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View style={tw`flex-1 items-center justify-start p-0`}>
+            <Image
+              source={require("../assets/oxsaid-logo-cropped.png")}
+              style={tw`w-62 h-62 m-5`}
+              resizeMode="contain"
+            />
+            <AuthContent isLogin onAuthenticate={loginHandler} />
+          </View>
+        </ScrollView>
       </TouchableWithoutFeedback>
     </KeyboardAvoidingView>
   );

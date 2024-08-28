@@ -3,15 +3,18 @@ import { StatusBar } from "expo-status-bar";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import AppLoading from "expo-app-loading";
+import * as SplashScreen from "expo-splash-screen"; // Import splash screen
 import AuthContextProvider, { AuthContext } from "./context/auth-context";
-import ChatContextProvider from "./context/chat-context";
 import MainDrawerNavigator from "./navigators/MainDrawerNavigator";
 import LoginScreen from "./screens/LoginScreen";
 import UserProfileScreen from "./screens/UserProfileScreen";
+import ChatTestScreen from "./screens/ChatTestScreen"; // Import the ChatTestScreen
 import { Colors } from "./constants/styles";
 
 const Stack = createNativeStackNavigator();
+
+// Prevent splash screen from hiding automatically
+SplashScreen.preventAutoHideAsync();
 
 function AuthStack() {
   return (
@@ -46,6 +49,11 @@ function AuthenticatedStack() {
         component={UserProfileScreen}
         options={{ title: "User Profile" }} // Title for the UserProfile screen
       />
+      <Stack.Screen
+        name="ChatTest"
+        component={ChatTestScreen}
+        options={{ title: "Chat Test" }} // Title for the ChatTest screen
+      />
     </Stack.Navigator>
   );
 }
@@ -67,20 +75,27 @@ function Root() {
 
   useEffect(() => {
     async function fetchToken() {
-      const storedToken = await AsyncStorage.getItem("token");
+      try {
+        const storedToken = await AsyncStorage.getItem("access_token"); // Changed from 'token' to 'access_token'
+        const storedUser = await AsyncStorage.getItem("user");
 
-      if (storedToken) {
-        authCtx.authenticate(storedToken);
+        if (storedToken) {
+          const user = storedUser ? JSON.parse(storedUser) : "";
+          authCtx.authenticate(storedToken, user); // Pass both token and user
+        }
+      } catch (error) {
+        console.error("Failed to fetch token", error);
+      } finally {
+        setIsTryingLogin(false);
+        await SplashScreen.hideAsync(); // Hide splash screen after loading is complete
       }
-
-      setIsTryingLogin(false);
     }
 
     fetchToken();
   }, []);
 
   if (isTryingLogin) {
-    return <AppLoading />;
+    return null;
   }
 
   return <Navigation />;
@@ -91,9 +106,7 @@ export default function App() {
     <>
       <StatusBar style="light" />
       <AuthContextProvider>
-        <ChatContextProvider>
-          <Root />
-        </ChatContextProvider>
+        <Root />
       </AuthContextProvider>
     </>
   );

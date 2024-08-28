@@ -19,7 +19,6 @@ const FriendsListScreen = () => {
             headers: { Authorization: `Bearer ${auth.access_token}` },
           }
         );
-        console.log(response.data);
         setFriends(response.data); // Set the full user details
       } catch (error) {
         console.error("Error fetching friends:", error);
