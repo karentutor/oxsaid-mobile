@@ -1,88 +1,208 @@
-import React, { useState, useEffect } from "react";
-import { View, Text, FlatList, TextInput, Button } from "react-native";
-import io from "socket.io-client";
+import React, { useEffect, useState } from "react";
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  ScrollView,
+} from "react-native";
+import tw from "twrnc";
+import socket, { connectSocket } from "../services/socket";
+import { useRoute } from "@react-navigation/native";
+import useAuth from "../hooks/useAuth";
 import { axiosBase } from "../services/BaseService";
 
-const ChatScreen = ({ route }) => {
-  const { userId, chatId } = route.params;
+export default function ChatScreen() {
+  const [connected, setConnected] = useState(false);
   const [messages, setMessages] = useState([]);
-  const [newMessage, setNewMessage] = useState("");
+  const [inputMessage, setInputMessage] = useState("");
 
-  const socket = io("http://10.0.0.99:8000", {
-    path: "/ws/socket.io/",
-    transports: ["websocket"],
-  });
+  const { auth } = useAuth();
+  const route = useRoute();
+  const recipientUser = route.params?.user;
+  const hasNewMessages = route.params?.new;
+
+  const currentUsername = auth.user.firstName;
+  const currentUserId = auth.user._id;
+  const recipientUsername = recipientUser?.firstName;
+  const recipientUserId = recipientUser?._id;
 
   useEffect(() => {
-    const fetchMessages = async () => {
-      try {
-        const response = await axiosBase.get(`/chats/${chatId}/messages`);
-        setMessages(response.data.messages);
-      } catch (error) {
-        console.error("Error fetching messages:", error);
-      }
-    };
+    connectSocket();
 
-    fetchMessages();
-
-    socket.emit("user-join-room", { roomId: chatId });
-
-    socket.on("receive-message", (data) => {
-      setMessages((prevMessages) => [...prevMessages, data.newMessage]);
+    socket.emit("registerUser", {
+      username: currentUsername,
+      userId: currentUserId,
     });
 
+    socket.on("connect", () => {
+      console.log("Socket connected", socket.id);
+      setConnected(true);
+    });
+
+    socket.on("privateMessage", (data) => {
+      // Update the state with the new message
+      setMessages((prevMessages) => [
+        {
+          text: data.message,
+          from: data.fromName,
+          isSentByCurrentUser: data.isSentByCurrentUser,
+          _id: data._id,
+        },
+        ...prevMessages,
+      ]);
+
+      // Mark the message as read if it is from the other user
+      if (!data.isSentByCurrentUser) {
+        markMessagesAsRead(currentUserId, recipientUserId);
+      }
+    });
+
+    socket.on("connect_error", (err) => {
+      console.error("Connection error:", err.message);
+      setConnected(false);
+    });
+
+    if (recipientUserId) {
+      fetchChatHistory();
+    }
+
     return () => {
+      socket.off("connect");
+      socket.off("privateMessage");
+      socket.off("connect_error");
       socket.disconnect();
     };
-  }, [chatId]);
+  }, []);
 
-  const handleSendMessage = async () => {
+  const fetchChatHistory = async () => {
     try {
-      const messageData = {
-        chatId: chatId,
-        senderId: userId,
-        content: newMessage,
-      };
+      const response = await axiosBase.get(
+        `/chats/history/${currentUserId}/${recipientUserId}`
+      );
 
-      // Emit message through socket
-      socket.emit("user-send-message", messageData);
+      if (response.data && response.data.length > 0) {
+        setMessages(
+          response.data.map((msg) => ({
+            text: msg.message,
+            from: msg.fromId.firstName,
+            isSentByCurrentUser: msg.fromId._id === currentUserId,
+            _id: msg._id,
+          }))
+        );
 
-      // Send message to the backend
-      await axiosBase.post(`/chats/${chatId}/messages`, messageData);
-
-      setNewMessage("");
+        if (hasNewMessages) {
+          markMessagesAsRead(currentUserId, recipientUserId);
+        }
+      } else {
+        console.log("No chat history found, starting a new chat.");
+        setMessages([]);
+      }
     } catch (error) {
-      console.error("Error sending message:", error);
+      console.error("Error fetching chat history:", error);
     }
   };
 
-  // Define handleMarkAsRead function
-  const handleMarkAsRead = () => {
+  const markMessagesAsRead = async (userId, otherUserId) => {
     try {
-      socket.emit("mark-as-read", { conversationId: chatId, userId });
+      const response = await axiosBase.post("/chats/mark-p-messages-as-read", {
+        userId,
+        otherUserId,
+      });
+
+      console.log("Messages marked as read:", response.data); // Debugging output
     } catch (error) {
       console.error("Error marking messages as read:", error);
     }
   };
 
+  const sendMessage = () => {
+    if (inputMessage.trim() && recipientUserId) {
+      const newMessage = {
+        message: inputMessage,
+        fromName: currentUsername,
+        fromId: currentUserId,
+        toId: recipientUserId,
+        toName: recipientUsername,
+      };
+
+      socket.emit("sendMessage", newMessage);
+
+      setMessages((prevMessages) => [
+        {
+          text: inputMessage,
+          from: currentUsername,
+          isSentByCurrentUser: true,
+          _id: Date.now().toString(),
+        },
+        ...prevMessages,
+      ]);
+
+      setInputMessage("");
+    }
+  };
+
+  if (!auth.user || !recipientUser) {
+    return (
+      <View style={tw`flex-1 items-center justify-center bg-white`}>
+        <Text style={tw`text-2xl font-bold text-red-500`}>
+          User data is missing. Please go back and try again.
+        </Text>
+      </View>
+    );
+  }
+
   return (
-    <View style={{ flex: 1, padding: 10 }}>
-      <FlatList
-        data={messages}
-        keyExtractor={(item, index) => index.toString()}
-        renderItem={({ item }) => (
-          <Text>{`${item.sender.firstName}: ${item.content}`}</Text>
-        )}
-        onEndReached={handleMarkAsRead}
-      />
-      <TextInput
-        value={newMessage}
-        onChangeText={setNewMessage}
-        placeholder="Type a message..."
-      />
-      <Button title="Send" onPress={handleSendMessage} />
+    <View style={tw`flex-1 bg-white`}>
+      {connected ? (
+        <>
+          <ScrollView
+            style={tw`flex-1`}
+            contentContainerStyle={tw`flex-grow`}
+            inverted={true}
+          >
+            {messages.map((msg, index) => (
+              <View
+                key={index}
+                style={tw`p-2 border-b border-gray-200 ${
+                  msg.isSentByCurrentUser ? "items-end" : "items-start"
+                }`}
+              >
+                <Text
+                  style={tw`text-base font-bold text-black ${
+                    msg.isSentByCurrentUser ? "text-right" : "text-left"
+                  }`}
+                >
+                  {msg.isSentByCurrentUser ? "You" : msg.from}:
+                </Text>
+                <Text
+                  style={tw`text-base text-black ${
+                    msg.isSentByCurrentUser ? "text-right" : "text-left"
+                  }`}
+                >
+                  {msg.text}
+                </Text>
+              </View>
+            ))}
+          </ScrollView>
+
+          <View style={tw`flex-row items-center p-4 border-t border-gray-300`}>
+            <TextInput
+              style={tw`flex-1 border rounded-full p-2 mr-2`}
+              placeholder="Type your message..."
+              value={inputMessage}
+              onChangeText={setInputMessage}
+            />
+            <TouchableOpacity onPress={sendMessage} style={tw`p-2`}>
+              <Text style={tw`text-xl text-blue-500`}>➡️</Text>
+            </TouchableOpacity>
+          </View>
+        </>
+      ) : (
+        <View style={tw`flex-1 items-center justify-center`}>
+          <Text style={tw`text-2xl font-bold text-red-500`}>Connecting...</Text>
+        </View>
+      )}
     </View>
   );
-};
-
-export default ChatScreen;
+}

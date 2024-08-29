@@ -3,6 +3,7 @@ import { createDrawerNavigator } from "@react-navigation/drawer";
 import HomeScreen from "../screens/HomeScreen";
 import UserSearchScreen from "../screens/UserSearchScreen";
 import FriendsListScreen from "../screens/FriendsListScreen";
+import ChatListScreen from "../screens/ChatListScreen"; // Import ChatListScreen
 import { Colors } from "../constants/styles";
 import IconButton from "../components/ui/IconButton";
 import useAuth from "../hooks/useAuth";
@@ -37,7 +38,11 @@ function MainDrawerNavigator() {
       <Drawer.Screen name="Home" component={HomeScreen} />
       <Drawer.Screen name="User Search" component={UserSearchScreen} />
       <Drawer.Screen name="Friends List" component={FriendsListScreen} />
-      {/* Removed the "Chats" screen here to keep it out of the drawer */}
+      <Drawer.Screen
+        name="Chats"
+        component={ChatListScreen}
+        options={{ title: "Chats" }} // Added ChatListScreen to the drawer
+      />
     </Drawer.Navigator>
   );
 }

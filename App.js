@@ -8,7 +8,7 @@ import AuthContextProvider, { AuthContext } from "./context/auth-context";
 import MainDrawerNavigator from "./navigators/MainDrawerNavigator";
 import LoginScreen from "./screens/LoginScreen";
 import UserProfileScreen from "./screens/UserProfileScreen";
-import ChatTestScreen from "./screens/ChatTestScreen"; // Import the ChatTestScreen
+import ChatScreen from "./screens/ChatScreen"; // Updated import for ChatScreen
 import { Colors } from "./constants/styles";
 
 const Stack = createNativeStackNavigator();
@@ -50,9 +50,9 @@ function AuthenticatedStack() {
         options={{ title: "User Profile" }} // Title for the UserProfile screen
       />
       <Stack.Screen
-        name="ChatTest"
-        component={ChatTestScreen}
-        options={{ title: "Chat Test" }} // Title for the ChatTest screen
+        name="ChatScreen"
+        component={ChatScreen}
+        options={{ title: "Chat" }} // Updated title for the Chat screen
       />
     </Stack.Navigator>
   );

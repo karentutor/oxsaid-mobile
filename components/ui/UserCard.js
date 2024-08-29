@@ -6,9 +6,8 @@ import tw from "../../lib/tailwind";
 const UserCard = ({ user }) => {
   const navigation = useNavigation();
 
-  // Function to handle chat navigation
   const handleChat = () => {
-    navigation.navigate("ChatTest", { user });
+    navigation.navigate("ChatScreen", { user }); // Updated navigation name to "Chat"
   };
 
   return (
