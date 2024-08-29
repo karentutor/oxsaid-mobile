@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { createDrawerNavigator } from "@react-navigation/drawer";
 import HomeScreen from "../screens/HomeScreen";
 import UserSearchScreen from "../screens/UserSearchScreen";
@@ -7,11 +7,36 @@ import ChatListScreen from "../screens/ChatListScreen"; // Import ChatListScreen
 import { Colors } from "../constants/styles";
 import IconButton from "../components/ui/IconButton";
 import useAuth from "../hooks/useAuth";
+import tw from "twrnc";
+import { axiosBase } from "../services/BaseService";
+import { View, Text } from "react-native"; // Import necessary components
 
 const Drawer = createDrawerNavigator();
 
 function MainDrawerNavigator() {
-  const { logout } = useAuth(); // Correctly destructuring logout from auth context
+  const { logout, auth } = useAuth();
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    // Function to fetch unread messages count
+    const fetchUnreadMessagesCount = async () => {
+      try {
+        const response = await axiosBase.get(
+          `/chats/unread-count/${auth.user._id}`
+        );
+        setUnreadCount(response.data.unreadCount); // Update the unread count
+      } catch (error) {
+        console.error("Error fetching unread message count:", error);
+      }
+    };
+
+    fetchUnreadMessagesCount(); // Initial fetch on mount
+
+    // Optionally, set up an interval to refresh the count periodically
+    const intervalId = setInterval(fetchUnreadMessagesCount, 10000); // Refresh every 10 seconds
+
+    return () => clearInterval(intervalId); // Clear interval on unmount
+  }, [auth.user._id]);
 
   return (
     <Drawer.Navigator
@@ -23,7 +48,7 @@ function MainDrawerNavigator() {
             icon="exit"
             color={tintColor}
             size={24}
-            onPress={logout} // Ensure logout function is referenced correctly
+            onPress={logout}
           />
         ),
         drawerContentStyle: {
@@ -41,7 +66,21 @@ function MainDrawerNavigator() {
       <Drawer.Screen
         name="Chats"
         component={ChatListScreen}
-        options={{ title: "Chats" }} // Added ChatListScreen to the drawer
+        options={{
+          title: "Chats",
+          drawerLabel: ({ color }) => (
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <Text style={{ color }}>Chats</Text>
+              {unreadCount > 0 && (
+                <View
+                  style={tw`bg-red-500 rounded-full h-5 w-5 items-center justify-center ml-2`}
+                >
+                  <Text style={tw`text-white text-xs`}>{unreadCount}</Text>
+                </View>
+              )}
+            </View>
+          ),
+        }}
       />
     </Drawer.Navigator>
   );

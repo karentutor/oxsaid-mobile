@@ -5,6 +5,8 @@ import {
   TextInput,
   TouchableOpacity,
   ScrollView,
+  Keyboard,
+  TouchableWithoutFeedback,
 } from "react-native";
 import tw from "twrnc";
 import socket, { connectSocket } from "../services/socket";
@@ -41,7 +43,6 @@ export default function ChatScreen() {
     });
 
     socket.on("privateMessage", (data) => {
-      // Update the state with the new message
       setMessages((prevMessages) => [
         {
           text: data.message,
@@ -52,7 +53,6 @@ export default function ChatScreen() {
         ...prevMessages,
       ]);
 
-      // Mark the message as read if it is from the other user
       if (!data.isSentByCurrentUser) {
         markMessagesAsRead(currentUserId, recipientUserId);
       }
@@ -110,7 +110,7 @@ export default function ChatScreen() {
         otherUserId,
       });
 
-      console.log("Messages marked as read:", response.data); // Debugging output
+      console.log("Messages marked as read:", response.data);
     } catch (error) {
       console.error("Error marking messages as read:", error);
     }
@@ -128,16 +128,7 @@ export default function ChatScreen() {
 
       socket.emit("sendMessage", newMessage);
 
-      setMessages((prevMessages) => [
-        {
-          text: inputMessage,
-          from: currentUsername,
-          isSentByCurrentUser: true,
-          _id: Date.now().toString(),
-        },
-        ...prevMessages,
-      ]);
-
+      // No need to add message to state here, rely on server response
       setInputMessage("");
     }
   };
@@ -153,56 +144,75 @@ export default function ChatScreen() {
   }
 
   return (
-    <View style={tw`flex-1 bg-white`}>
-      {connected ? (
-        <>
-          <ScrollView
-            style={tw`flex-1`}
-            contentContainerStyle={tw`flex-grow`}
-            inverted={true}
-          >
-            {messages.map((msg, index) => (
-              <View
-                key={index}
-                style={tw`p-2 border-b border-gray-200 ${
-                  msg.isSentByCurrentUser ? "items-end" : "items-start"
-                }`}
-              >
-                <Text
-                  style={tw`text-base font-bold text-black ${
-                    msg.isSentByCurrentUser ? "text-right" : "text-left"
-                  }`}
-                >
-                  {msg.isSentByCurrentUser ? "You" : msg.from}:
-                </Text>
-                <Text
-                  style={tw`text-base text-black ${
-                    msg.isSentByCurrentUser ? "text-right" : "text-left"
-                  }`}
-                >
-                  {msg.text}
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <View style={tw`flex-1 bg-white`}>
+        {connected ? (
+          <>
+            {messages.length === 0 ? (
+              // Display message when no chat history exists
+              <View style={tw`flex-1 items-center justify-center`}>
+                <Text style={tw`text-xl font-bold text-gray-500`}>
+                  Start Your Chat
                 </Text>
               </View>
-            ))}
-          </ScrollView>
+            ) : (
+              // Display chat history
+              <ScrollView
+                style={tw`flex-1`}
+                contentContainerStyle={tw`flex-grow`}
+                inverted={true}
+                keyboardShouldPersistTaps="handled"
+              >
+                {messages.map((msg, index) => (
+                  <View
+                    key={index}
+                    style={tw`p-2 border-b border-gray-200 ${
+                      msg.isSentByCurrentUser ? "items-end" : "items-start"
+                    }`}
+                  >
+                    <Text
+                      style={tw`text-base font-bold text-black ${
+                        msg.isSentByCurrentUser ? "text-right" : "text-left"
+                      }`}
+                    >
+                      {msg.isSentByCurrentUser ? "You" : msg.from}:
+                    </Text>
+                    <Text
+                      style={tw`text-base text-black ${
+                        msg.isSentByCurrentUser ? "text-right" : "text-left"
+                      }`}
+                    >
+                      {msg.text}
+                    </Text>
+                  </View>
+                ))}
+              </ScrollView>
+            )}
 
-          <View style={tw`flex-row items-center p-4 border-t border-gray-300`}>
-            <TextInput
-              style={tw`flex-1 border rounded-full p-2 mr-2`}
-              placeholder="Type your message..."
-              value={inputMessage}
-              onChangeText={setInputMessage}
-            />
-            <TouchableOpacity onPress={sendMessage} style={tw`p-2`}>
-              <Text style={tw`text-xl text-blue-500`}>➡️</Text>
-            </TouchableOpacity>
+            <View
+              style={tw`flex-row items-center p-4 border-t border-gray-300`}
+            >
+              <TextInput
+                style={tw`flex-1 border rounded-full p-2 mr-2`}
+                placeholder="Type your message..."
+                value={inputMessage}
+                onChangeText={setInputMessage}
+                returnKeyType="done"
+                onSubmitEditing={Keyboard.dismiss}
+              />
+              <TouchableOpacity onPress={sendMessage} style={tw`p-2`}>
+                <Text style={tw`text-xl text-blue-500`}>➡️</Text>
+              </TouchableOpacity>
+            </View>
+          </>
+        ) : (
+          <View style={tw`flex-1 items-center justify-center`}>
+            <Text style={tw`text-2xl font-bold text-red-500`}>
+              Connecting...
+            </Text>
           </View>
-        </>
-      ) : (
-        <View style={tw`flex-1 items-center justify-center`}>
-          <Text style={tw`text-2xl font-bold text-red-500`}>Connecting...</Text>
-        </View>
-      )}
-    </View>
+        )}
+      </View>
+    </TouchableWithoutFeedback>
   );
 }

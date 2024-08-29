@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from "react";
-import { FlatList } from "react-native";
+import { View, Text, FlatList, Button } from "react-native"; // Import Button from react-native
 import { axiosBase } from "../services/BaseService";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import useAuth from "../hooks/useAuth";
@@ -40,7 +40,8 @@ const ChatListScreen = () => {
             setChatList([]);
           }
         } catch (error) {
-          console.error("Error fetching chat list:", error);
+          // console.error("Error fetching chat list:", error);
+          setChatList([]); // Clear chat list on error
         }
       };
 
@@ -52,18 +53,35 @@ const ChatListScreen = () => {
     navigation.navigate("ChatScreen", { user, new: hasUnread }); // Pass unread status
   };
 
+  const handleStartChat = () => {
+    navigation.navigate("User Search"); // Navigate to UserSearchScreen to start a new chat
+  };
+
   return (
-    <FlatList
-      data={chatList}
-      keyExtractor={(item) => item.user._id.toString()}
-      renderItem={({ item }) => (
-        <ChatListItem
-          user={item.user}
-          hasUnread={item.hasUnread}
-          onPress={handlePress} // Pass the user and unread status
+    <View style={{ flex: 1, padding: 20 }}>
+      {chatList.length > 0 ? (
+        <FlatList
+          data={chatList}
+          keyExtractor={(item) => item.user._id.toString()}
+          renderItem={({ item }) => (
+            <ChatListItem
+              user={item.user}
+              hasUnread={item.hasUnread}
+              onPress={handlePress} // Pass the user and unread status
+            />
+          )}
         />
+      ) : (
+        <View
+          style={{ alignItems: "center", justifyContent: "center", flex: 1 }}
+        >
+          <Text style={{ fontSize: 18, marginBottom: 20 }}>
+            No chats found. Would you like to start one?
+          </Text>
+          <Button title="Start a New Chat" onPress={handleStartChat} />
+        </View>
       )}
-    />
+    </View>
   );
 };
 
