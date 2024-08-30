@@ -4,27 +4,41 @@
     "slug": "oxsaid-mbile",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/oxsaid-i.png",
     "userInterfaceStyle": "light",
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#1a2a40"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.karentutor1.oxsaidmbile"
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
-      }
+        "foregroundImage": "./assets/oxsaid-i.png",
+        "backgroundColor": "#1a2a40"
+      },
+      "package": "com.karentutor1.oxsaidmbile"
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
       "expo-font"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "10ba9ecc-625e-4550-8388-2984b9813f02"
+      }
+    },
+    "owner": "karentutor1",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/10ba9ecc-625e-4550-8388-2984b9813f02"
+    }
   }
 }

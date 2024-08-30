@@ -62,7 +62,7 @@ function MainDrawerNavigator() {
     >
       <Drawer.Screen name="Home" component={HomeScreen} />
       <Drawer.Screen name="User Search" component={UserSearchScreen} />
-      <Drawer.Screen name="Friends List" component={FriendsListScreen} />
+      <Drawer.Screen name="Following List" component={FriendsListScreen} />
       <Drawer.Screen
         name="Chats"
         component={ChatListScreen}

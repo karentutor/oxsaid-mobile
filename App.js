@@ -10,6 +10,12 @@ import LoginScreen from "./screens/LoginScreen";
 import UserProfileScreen from "./screens/UserProfileScreen";
 import ChatScreen from "./screens/ChatScreen"; // Updated import for ChatScreen
 import { Colors } from "./constants/styles";
+import {
+  registerForPushNotificationsAsync,
+  updateBadgeCount,
+  requestPermissionsAsync,
+} from "./services/NotificationService"; // Import notification functions
+import { axiosBase } from "./services/BaseService";
 
 const Stack = createNativeStackNavigator();
 
@@ -80,8 +86,10 @@ function Root() {
         const storedUser = await AsyncStorage.getItem("user");
 
         if (storedToken) {
-          const user = storedUser ? JSON.parse(storedUser) : "";
-          authCtx.authenticate(storedToken, user); // Pass both token and user
+          const user = storedUser ? JSON.parse(storedUser) : null;
+          if (user) {
+            authCtx.authenticate(storedToken, user); // Pass both token and user
+          }
         }
       } catch (error) {
         console.error("Failed to fetch token", error);
@@ -93,6 +101,39 @@ function Root() {
 
     fetchToken();
   }, []);
+
+  useEffect(() => {
+    // Only proceed if user is authenticated and user data is available
+    if (authCtx.isAuthenticated && authCtx.user && authCtx.user._id) {
+      // Request notification permissions
+      requestPermissionsAsync();
+
+      // Register for push notifications and get the Expo push token
+      registerForPushNotificationsAsync(
+        "10ba9ecc-625e-4550-8388-2984b9813f02"
+      ).then((token) => {
+        console.log("Expo Push Token:", token);
+        // Optionally, send this token to your backend server for later use
+      });
+
+      const fetchUnreadMessagesCount = async () => {
+        try {
+          const response = await axiosBase.get(
+            `/chats/unread-count/${authCtx.user._id}`
+          );
+          const count = response.data.unreadCount;
+          updateBadgeCount(count); // Update the badge count on the app icon
+        } catch (error) {
+          console.error("Error fetching unread message count:", error);
+        }
+      };
+
+      fetchUnreadMessagesCount(); // Fetch count when user is authenticated
+      const intervalId = setInterval(fetchUnreadMessagesCount, 10000); // Refresh every 10 seconds
+
+      return () => clearInterval(intervalId); // Clear interval on unmount
+    }
+  }, [authCtx.isAuthenticated, authCtx.user]);
 
   if (isTryingLogin) {
     return null;

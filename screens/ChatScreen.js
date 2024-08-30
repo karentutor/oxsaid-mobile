@@ -7,6 +7,8 @@ import {
   ScrollView,
   Keyboard,
   TouchableWithoutFeedback,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import tw from "twrnc";
 import socket, { connectSocket } from "../services/socket";
@@ -49,6 +51,7 @@ export default function ChatScreen() {
           from: data.fromName,
           isSentByCurrentUser: data.isSentByCurrentUser,
           _id: data._id,
+          timestamp: validateDate(data.timestamp),
         },
         ...prevMessages,
       ]);
@@ -75,6 +78,13 @@ export default function ChatScreen() {
     };
   }, []);
 
+  const validateDate = (dateString) => {
+    const date = new Date(dateString);
+    return isNaN(date.getTime())
+      ? new Date().toISOString()
+      : date.toISOString(); // If invalid, return current date
+  };
+
   const fetchChatHistory = async () => {
     try {
       const response = await axiosBase.get(
@@ -88,6 +98,7 @@ export default function ChatScreen() {
             from: msg.fromId.firstName,
             isSentByCurrentUser: msg.fromId._id === currentUserId,
             _id: msg._id,
+            timestamp: validateDate(msg.timestamp),
           }))
         );
 
@@ -128,7 +139,6 @@ export default function ChatScreen() {
 
       socket.emit("sendMessage", newMessage);
 
-      // No need to add message to state here, rely on server response
       setInputMessage("");
     }
   };
@@ -144,75 +154,81 @@ export default function ChatScreen() {
   }
 
   return (
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-      <View style={tw`flex-1 bg-white`}>
-        {connected ? (
-          <>
-            {messages.length === 0 ? (
-              // Display message when no chat history exists
-              <View style={tw`flex-1 items-center justify-center`}>
-                <Text style={tw`text-xl font-bold text-gray-500`}>
-                  Start Your Chat
-                </Text>
-              </View>
-            ) : (
-              // Display chat history
-              <ScrollView
-                style={tw`flex-1`}
-                contentContainerStyle={tw`flex-grow`}
-                inverted={true}
-                keyboardShouldPersistTaps="handled"
-              >
-                {messages.map((msg, index) => (
-                  <View
-                    key={index}
-                    style={tw`p-2 border-b border-gray-200 ${
-                      msg.isSentByCurrentUser ? "items-end" : "items-start"
-                    }`}
-                  >
-                    <Text
-                      style={tw`text-base font-bold text-black ${
-                        msg.isSentByCurrentUser ? "text-right" : "text-left"
-                      }`}
-                    >
-                      {msg.isSentByCurrentUser ? "You" : msg.from}:
-                    </Text>
-                    <Text
-                      style={tw`text-base text-black ${
-                        msg.isSentByCurrentUser ? "text-right" : "text-left"
-                      }`}
-                    >
-                      {msg.text}
-                    </Text>
-                  </View>
-                ))}
-              </ScrollView>
-            )}
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      style={tw`flex-1`}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
+    >
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <View style={tw`flex-1 bg-white`}>
+          {connected ? (
+            <>
+              {messages.length === 0 ? (
+                <View style={tw`flex-1 items-center justify-center`}>
+                  <Text style={tw`text-xl font-bold text-gray-500`}>
+                    Start Your Chat
+                  </Text>
+                </View>
+              ) : (
+                <ScrollView
+                  style={tw`flex-1`}
+                  contentContainerStyle={tw`flex-grow pt-4`}
+                  inverted={true}
+                  keyboardShouldPersistTaps="handled"
+                >
+                  {messages.map((msg, index) => {
+                    const messageDate = new Date(msg.timestamp);
+                    return (
+                      <View
+                        key={index}
+                        style={tw`mb-4 p-2 rounded-lg ${
+                          msg.isSentByCurrentUser
+                            ? "bg-blue-100 self-end"
+                            : "bg-gray-200 self-start"
+                        }`}
+                      >
+                        <Text style={tw`text-sm text-gray-500`}>
+                          {msg.isSentByCurrentUser ? "You" : msg.from} •{" "}
+                          {messageDate.toLocaleTimeString()} {/* Time */}
+                        </Text>
+                        <Text style={tw`text-xs text-gray-400`}>
+                          {messageDate.toLocaleDateString()}{" "}
+                          {/* Date: Month Day, Year */}
+                        </Text>
+                        <Text style={tw`text-base text-black mt-1`}>
+                          {msg.text}
+                        </Text>
+                      </View>
+                    );
+                  })}
+                </ScrollView>
+              )}
 
-            <View
-              style={tw`flex-row items-center p-4 border-t border-gray-300`}
-            >
-              <TextInput
-                style={tw`flex-1 border rounded-full p-2 mr-2`}
-                placeholder="Type your message..."
-                value={inputMessage}
-                onChangeText={setInputMessage}
-                returnKeyType="done"
-                onSubmitEditing={Keyboard.dismiss}
-              />
-              <TouchableOpacity onPress={sendMessage} style={tw`p-2`}>
-                <Text style={tw`text-xl text-blue-500`}>➡️</Text>
-              </TouchableOpacity>
+              <View
+                style={tw`flex-row items-center p-4 border-t border-gray-300 bg-secondary500`}
+              >
+                <TextInput
+                  style={tw`flex-1 border border-gray-300 rounded-full p-2 mr-2 bg-white`}
+                  placeholder="Type your message..."
+                  value={inputMessage}
+                  onChangeText={setInputMessage}
+                  returnKeyType="send"
+                  onSubmitEditing={sendMessage}
+                />
+                <TouchableOpacity onPress={sendMessage} style={tw`p-2`}>
+                  <Text style={tw`text-xl text-blue-500`}>➡️</Text>
+                </TouchableOpacity>
+              </View>
+            </>
+          ) : (
+            <View style={tw`flex-1 items-center justify-center`}>
+              <Text style={tw`text-2xl font-bold text-red-500`}>
+                Connecting...
+              </Text>
             </View>
-          </>
-        ) : (
-          <View style={tw`flex-1 items-center justify-center`}>
-            <Text style={tw`text-2xl font-bold text-red-500`}>
-              Connecting...
-            </Text>
-          </View>
-        )}
-      </View>
-    </TouchableWithoutFeedback>
+          )}
+        </View>
+      </TouchableWithoutFeedback>
+    </KeyboardAvoidingView>
   );
 }
