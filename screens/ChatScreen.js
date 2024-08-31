@@ -10,7 +10,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
-import tw from "twrnc";
+import tw from "../lib/tailwind";
 import socket, { connectSocket } from "../services/socket";
 import { useRoute } from "@react-navigation/native";
 import useAuth from "../hooks/useAuth";
@@ -205,7 +205,7 @@ export default function ChatScreen() {
               )}
 
               <View
-                style={tw`flex-row items-center p-4 border-t border-gray-300 bg-secondary500`}
+                style={tw`flex-row items-center p-4 border-t border-gray-300`}
               >
                 <TextInput
                   style={tw`flex-1 border border-gray-300 rounded-full p-2 mr-2 bg-white`}
