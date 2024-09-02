@@ -1,86 +1,84 @@
-import { useState } from "react";
-import { StyleSheet, View } from "react-native";
-
+import React, { useState, useCallback, useEffect } from "react";
+import { StyleSheet, View, TextInput, Keyboard, Alert } from "react-native";
 import Button from "../ui/Button";
-import Input from "../ui/Input";
+import { Colors } from "../../constants/styles";
 
-function AuthForm({ isLogin, onSubmit, credentialsInvalid }) {
+function AuthForm({ isLogin, onSubmit, credentialsInvalid = {} }) {
   const [enteredEmail, setEnteredEmail] = useState("");
-  const [enteredConfirmEmail, setEnteredConfirmEmail] = useState("");
   const [enteredPassword, setEnteredPassword] = useState("");
-  const [enteredConfirmPassword, setEnteredConfirmPassword] = useState("");
+  const [emailFocused, setEmailFocused] = useState(false);
+  const [passwordFocused, setPasswordFocused] = useState(false);
 
-  const {
-    email: emailIsInvalid,
-    confirmEmail: emailsDontMatch,
-    password: passwordIsInvalid,
-    confirmPassword: passwordsDontMatch,
-  } = credentialsInvalid;
+  const { email: emailIsInvalid = false, password: passwordIsInvalid = false } =
+    credentialsInvalid;
 
-  function updateInputValueHandler(inputType, enteredValue) {
-    switch (inputType) {
-      case "email":
-        setEnteredEmail(enteredValue);
-        break;
-      case "confirmEmail":
-        setEnteredConfirmEmail(enteredValue);
-        break;
-      case "password":
-        setEnteredPassword(enteredValue);
-        break;
-      case "confirmPassword":
-        setEnteredConfirmPassword(enteredValue);
-        break;
+  const updateEmailHandler = useCallback((value) => {
+    setEnteredEmail(value);
+  }, []);
+
+  const updatePasswordHandler = useCallback((value) => {
+    setEnteredPassword(value);
+  }, []);
+
+  const submitHandler = useCallback(() => {
+    if (!enteredEmail || !enteredPassword) {
+      Alert.alert("Input Error", "Please fill in all fields.");
+      return;
     }
-  }
-
-  function submitHandler() {
     onSubmit({
       email: enteredEmail,
-      confirmEmail: enteredConfirmEmail,
       password: enteredPassword,
-      confirmPassword: enteredConfirmPassword,
     });
-  }
+  }, [enteredEmail, enteredPassword, onSubmit]);
+
+  useEffect(() => {
+    const keyboardDidHideListener = Keyboard.addListener(
+      "keyboardDidHide",
+      () => {
+        setEnteredEmail((prev) => prev);
+        setEnteredPassword((prev) => prev);
+      }
+    );
+
+    return () => {
+      keyboardDidHideListener.remove();
+    };
+  }, []);
 
   return (
     <View style={styles.form}>
-      <Input
-        label="Email Address"
-        onUpdateValue={updateInputValueHandler.bind(this, "email")}
+      <TextInput
+        style={[
+          styles.input,
+          emailIsInvalid && styles.inputInvalid,
+          emailFocused && styles.inputFocused, // Apply focus styles
+        ]}
+        placeholder="Email Address"
+        onChangeText={updateEmailHandler}
         value={enteredEmail}
         keyboardType="email-address"
-        isInvalid={emailIsInvalid}
-        style={styles.input}
+        autoCapitalize="none"
+        autoCorrect={false}
+        placeholderTextColor="gray"
+        onFocus={() => setEmailFocused(true)} // Set focus state
+        onBlur={() => setEmailFocused(false)} // Remove focus state
       />
-      {!isLogin && (
-        <Input
-          label="Confirm Email Address"
-          onUpdateValue={updateInputValueHandler.bind(this, "confirmEmail")}
-          value={enteredConfirmEmail}
-          keyboardType="email-address"
-          isInvalid={emailsDontMatch}
-          style={styles.input}
-        />
-      )}
-      <Input
-        label="Password"
-        onUpdateValue={updateInputValueHandler.bind(this, "password")}
-        secure
+      <TextInput
+        style={[
+          styles.input,
+          passwordIsInvalid && styles.inputInvalid,
+          passwordFocused && styles.inputFocused, // Apply focus styles
+        ]}
+        placeholder="Password"
+        onChangeText={updatePasswordHandler}
         value={enteredPassword}
-        isInvalid={passwordIsInvalid}
-        style={styles.input}
+        secureTextEntry={true}
+        autoCapitalize="none"
+        autoCorrect={false}
+        placeholderTextColor="gray"
+        onFocus={() => setPasswordFocused(true)} // Set focus state
+        onBlur={() => setPasswordFocused(false)} // Remove focus state
       />
-      {!isLogin && (
-        <Input
-          label="Confirm Password"
-          onUpdateValue={updateInputValueHandler.bind(this, "confirmPassword")}
-          secure
-          value={enteredConfirmPassword}
-          isInvalid={passwordsDontMatch}
-          style={styles.input}
-        />
-      )}
       <View style={styles.buttons}>
         <Button onPress={submitHandler}>
           {isLogin ? "Log In" : "Sign Up"}
@@ -96,119 +94,33 @@ const styles = StyleSheet.create({
   form: {
     marginTop: 20,
     padding: 16,
-    width: "100%",
-    maxWidth: 400,
+    width: "90%",
+    maxWidth: 350,
     alignSelf: "center",
+    backgroundColor: Colors.primary800,
+    borderRadius: 8,
   },
   input: {
-    marginVertical: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    marginVertical: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
     fontSize: 16,
+    color: "black",
+    borderColor: "gray",
+    borderWidth: 1,
+    borderRadius: 4,
     width: "100%",
+    backgroundColor: "white",
+  },
+  inputFocused: {
+    borderColor: Colors.primary500, // Blue color for focus
+    borderWidth: 1.5, // Slightly thicker border on focus
+  },
+  inputInvalid: {
+    borderColor: "red",
+    backgroundColor: "#fdd",
   },
   buttons: {
-    marginTop: 24,
+    marginTop: 20,
   },
 });
-
-// import { useState } from "react";
-// import { StyleSheet, View } from "react-native";
-
-// import Button from "../ui/Button";
-// import Input from "../ui/Input";
-
-// function AuthForm({ isLogin, onSubmit, credentialsInvalid }) {
-//   const [enteredEmail, setEnteredEmail] = useState("");
-//   const [enteredConfirmEmail, setEnteredConfirmEmail] = useState("");
-//   const [enteredPassword, setEnteredPassword] = useState("");
-//   const [enteredConfirmPassword, setEnteredConfirmPassword] = useState("");
-
-//   const {
-//     email: emailIsInvalid,
-//     confirmEmail: emailsDontMatch,
-//     password: passwordIsInvalid,
-//     confirmPassword: passwordsDontMatch,
-//   } = credentialsInvalid;
-
-//   function updateInputValueHandler(inputType, enteredValue) {
-//     switch (inputType) {
-//       case "email":
-//         setEnteredEmail(enteredValue);
-//         break;
-//       case "confirmEmail":
-//         setEnteredConfirmEmail(enteredValue);
-//         break;
-//       case "password":
-//         setEnteredPassword(enteredValue);
-//         break;
-//       case "confirmPassword":
-//         setEnteredConfirmPassword(enteredValue);
-//         break;
-//     }
-//   }
-
-//   function submitHandler() {
-//     onSubmit({
-//       email: enteredEmail,
-//       confirmEmail: enteredConfirmEmail,
-//       password: enteredPassword,
-//       confirmPassword: enteredConfirmPassword,
-//     });
-//   }
-
-//   return (
-//     <View style={styles.form}>
-//       <View>
-//         <Input
-//           label="Email Address"
-//           onUpdateValue={updateInputValueHandler.bind(this, "email")}
-//           value={enteredEmail}
-//           keyboardType="email-address"
-//           isInvalid={emailIsInvalid}
-//         />
-//         {!isLogin && (
-//           <Input
-//             label="Confirm Email Address"
-//             onUpdateValue={updateInputValueHandler.bind(this, "confirmEmail")}
-//             value={enteredConfirmEmail}
-//             keyboardType="email-address"
-//             isInvalid={emailsDontMatch}
-//           />
-//         )}
-//         <Input
-//           label="Password"
-//           onUpdateValue={updateInputValueHandler.bind(this, "password")}
-//           secure
-//           value={enteredPassword}
-//           isInvalid={passwordIsInvalid}
-//         />
-//         {!isLogin && (
-//           <Input
-//             label="Confirm Password"
-//             onUpdateValue={updateInputValueHandler.bind(
-//               this,
-//               "confirmPassword"
-//             )}
-//             secure
-//             value={enteredConfirmPassword}
-//             isInvalid={passwordsDontMatch}
-//           />
-//         )}
-//         <View style={styles.buttons}>
-//           <Button onPress={submitHandler}>
-//             {isLogin ? "Log In" : "Sign Up"}
-//           </Button>
-//         </View>
-//       </View>
-//     </View>
-//   );
-// }
-
-// export default AuthForm;
-
-// const styles = StyleSheet.create({
-//   buttons: {
-//     marginTop: 12,
-//   },
-// });

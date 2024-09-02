@@ -13,7 +13,11 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.karentutor1.oxsaidmbile"
+      "bundleIdentifier": "com.karentutor1.oxsaidmbile",
+      "icon": "./assets/oxsaid-i-quadruple-size.png",
+      "infoPlist": {
+        "UIPrerenderedIcon": true
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -22,12 +26,7 @@
       },
       "package": "com.karentutor1.oxsaidmbile"
     },
-    "web": {
-      "favicon": "./assets/favicon.png"
-    },
-    "plugins": [
-      "expo-font"
-    ],
+    "plugins": ["expo-font"],
     "extra": {
       "eas": {
         "projectId": "10ba9ecc-625e-4550-8388-2984b9813f02"

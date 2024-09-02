@@ -28,7 +28,13 @@ const PostCard = ({ post, onDelete }) => {
 
   return (
     <View
-      style={tw`w-full mb-4 border border-gray-300 rounded-lg shadow-sm p-4`}
+      style={[
+        tw`w-full mb-4 rounded-lg shadow-sm p-4`,
+        {
+          borderColor: "gray",
+          borderWidth: 1, // Explicit border width for consistency across platforms
+        },
+      ]}
     >
       <View style={tw`flex-row items-center mb-2`}>
         {post.userPicturePath ? (

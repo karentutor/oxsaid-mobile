@@ -3,6 +3,8 @@ import { createDrawerNavigator } from "@react-navigation/drawer";
 import HomeScreen from "../screens/HomeScreen";
 import UserSearchScreen from "../screens/UserSearchScreen";
 import FriendsListScreen from "../screens/FriendsListScreen";
+import GroupsScene from "../screens/GroupsScene";
+import EventsScene from "../screens/EventsScene";
 import ChatListScreen from "../screens/ChatListScreen"; // Import ChatListScreen
 import { Colors } from "../constants/styles";
 import IconButton from "../components/ui/IconButton";
@@ -33,7 +35,7 @@ function MainDrawerNavigator() {
     fetchUnreadMessagesCount(); // Initial fetch on mount
 
     // Optionally, set up an interval to refresh the count periodically
-    const intervalId = setInterval(fetchUnreadMessagesCount, 10000); // Refresh every 10 seconds
+    const intervalId = setInterval(fetchUnreadMessagesCount, 60000); // Refresh every 10 seconds
 
     return () => clearInterval(intervalId); // Clear interval on unmount
   }, [auth.user._id]);
@@ -63,6 +65,8 @@ function MainDrawerNavigator() {
       <Drawer.Screen name="Home" component={HomeScreen} />
       <Drawer.Screen name="User Search" component={UserSearchScreen} />
       <Drawer.Screen name="Following List" component={FriendsListScreen} />
+      <Drawer.Screen name="Groups" component={GroupsScene} />
+      <Drawer.Screen name="Events" component={EventsScene} />
       <Drawer.Screen
         name="Chats"
         component={ChatListScreen}

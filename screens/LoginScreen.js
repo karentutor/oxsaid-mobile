@@ -23,8 +23,8 @@ function LoginScreen() {
   async function loginHandler({ email, password }) {
     setIsAuthenticating(true);
     try {
-      const { token, user } = await login(email, password); // Handle both token and user
-      auth.authenticate(token, user); // Pass both token and user to the context's authenticate function
+      const { token, user } = await login(email, password);
+      auth.authenticate(token, user);
     } catch (error) {
       Alert.alert(
         "Authentication failed!",
@@ -43,8 +43,12 @@ function LoginScreen() {
       style={tw`flex-1`}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      {/* Dismiss keyboard only when tapping outside the scrollable content */}
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+      {/* Updated TouchableWithoutFeedback with pointerEvents="box-none" */}
+      <TouchableWithoutFeedback
+        onPress={Keyboard.dismiss}
+        accessible={false}
+        pointerEvents="box-none"
+      >
         <ScrollView
           contentContainerStyle={tw`flex-grow`}
           keyboardShouldPersistTaps="handled"

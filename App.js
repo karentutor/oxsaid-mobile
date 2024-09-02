@@ -48,17 +48,17 @@ function AuthenticatedStack() {
       <Stack.Screen
         name="MainDrawer"
         component={MainDrawerNavigator}
-        options={{ headerShown: false }} // Hide the header for the main drawer
+        options={{ headerShown: false }} // Hide the header for the MainDrawer screen
       />
       <Stack.Screen
         name="UserProfile"
         component={UserProfileScreen}
-        options={{ title: "User Profile" }} // Title for the UserProfile screen
+        options={{ title: "User Profile" }}
       />
       <Stack.Screen
         name="ChatScreen"
         component={ChatScreen}
-        options={{ title: "Chat" }} // Updated title for the Chat screen
+        options={{ title: "Chat" }}
       />
     </Stack.Navigator>
   );

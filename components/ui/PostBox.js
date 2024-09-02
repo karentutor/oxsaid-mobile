@@ -50,17 +50,15 @@ const PostBox = ({ onPost, onCancel }) => {
 
   return (
     <View style={tw`w-full mb-4`}>
-      {/* Post and Cancel Buttons Outside of Input Area */}
-      <View style={tw`flex-row justify-between mb-2`}>
-        <Button title="Post" onPress={handlePostSubmit} />
-        <TouchableOpacity onPress={handleCancel}>
-          <Text style={tw`text-red-500`}>Cancel</Text>
-        </TouchableOpacity>
-      </View>
-
       {/* Scrollable Input Area */}
       <View
-        style={tw`w-full border border-gray-300 rounded-lg shadow-sm p-4 relative`}
+        style={[
+          tw`w-full rounded-lg shadow-sm p-4 relative`,
+          {
+            borderColor: "gray",
+            borderWidth: 1, // Explicit border width for consistency
+          },
+        ]}
       >
         <ScrollView nestedScrollEnabled={true}>
           <TextInput
@@ -90,6 +88,17 @@ const PostBox = ({ onPost, onCancel }) => {
             <Icon name="photo" size={30} color="gray" />
           </TouchableOpacity>
         </View>
+      </View>
+
+      {/* Post and Cancel Buttons Under Input Area */}
+      <View style={tw`flex-row justify-between mt-2`}>
+        {/* Cancel Button on the Left */}
+        <TouchableOpacity style={tw`px-4 py-2`} onPress={handleCancel}>
+          <Text style={tw`text-red-500`}>Cancel</Text>
+        </TouchableOpacity>
+
+        {/* Post Button on the Right */}
+        <Button title="Post" onPress={handlePostSubmit} />
       </View>
     </View>
   );
