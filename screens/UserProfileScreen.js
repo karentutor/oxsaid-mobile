@@ -158,16 +158,6 @@ const UserProfileScreen = ({ route }) => {
           </TouchableOpacity>
         )}
 
-        {/* Chat Button */}
-        {/* {!loading && (
-          <TouchableOpacity
-            style={tw`mt-4 bg-primary500 px-4 py-2 rounded-lg`}
-            onPress={handleChatPress}
-          >
-            <Text style={tw`text-white text-lg font-bold`}>Chat</Text>
-          </TouchableOpacity>
-        )} */}
-
         {/* User Posts */}
         <View style={tw`mt-6 w-full`}>
           <Text style={tw`text-xl font-bold mb-4`}>User's Posts</Text>

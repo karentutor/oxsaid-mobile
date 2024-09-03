@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import {
   Text,
   View,
+  TouchableOpacity,
   TouchableWithoutFeedback,
   Keyboard,
   ScrollView,
@@ -9,18 +10,22 @@ import {
   Image,
 } from "react-native";
 import useAuth from "../hooks/useAuth";
-import tw from "twrnc";
 import PostBox from "../components/ui/PostBox";
 import PostCard from "../components/ui/PostCard";
-import { axiosBase } from "../services/BaseService"; // Ensure consistent axios usage
+import { axiosBase } from "../services/BaseService";
+import { useNavigation } from "@react-navigation/native";
+import tw from "../lib/tailwind";
 
 function HomeScreen() {
   const { auth } = useAuth();
   const { access_token, user } = auth;
   const [posts, setPosts] = useState([]);
+  const [business, setBusiness] = useState(null); // State to store user's business
+  const navigation = useNavigation();
 
   useEffect(() => {
     fetchPosts();
+    fetchBusiness(); // Fetch business information on component mount
   }, []);
 
   const fetchPosts = async () => {
@@ -48,6 +53,22 @@ function HomeScreen() {
     } catch (err) {
       console.error("Error fetching posts:", err.message);
       Alert.alert("Error fetching posts", err.message);
+    }
+  };
+
+  const fetchBusiness = async () => {
+    try {
+      const response = await axiosBase.get(`/business/${user._id}`, {
+        headers: { Authorization: `Bearer ${access_token}` },
+      });
+      setBusiness(response.data); // Set the business state with the fetched data
+    } catch (error) {
+      if (error.response && error.response.status === 404) {
+        // Handle 404 error when no business is found
+        setBusiness(null); // Ensure business is null if not found
+      } else {
+        console.error("Error fetching business:", error.message);
+      }
     }
   };
 
@@ -114,6 +135,10 @@ function HomeScreen() {
     Alert.alert("Post creation canceled");
   };
 
+  const handleCreateBusiness = () => {
+    navigation.navigate("CreateBusiness", { userId: user._id });
+  };
+
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <ScrollView style={tw`flex-1 p-8 bg-white`}>
@@ -137,10 +162,40 @@ function HomeScreen() {
             <Text style={tw`text-xl font-bold`}>
               {user.firstName} {user.lastName}
             </Text>
-            <Text style={tw`text-sm text-gray-500`}>{user.email}</Text>
-            <Text style={tw`text-sm text-gray-500 mb-4`}>
+
+            {/* Display user's occupation directly under their name */}
+            <Text style={tw`text-sm text-gray-500 mb-2`}>
               {user.occupation}
             </Text>
+
+            {/* Move business information directly beneath the user's occupation */}
+            {business ? (
+              <>
+                <Text style={tw`text-base text-gray-700 mt-2`}>
+                  Where do you work?
+                </Text>
+                <Text style={tw`text-base text-gray-700 mt-2`}>
+                  {business.name}
+                </Text>
+                <Text style={tw`text-base text-gray-700 mt-2`}>
+                  Address: {business.addresses[0].street},{" "}
+                  {business.addresses[0].city}, {business.addresses[0].country}
+                </Text>
+              </>
+            ) : (
+              // Show button to create business if none exists
+              <View style={tw`items-center mt-4`}>
+                <Text style={tw`text-base text-gray-700 mt-2`}>
+                  Where do you Work?
+                </Text>
+                <TouchableOpacity
+                  style={tw`mt-2 bg-red-500 px-4 py-2 rounded-lg`}
+                  onPress={handleCreateBusiness}
+                >
+                  <Text style={tw`text-white text-lg font-bold`}>My Work</Text>
+                </TouchableOpacity>
+              </View>
+            )}
           </View>
         ) : (
           <Text>No User ID</Text>

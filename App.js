@@ -12,6 +12,7 @@ import LoginScreen from "./screens/LoginScreen";
 import UserProfileScreen from "./screens/UserProfileScreen";
 import ChatScreen from "./screens/ChatScreen";
 import EmailScreen from "./screens/EmailScreen"; // Import the EmailScreen component
+import CreateBusinessScreen from "./screens/CreateBusinessScreen";
 import { Colors } from "./constants/styles";
 import {
   registerForPushNotificationsAsync,
@@ -66,6 +67,11 @@ function AuthenticatedStack() {
         name="EmailScreen"
         component={EmailScreen} // Add EmailScreen to the stack
         options={{ title: "Send Email" }}
+      />
+      <Stack.Screen
+        name="CreateBusiness"
+        component={CreateBusinessScreen}
+        options={{ title: "Create Business" }} // Add CreateBusinessScreen to the stack
       />
     </Stack.Navigator>
   );
