@@ -1,15 +1,24 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, Image, TouchableOpacity } from "react-native";
+import {
+  View,
+  Text,
+  Image,
+  TouchableOpacity,
+  ScrollView,
+  Alert,
+} from "react-native";
 import { axiosBase } from "../services/BaseService";
 import useAuth from "../hooks/useAuth";
 import tw from "../lib/tailwind";
 import { useNavigation } from "@react-navigation/native";
+import PostCard from "../components/ui/PostCard"; // Import the PostCard component
 
 const UserProfileScreen = ({ route }) => {
   const { user } = route.params; // The user whose profile you're viewing
   const { auth } = useAuth(); // The authenticated user
   const [isConnected, setIsConnected] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [posts, setPosts] = useState([]); // State to store user posts
   const navigation = useNavigation();
 
   useEffect(() => {
@@ -31,7 +40,21 @@ const UserProfileScreen = ({ route }) => {
     };
 
     checkConnection();
+    fetchUserPosts(); // Fetch user posts on component mount
   }, [auth.user._id, auth.access_token, user._id]);
+
+  // Function to fetch user's posts
+  const fetchUserPosts = async () => {
+    try {
+      const response = await axiosBase.get(`/posts/${user._id}`, {
+        headers: { Authorization: `Bearer ${auth.access_token}` },
+      });
+      setPosts(response.data);
+    } catch (error) {
+      console.error("Error fetching user posts:", error);
+      Alert.alert("Error", "Failed to load user posts.");
+    }
+  };
 
   const handleConnect = async () => {
     try {
@@ -65,7 +88,6 @@ const UserProfileScreen = ({ route }) => {
 
   const handleChatPress = async () => {
     try {
-      // Create or get the chat between the current user and the profile user
       const response = await axiosBase.post(
         `/chats/create-or-get`,
         {
@@ -79,7 +101,6 @@ const UserProfileScreen = ({ route }) => {
 
       const { _id: chatId } = response.data;
 
-      // Navigate to the ChatScreen with the chatId and userId
       navigation.navigate("Chats", {
         screen: "Chat",
         params: {
@@ -94,58 +115,72 @@ const UserProfileScreen = ({ route }) => {
   };
 
   return (
-    <View style={tw`flex-1 items-center justify-center p-4`}>
-      {/* User Profile Header */}
-      <Text style={tw`text-3xl font-bold mb-4`}>User Profile</Text>
+    <ScrollView style={tw`flex-1 p-4`}>
+      <View style={tw`items-center justify-center`}>
+        {/* User Profile Header */}
+        <Text style={tw`text-3xl font-bold mb-4`}>User Profile</Text>
 
-      {/* User Picture */}
-      {user.picturePath ? (
-        <Image
-          source={{ uri: user.picturePath }}
-          style={tw`w-32 h-32 rounded-full mb-4`}
-        />
-      ) : (
-        <View style={tw`w-32 h-32 rounded-full bg-gray-300 mb-4`} />
-      )}
+        {/* User Picture */}
+        {user.picturePath ? (
+          <Image
+            source={{ uri: user.picturePath }}
+            style={tw`w-32 h-32 rounded-full mb-4`}
+          />
+        ) : (
+          <View style={tw`w-32 h-32 rounded-full bg-gray-300 mb-4`} />
+        )}
 
-      {/* User Details */}
-      <View style={tw`items-center`}>
-        <Text style={tw`text-xl font-bold text-black`}>
-          {user.firstName} {user.lastName}
-        </Text>
-        <Text style={tw`text-base text-gray-700 mt-2`}>
-          College: {user.college || "N/A"}
-        </Text>
-        <Text style={tw`text-base text-gray-700 mt-2`}>
-          Matriculation Year: {user.matriculationYear || "N/A"}
-        </Text>
-        <Text style={tw`text-base text-gray-700 mt-2`}>
-          Industry: {user.occupation || "N/A"}
-        </Text>
-      </View>
-
-      {/* Connect Button */}
-      {!loading && (
-        <TouchableOpacity
-          style={tw`mt-6 bg-primary500 px-4 py-2 rounded-lg`}
-          onPress={isConnected ? handleDisconnect : handleConnect}
-        >
-          <Text style={tw`text-white text-lg font-bold`}>
-            {isConnected ? "Following" : "Follow"}
+        {/* User Details */}
+        <View style={tw`items-center`}>
+          <Text style={tw`text-xl font-bold text-black`}>
+            {user.firstName} {user.lastName}
           </Text>
-        </TouchableOpacity>
-      )}
+          <Text style={tw`text-base text-gray-700 mt-2`}>
+            College: {user.college || "N/A"}
+          </Text>
+          <Text style={tw`text-base text-gray-700 mt-2`}>
+            Matriculation Year: {user.matriculationYear || "N/A"}
+          </Text>
+          <Text style={tw`text-base text-gray-700 mt-2`}>
+            Industry: {user.occupation || "N/A"}
+          </Text>
+        </View>
 
-      {/* Chat Button */}
-      {!loading && (
-        <TouchableOpacity
-          style={tw`mt-4 bg-primary500 px-4 py-2 rounded-lg`}
-          onPress={handleChatPress}
-        >
-          <Text style={tw`text-white text-lg font-bold`}>Chat</Text>
-        </TouchableOpacity>
-      )}
-    </View>
+        {/* Connect Button */}
+        {!loading && (
+          <TouchableOpacity
+            style={tw`mt-6 bg-primary500 px-4 py-2 rounded-lg`}
+            onPress={isConnected ? handleDisconnect : handleConnect}
+          >
+            <Text style={tw`text-white text-lg font-bold`}>
+              {isConnected ? "Following" : "Follow"}
+            </Text>
+          </TouchableOpacity>
+        )}
+
+        {/* Chat Button */}
+        {/* {!loading && (
+          <TouchableOpacity
+            style={tw`mt-4 bg-primary500 px-4 py-2 rounded-lg`}
+            onPress={handleChatPress}
+          >
+            <Text style={tw`text-white text-lg font-bold`}>Chat</Text>
+          </TouchableOpacity>
+        )} */}
+
+        {/* User Posts */}
+        <View style={tw`mt-6 w-full`}>
+          <Text style={tw`text-xl font-bold mb-4`}>User's Posts</Text>
+          {posts.length > 0 ? (
+            posts.map((post) => (
+              <PostCard key={post._id} post={post} onDelete={() => {}} /> // Display posts using PostCard component
+            ))
+          ) : (
+            <Text>No posts to display</Text>
+          )}
+        </View>
+      </View>
+    </ScrollView>
   );
 };
 

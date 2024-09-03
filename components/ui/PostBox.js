@@ -1,3 +1,5 @@
+// PostBox.js
+
 import React, { useState } from "react";
 import {
   View,
@@ -50,13 +52,12 @@ const PostBox = ({ onPost, onCancel }) => {
 
   return (
     <View style={tw`w-full mb-4`}>
-      {/* Scrollable Input Area */}
       <View
         style={[
           tw`w-full rounded-lg shadow-sm p-4 relative`,
           {
-            borderColor: "gray",
-            borderWidth: 1, // Explicit border width for consistency
+            borderWidth: 1, // Explicitly define border width to ensure pencil width
+            borderColor: "black", // Change to the color you want for the pencil width
           },
         ]}
       >
@@ -70,7 +71,6 @@ const PostBox = ({ onPost, onCancel }) => {
             onChangeText={setPostText}
           />
 
-          {/* Selected Image Preview Below Input Field */}
           {selectedImage && (
             <View style={tw`w-full mt-2`}>
               <Image
@@ -82,7 +82,6 @@ const PostBox = ({ onPost, onCancel }) => {
           )}
         </ScrollView>
 
-        {/* Photo Upload Icon */}
         <View style={tw`absolute bottom-2 left-2`}>
           <TouchableOpacity onPress={handleImagePick}>
             <Icon name="photo" size={30} color="gray" />
@@ -90,14 +89,11 @@ const PostBox = ({ onPost, onCancel }) => {
         </View>
       </View>
 
-      {/* Post and Cancel Buttons Under Input Area */}
       <View style={tw`flex-row justify-between mt-2`}>
-        {/* Cancel Button on the Left */}
         <TouchableOpacity style={tw`px-4 py-2`} onPress={handleCancel}>
           <Text style={tw`text-red-500`}>Cancel</Text>
         </TouchableOpacity>
 
-        {/* Post Button on the Right */}
         <Button title="Post" onPress={handlePostSubmit} />
       </View>
     </View>

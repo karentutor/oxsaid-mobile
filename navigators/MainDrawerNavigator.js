@@ -35,7 +35,7 @@ function MainDrawerNavigator() {
     fetchUnreadMessagesCount(); // Initial fetch on mount
 
     // Optionally, set up an interval to refresh the count periodically
-    const intervalId = setInterval(fetchUnreadMessagesCount, 60000); // Refresh every 10 seconds
+    const intervalId = setInterval(fetchUnreadMessagesCount, 10000); // Refresh every 10 seconds
 
     return () => clearInterval(intervalId); // Clear interval on unmount
   }, [auth.user._id]);

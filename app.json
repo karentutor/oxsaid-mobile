@@ -1,10 +1,10 @@
 {
   "expo": {
-    "name": "oxsaid-mbile",
-    "slug": "oxsaid-mbile",
+    "name": "oxsaid-mobile",
+    "slug": "oxsaid-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/oxsaid-i.png",
+    "icon": "./assets/oxsaid-i-quadruple-size.png",
     "userInterfaceStyle": "light",
     "splash": {
       "image": "./assets/splash.png",
@@ -13,31 +13,22 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.karentutor1.oxsaidmbile",
-      "icon": "./assets/oxsaid-i-quadruple-size.png",
-      "infoPlist": {
-        "UIPrerenderedIcon": true
-      }
+      "bundleIdentifier": "com.karentutor1.oxsaidmobile",
+      "buildNumber": "1.0.1",
+      "icon": "./assets/oxsaid-i-quadruple-size.png"
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/oxsaid-i.png",
+        "foregroundImage": "./assets/oxsaid-i-quadruple-size.png",
         "backgroundColor": "#1a2a40"
       },
-      "package": "com.karentutor1.oxsaidmbile"
+      "versionCode": 2,
+      "package": "com.karentutor1.oxsaidmobile"
     },
-    "plugins": ["expo-font"],
     "extra": {
       "eas": {
-        "projectId": "10ba9ecc-625e-4550-8388-2984b9813f02"
+        "projectId": "f035c329-b14b-446a-a560-8b4649147e9b"
       }
-    },
-    "owner": "karentutor1",
-    "runtimeVersion": {
-      "policy": "appVersion"
-    },
-    "updates": {
-      "url": "https://u.expo.dev/10ba9ecc-625e-4550-8388-2984b9813f02"
     }
   }
 }
