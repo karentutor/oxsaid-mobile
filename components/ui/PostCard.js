@@ -1,3 +1,5 @@
+// PostCard.js
+
 import React from "react";
 import { View, Text, Image, TouchableOpacity, Alert } from "react-native";
 import Icon from "react-native-vector-icons/FontAwesome";
@@ -31,8 +33,8 @@ const PostCard = ({ post, onDelete }) => {
       style={[
         tw`w-full mb-4 rounded-lg shadow-sm p-4`,
         {
-          borderColor: "gray",
-          borderWidth: 1, // Explicit border width for consistency across platforms
+          borderWidth: 1, // Explicitly define border width to ensure pencil width
+          borderColor: "black", // Change to the color you want for the pencil width
         },
       ]}
     >
@@ -57,7 +59,6 @@ const PostCard = ({ post, onDelete }) => {
           <Text style={tw`text-sm text-gray-500`}>{post.location}</Text>
         </View>
 
-        {/* Render delete button only if the post belongs to the logged-in user */}
         {post.userId === auth.user._id && (
           <TouchableOpacity onPress={handleDelete}>
             <Icon name="trash" size={20} color="red" />

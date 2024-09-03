@@ -11,6 +11,7 @@ import MainDrawerNavigator from "./navigators/MainDrawerNavigator";
 import LoginScreen from "./screens/LoginScreen";
 import UserProfileScreen from "./screens/UserProfileScreen";
 import ChatScreen from "./screens/ChatScreen";
+import EmailScreen from "./screens/EmailScreen"; // Import the EmailScreen component
 import { Colors } from "./constants/styles";
 import {
   registerForPushNotificationsAsync,
@@ -60,6 +61,11 @@ function AuthenticatedStack() {
         name="ChatScreen"
         component={ChatScreen}
         options={{ title: "Chat" }}
+      />
+      <Stack.Screen
+        name="EmailScreen"
+        component={EmailScreen} // Add EmailScreen to the stack
+        options={{ title: "Send Email" }}
       />
     </Stack.Navigator>
   );

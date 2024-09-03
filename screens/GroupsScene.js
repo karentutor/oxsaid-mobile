@@ -14,7 +14,7 @@ const GroupsScene = () => {
       ]}
     >
       <Text style={tw`text-lg font-bold text-center`}>
-        Group Chats and Group Functionality coming Mid-September
+        Group Chats and Group Functionality coming Coming in Septebmer v2
       </Text>
     </View>
   );

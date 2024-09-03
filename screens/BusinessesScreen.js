@@ -2,7 +2,7 @@ import React from "react";
 import { View, Text } from "react-native";
 import tw from "twrnc";
 
-const GroupsScene = () => {
+const BusinessesScene = () => {
   return (
     <View
       style={[
@@ -14,10 +14,10 @@ const GroupsScene = () => {
       ]}
     >
       <Text style={tw`text-lg font-bold text-center`}>
-        Events and Event Functionality Coming in Septebmer v2
+        Oxsaid Alum Businesses Coming in Septebmer v2
       </Text>
     </View>
   );
 };
 
-export default GroupsScene;
+export default BusinessesScene;

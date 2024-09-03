@@ -1,13 +1,21 @@
+// UserCard.js
+
 import React from "react";
 import { View, Text, Image, TouchableOpacity } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import tw from "../../lib/tailwind";
+import Icon from "react-native-vector-icons/MaterialIcons"; // Import an icon library, e.g., MaterialIcons
 
 const UserCard = ({ user }) => {
   const navigation = useNavigation();
 
   const handleChat = () => {
-    navigation.navigate("ChatScreen", { user }); // Updated navigation name to "Chat"
+    navigation.navigate("ChatScreen", { user });
+  };
+
+  const handleEmail = () => {
+    // Navigate to EmailScreen with user details
+    navigation.navigate("EmailScreen", { user });
   };
 
   return (
@@ -24,6 +32,12 @@ const UserCard = ({ user }) => {
         },
       ]}
     >
+      {/* Top Right Arrow and "View" Text */}
+      <TouchableOpacity style={tw`absolute top-2 right-2 items-center`}>
+        <Icon name="arrow-forward-ios" size={20} color="gray" />
+        {/* <Text style={tw`text-gray-500 text-xs`}>View</Text> */}
+      </TouchableOpacity>
+
       {/* User Details */}
       <TouchableOpacity
         onPress={() => navigation.navigate("UserProfile", { user })}
@@ -58,7 +72,7 @@ const UserCard = ({ user }) => {
           <Text style={tw`text-white text-center`}>Chat</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          onPress={() => console.log("Email button clicked")}
+          onPress={handleEmail} // Updated to navigate to EmailScreen
           style={tw`bg-secondary500 rounded-lg p-2 w-1/2`}
         >
           <Text style={tw`text-center`}>Email</Text>
