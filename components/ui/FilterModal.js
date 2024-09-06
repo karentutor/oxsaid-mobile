@@ -56,8 +56,9 @@ const FilterModal = ({ visible, onClose, data, onSelect, selectedValue }) => {
         <View style={tw`bg-white rounded-lg p-6 w-3/4`}>
           {/* Search Input */}
           <TextInput
-            style={tw`border border-gray-300 rounded p-2 mb-4`}
-            placeholder="Type to search..." // Added placeholder text
+            style={tw`border border-gray-300 rounded p-2 mb-4 text-black`} // Ensure text color is set
+            placeholder="Type to search..." // Placeholder text
+            placeholderTextColor="gray" // Set placeholder text color for visibility
             value={searchTerm}
             onChangeText={setSearchTerm}
           />
