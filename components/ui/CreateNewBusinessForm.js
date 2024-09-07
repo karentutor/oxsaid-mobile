@@ -5,13 +5,19 @@ import {
   TextInput,
   TouchableOpacity,
   ScrollView,
+  Image,
+  Alert,
 } from "react-native";
+import * as ImagePicker from "expo-image-picker";
 import tw from "../../lib/tailwind";
 import FilterModal from "./FilterModal";
 import { companysizeData, OCCUPATION_DATA } from "../../data";
 import geoData from "../../data/geoDataSorted";
+import { useNavigation } from "@react-navigation/native"; // Import useNavigation
 
 const CreateNewBusinessForm = ({ onSubmit, onClose }) => {
+  const navigation = useNavigation(); // Get navigation prop
+
   // State for modals visibility
   const [sizeModalVisible, setSizeModalVisible] = useState(false);
   const [occupationModalVisible, setOccupationModalVisible] = useState(false);
@@ -20,7 +26,7 @@ const CreateNewBusinessForm = ({ onSubmit, onClose }) => {
   const [countryModalVisible, setCountryModalVisible] = useState(false);
   const [cityModalVisible, setCityModalVisible] = useState(false);
 
-  // Form state for BusinessName and BusinessDetails
+  // Form state
   const [name, setName] = useState("");
   const [size, setSize] = useState("");
   const [isAlumniOwned, setIsAlumniOwned] = useState(false);
@@ -28,16 +34,21 @@ const CreateNewBusinessForm = ({ onSubmit, onClose }) => {
   const [occupation, setOccupation] = useState("");
   const [subOccupation, setSubOccupation] = useState("");
   const [websiteUrl, setWebsiteUrl] = useState("");
-  const [picturePath, setPicturePath] = useState("");
   const [address, setAddress] = useState("");
   const [city, setCity] = useState("");
   const [country, setCountry] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [description, setDescription] = useState("");
+  const [image, setImage] = useState(null);
 
   // Handle form submission
   const handleSubmit = () => {
+    if (!name || !size || !yearFounded || !occupation || !email) {
+      Alert.alert("Error", "Please fill in all required fields.");
+      return;
+    }
+
     onSubmit({
       name,
       size,
@@ -46,7 +57,7 @@ const CreateNewBusinessForm = ({ onSubmit, onClose }) => {
       occupation,
       subOccupation,
       websiteUrl,
-      picturePath,
+      picturePath: image,
       address,
       city,
       country,
@@ -56,14 +67,24 @@ const CreateNewBusinessForm = ({ onSubmit, onClose }) => {
     });
   };
 
-  // Get sub-occupations based on the selected occupation
-  const getSubOccupations = () => {
-    const selectedOccupation = OCCUPATION_DATA.find(
-      (occ) => occ.name === occupation
-    );
-    return selectedOccupation
-      ? selectedOccupation.sublist.map((sub) => sub.name)
-      : [];
+  // Function to handle image picking
+  const pickImage = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert("Permission Denied", "Camera roll access is required.");
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 1,
+    });
+
+    if (!result.canceled) {
+      setImage(result.assets[0].uri);
+    }
   };
 
   return (
@@ -71,7 +92,9 @@ const CreateNewBusinessForm = ({ onSubmit, onClose }) => {
       <Text style={tw`text-lg font-bold mb-4`}>Create New Business</Text>
 
       {/* Business Name */}
-      <Text style={tw`mb-2 font-bold`}>Business Name</Text>
+      <Text style={tw`mb-2 font-bold`}>
+        Business Name <Text style={tw`text-red-500`}>*</Text>
+      </Text>
       <TextInput
         style={tw`border p-2 mb-4`}
         value={name}
@@ -80,7 +103,9 @@ const CreateNewBusinessForm = ({ onSubmit, onClose }) => {
       />
 
       {/* Business Size with FilterModal */}
-      <Text style={tw`mb-2 font-bold`}>Business Size</Text>
+      <Text style={tw`mb-2 font-bold`}>
+        Business Size <Text style={tw`text-red-500`}>*</Text>
+      </Text>
       <TouchableOpacity
         style={tw`border p-2 mb-4`}
         onPress={() => setSizeModalVisible(true)}
@@ -107,7 +132,9 @@ const CreateNewBusinessForm = ({ onSubmit, onClose }) => {
       </TouchableOpacity>
 
       {/* Year Founded */}
-      <Text style={tw`mb-2 font-bold`}>Year Founded</Text>
+      <Text style={tw`mb-2 font-bold`}>
+        Year Founded <Text style={tw`text-red-500`}>*</Text>
+      </Text>
       <TextInput
         style={tw`border p-2 mb-4`}
         value={yearFounded}
@@ -117,7 +144,9 @@ const CreateNewBusinessForm = ({ onSubmit, onClose }) => {
       />
 
       {/* Occupation with FilterModal */}
-      <Text style={tw`mb-2 font-bold`}>Occupation</Text>
+      <Text style={tw`mb-2 font-bold`}>
+        Occupation <Text style={tw`text-red-500`}>*</Text>
+      </Text>
       <TouchableOpacity
         style={tw`border p-2 mb-4`}
         onPress={() => setOccupationModalVisible(true)}
@@ -134,7 +163,7 @@ const CreateNewBusinessForm = ({ onSubmit, onClose }) => {
         selectedValue={occupation}
       />
 
-      {/* Sub-Occupation with FilterModal */}
+      {/* Sub-Occupation */}
       {occupation && (
         <>
           <Text style={tw`mb-2 font-bold`}>Sub Occupation</Text>
@@ -151,14 +180,16 @@ const CreateNewBusinessForm = ({ onSubmit, onClose }) => {
           <FilterModal
             visible={subOccupationModalVisible}
             onClose={() => setSubOccupationModalVisible(false)}
-            data={getSubOccupations()}
+            data={OCCUPATION_DATA.find(
+              (occ) => occ.name === occupation
+            )?.sublist.map((sub) => sub.name)}
             onSelect={setSubOccupation}
             selectedValue={subOccupation}
           />
         </>
       )}
 
-      {/* Country with FilterModal */}
+      {/* Country */}
       <Text style={tw`mb-2 font-bold`}>Country</Text>
       <TouchableOpacity
         style={tw`border p-2 mb-4`}
@@ -176,7 +207,7 @@ const CreateNewBusinessForm = ({ onSubmit, onClose }) => {
         selectedValue={country}
       />
 
-      {/* City with FilterModal */}
+      {/* City */}
       {country && (
         <>
           <Text style={tw`mb-2 font-bold`}>City</Text>
@@ -218,13 +249,25 @@ const CreateNewBusinessForm = ({ onSubmit, onClose }) => {
       />
 
       {/* Email */}
-      <Text style={tw`mb-2 font-bold`}>Email</Text>
+      <Text style={tw`mb-2 font-bold`}>
+        Email <Text style={tw`text-red-500`}>*</Text>
+      </Text>
       <TextInput
         style={tw`border p-2 mb-4`}
         value={email}
         onChangeText={setEmail}
         placeholder="Enter email"
         keyboardType="email-address"
+      />
+
+      {/* Website URL */}
+      <Text style={tw`mb-2 font-bold`}>Website URL</Text>
+      <TextInput
+        style={tw`border p-2 mb-4`}
+        value={websiteUrl}
+        onChangeText={(text) => setWebsiteUrl(text.toLowerCase())}
+        placeholder="Enter website URL"
+        keyboardType="url"
       />
 
       {/* Description */}
@@ -236,6 +279,35 @@ const CreateNewBusinessForm = ({ onSubmit, onClose }) => {
         placeholder="Enter business description"
         multiline
       />
+
+      {/* Image Picker Section */}
+      <Text style={tw`mb-2 font-bold`}>Business Image</Text>
+      {image ? (
+        <View style={tw`mb-4`}>
+          <Image
+            source={{ uri: image }}
+            style={{ width: 200, height: 200, resizeMode: "cover" }}
+          />
+          <View style={tw`flex-row justify-between mt-2`}>
+            <TouchableOpacity
+              style={tw`bg-yellow-500 p-2 rounded`}
+              onPress={pickImage}
+            >
+              <Text style={tw`text-white`}>Update Image</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={tw`bg-red-500 p-2 rounded`}
+              onPress={() => setImage(null)}
+            >
+              <Text style={tw`text-white`}>Delete Image</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      ) : (
+        <TouchableOpacity style={tw`border p-2 mb-4`} onPress={pickImage}>
+          <Text>Select Image</Text>
+        </TouchableOpacity>
+      )}
 
       {/* Submit and Cancel buttons */}
       <TouchableOpacity

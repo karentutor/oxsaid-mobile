@@ -9,12 +9,17 @@ import {
 import { axiosBase } from "../services/BaseService";
 import useAuth from "../hooks/useAuth";
 import tw from "twrnc";
+import Ionicons from "react-native-vector-icons/Ionicons";
 import FilterModal from "../components/ui/FilterModal";
 import CreateNewBusinessForm from "../components/ui/CreateNewBusinessForm";
+import BusinessDetails from "../components/ui/BusinessDetails";
+import { useNavigation } from "@react-navigation/native";
 
 function CreateBusinessScreen() {
   const { auth } = useAuth();
   const { access_token } = auth;
+  const currentUserId = auth.user._id;
+  const navigation = useNavigation(); // Get navigation prop
 
   const [businesses, setBusinesses] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -32,7 +37,7 @@ function CreateBusinessScreen() {
       const response = await axiosBase.get("/businesses/business-name", {
         headers: { Authorization: `Bearer ${access_token}` },
       });
-      setBusinesses(response.data.map((business) => business.name));
+      setBusinesses(response.data); // Make sure data includes the full object
     } catch (error) {
       console.error("Error fetching business names:", error.message);
       alert("Failed to fetch business names. Please try again.");
@@ -47,10 +52,24 @@ function CreateBusinessScreen() {
     setFormVisible(false);
   };
 
-  const handleFormSubmit = (newBusinessData) => {
-    // Submit new business data and close the form
-    console.log("New Business Data:", newBusinessData);
-    setFormVisible(false);
+  const handleCreateBusiness = async (newBusinessData) => {
+    try {
+      const businessData = {
+        ...newBusinessData,
+        userId: currentUserId,
+      };
+
+      await axiosBase.post(`/businesses/business-name`, businessData, {
+        headers: { Authorization: `Bearer ${access_token}` },
+      });
+
+      alert("Success", "Business created successfully!");
+      setFormVisible(false);
+      fetchBusinessNames();
+    } catch (error) {
+      console.error("Error creating business:", error);
+      alert("Error", "Failed to create business. Please try again.");
+    }
   };
 
   return (
@@ -61,6 +80,14 @@ function CreateBusinessScreen() {
         </View>
       ) : (
         <View>
+          {/* Top left back arrow */}
+          <TouchableOpacity
+            style={tw`p-2 mb-4`}
+            onPress={() => navigation.goBack()} // Go back to previous screen
+          >
+            <Ionicons name="arrow-back" size={24} color="black" />
+          </TouchableOpacity>
+
           {!formVisible && !selectedBusiness && (
             <>
               {/* Business Selector */}
@@ -70,7 +97,7 @@ function CreateBusinessScreen() {
               >
                 <Text style={tw`text-black`}>
                   {selectedBusiness
-                    ? `Selected Business: ${selectedBusiness}`
+                    ? `Selected Business: ${selectedBusiness.name}`
                     : "Select or enter a new business"}
                 </Text>
                 <Text style={tw`text-black`}>▼</Text>
@@ -92,15 +119,15 @@ function CreateBusinessScreen() {
           {selectedBusiness && (
             <View style={tw`mt-6`}>
               <Text style={tw`font-bold`}>Business Name:</Text>
-              <Text>{selectedBusiness}</Text>
-              {/* Display other business details as needed */}
+              <Text>{selectedBusiness.name}</Text>
+              <BusinessDetails business={selectedBusiness} />
             </View>
           )}
 
           {/* CreateNewBusinessForm to add a new business */}
           {formVisible && (
             <CreateNewBusinessForm
-              onSubmit={handleFormSubmit}
+              onSubmit={handleCreateBusiness}
               onClose={() => setFormVisible(false)}
             />
           )}
@@ -111,7 +138,8 @@ function CreateBusinessScreen() {
             onClose={() => setModalVisible(false)}
             data={businesses}
             onSelect={handleSelectBusiness}
-            selectedValue={selectedBusiness}
+            selectedValue={selectedBusiness?.name}
+            object={true} // Pass object=true to return the full object
           />
         </View>
       )}

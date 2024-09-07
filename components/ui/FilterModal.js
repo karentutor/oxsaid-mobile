@@ -12,9 +12,18 @@ import tw from "../../lib/tailwind"; // Adjust the import based on your setup
 
 const { height } = Dimensions.get("window");
 
-const FilterModal = ({ visible, onClose, data, onSelect, selectedValue }) => {
+const FilterModal = ({
+  visible,
+  onClose,
+  data,
+  onSelect,
+  selectedValue,
+  object = false,
+}) => {
   const flatListRef = useRef(null);
-  const [currentIndex, setCurrentIndex] = useState(data.indexOf(selectedValue));
+  const [currentIndex, setCurrentIndex] = useState(
+    data.findIndex((item) => (object ? item.name : item) === selectedValue)
+  );
   const [searchTerm, setSearchTerm] = useState(""); // State for the search input
   const [filteredData, setFilteredData] = useState(data); // State for the filtered data
 
@@ -22,7 +31,9 @@ const FilterModal = ({ visible, onClose, data, onSelect, selectedValue }) => {
     // Filter data based on search term
     if (searchTerm) {
       const filtered = data.filter((item) =>
-        item.toLowerCase().includes(searchTerm.toLowerCase())
+        (object ? item.name : item)
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase())
       );
       setFilteredData(filtered);
     } else {
@@ -30,18 +41,23 @@ const FilterModal = ({ visible, onClose, data, onSelect, selectedValue }) => {
     }
   }, [searchTerm, data]);
 
-  const renderItem = ({ item, index }) => (
-    <TouchableOpacity
-      style={tw`h-12 justify-center`}
-      onPress={() => {
-        setCurrentIndex(index);
-        onSelect(item);
-        onClose();
-      }}
-    >
-      <Text style={tw`text-center text-lg`}>{item}</Text>
-    </TouchableOpacity>
-  );
+  const renderItem = ({ item, index }) => {
+    const itemName = object ? item.name : item; // Handle both object and string cases
+    return (
+      <TouchableOpacity
+        style={tw`h-12 justify-center`}
+        onPress={() => {
+          setCurrentIndex(index);
+          onSelect(object ? item : itemName); // Pass the whole object or just the string
+          onClose();
+        }}
+      >
+        <Text style={tw`text-center text-lg`}>{itemName}</Text>
+      </TouchableOpacity>
+    );
+  };
+
+  const keyExtractor = (item) => (object ? item._id : item);
 
   return (
     <Modal
@@ -56,9 +72,9 @@ const FilterModal = ({ visible, onClose, data, onSelect, selectedValue }) => {
         <View style={tw`bg-white rounded-lg p-6 w-3/4`}>
           {/* Search Input */}
           <TextInput
-            style={tw`border border-gray-300 rounded p-2 mb-4 text-black`} // Ensure text color is set
-            placeholder="Type to search..." // Placeholder text
-            placeholderTextColor="gray" // Set placeholder text color for visibility
+            style={tw`border border-gray-300 rounded p-2 mb-4 text-black`}
+            placeholder="Type to search..."
+            placeholderTextColor="gray"
             value={searchTerm}
             onChangeText={setSearchTerm}
           />
@@ -67,7 +83,7 @@ const FilterModal = ({ visible, onClose, data, onSelect, selectedValue }) => {
           <FlatList
             ref={flatListRef}
             data={filteredData} // Use the filtered data here
-            keyExtractor={(item) => item}
+            keyExtractor={keyExtractor} // Use the business _id or string as key
             initialScrollIndex={currentIndex >= 0 ? currentIndex : 0}
             getItemLayout={(data, index) => ({
               length: 50,
@@ -76,8 +92,8 @@ const FilterModal = ({ visible, onClose, data, onSelect, selectedValue }) => {
             })}
             showsVerticalScrollIndicator={false}
             renderItem={renderItem}
-            style={{ height: 250 }} // 5 items with each height of 50
-            contentContainerStyle={{ paddingBottom: 150 }} // Extra space to allow full scrolling to last item
+            style={{ height: 250 }}
+            contentContainerStyle={{ paddingBottom: 150 }}
           />
           <TouchableOpacity
             style={tw`mt-4 p-2 bg-primary500 rounded-lg`}
