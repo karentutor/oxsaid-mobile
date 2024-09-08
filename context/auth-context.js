@@ -47,9 +47,11 @@ export const AuthContextProvider = ({ children }) => {
     }
   };
 
+  // Expose `auth`, `setAuth`, and the utility functions
   const value = useMemo(
     () => ({
       auth,
+      setAuth, // Expose `setAuth` here
       isAuthenticated: !!auth.access_token,
       authenticate,
       logout,

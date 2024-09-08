@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import {
+  Alert,
   View,
   Text,
   TouchableOpacity,
@@ -12,32 +13,34 @@ import tw from "twrnc";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import FilterModal from "../components/ui/FilterModal";
 import CreateNewBusinessForm from "../components/ui/CreateNewBusinessForm";
-import BusinessDetails from "../components/ui/BusinessDetails";
+import BusinessInformation from "../components/ui/BusinessInformation"; // Renamed component for better clarity
 import { useNavigation } from "@react-navigation/native";
 
 function CreateBusinessScreen() {
   const { auth } = useAuth();
   const { access_token } = auth;
   const currentUserId = auth.user._id;
-  const navigation = useNavigation(); // Get navigation prop
+  const navigation = useNavigation(); // For navigation within the app
 
   const [businesses, setBusinesses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
   const [formVisible, setFormVisible] = useState(false);
+  const [addLocationMode, setAddLocationMode] = useState(false); // Track if we are in add location mode
   const [selectedBusiness, setSelectedBusiness] = useState(null);
 
   useEffect(() => {
     fetchBusinessNames();
   }, []);
 
+  // Fetch list of business names
   const fetchBusinessNames = async () => {
     setLoading(true);
     try {
       const response = await axiosBase.get("/businesses/business-name", {
         headers: { Authorization: `Bearer ${access_token}` },
       });
-      setBusinesses(response.data); // Make sure data includes the full object
+      setBusinesses(response.data);
     } catch (error) {
       console.error("Error fetching business names:", error.message);
       alert("Failed to fetch business names. Please try again.");
@@ -46,17 +49,37 @@ function CreateBusinessScreen() {
     }
   };
 
-  const handleSelectBusiness = (business) => {
-    setSelectedBusiness(business);
-    setModalVisible(false);
-    setFormVisible(false);
+  // Function for adding a different location
+  const AddDifferentLocation = () => {
+    setAddLocationMode(true);
+    setFormVisible(true);
   };
 
+  // Handle selecting a business from the modal
+  const handleSelectBusiness = async (business) => {
+    try {
+      const response = await axiosBase.get(
+        `/businesses/business-name/${business._id}`,
+        {
+          headers: { Authorization: `Bearer ${access_token}` },
+        }
+      );
+
+      setSelectedBusiness(response.data); // Populate business details from API
+      setModalVisible(false);
+      setFormVisible(false);
+    } catch (error) {
+      console.error("Error fetching business details:", error);
+      alert("Error fetching business details");
+    }
+  };
+
+  // Handle creating a new business or location
   const handleCreateBusiness = async (newBusinessData) => {
     try {
       const businessData = {
         ...newBusinessData,
-        userId: currentUserId,
+        userId: currentUserId, // Add the user's ID to the new business data
       };
 
       await axiosBase.post(`/businesses/business-name`, businessData, {
@@ -64,8 +87,9 @@ function CreateBusinessScreen() {
       });
 
       alert("Success", "Business created successfully!");
-      setFormVisible(false);
-      fetchBusinessNames();
+      setFormVisible(false); // Hide the form after successful creation
+      fetchBusinessNames(); // Refresh the list of businesses
+      navigation.navigate("Home");
     } catch (error) {
       console.error("Error creating business:", error);
       alert("Error", "Failed to create business. Please try again.");
@@ -83,7 +107,7 @@ function CreateBusinessScreen() {
           {/* Top left back arrow */}
           <TouchableOpacity
             style={tw`p-2 mb-4`}
-            onPress={() => navigation.goBack()} // Go back to previous screen
+            onPress={() => navigation.goBack()} // Go back to the previous screen
           >
             <Ionicons name="arrow-back" size={24} color="black" />
           </TouchableOpacity>
@@ -116,19 +140,45 @@ function CreateBusinessScreen() {
           )}
 
           {/* Show selected business details */}
-          {selectedBusiness && (
-            <View style={tw`mt-6`}>
-              <Text style={tw`font-bold`}>Business Name:</Text>
-              <Text>{selectedBusiness.name}</Text>
-              <BusinessDetails business={selectedBusiness} />
+          {selectedBusiness && !addLocationMode && (
+            <View style={tw`mt-0`}>
+              {/* Display detailed information of the selected business */}
+              <BusinessInformation business={selectedBusiness} />
+
+              {/* Buttons */}
+              <View style={tw`mt-4`}>
+                <View style={tw`flex-row justify-between mb-4`}>
+                  {/* Yes, I work here (primary800) */}
+                  <TouchableOpacity
+                    style={tw`bg-[#1a2a40] p-3 rounded-lg w-1/2 mr-2`}
+                    onPress={() => handleLinkBusinessToUser(selectedBusiness)}
+                  >
+                    <Text style={tw`text-center text-white font-bold text-xl`}>
+                      Yes, I work here
+                    </Text>
+                  </TouchableOpacity>
+
+                  {/* Different location (secondary500) */}
+                  <TouchableOpacity
+                    style={tw`bg-[#ffab40] p-3 rounded-lg w-1/2 ml-2`}
+                    onPress={AddDifferentLocation} // Trigger the new function
+                  >
+                    <Text style={tw`text-center text-white text-xl font-bold`}>
+                      I work here but at a different location
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
             </View>
           )}
 
-          {/* CreateNewBusinessForm to add a new business */}
+          {/* CreateNewBusinessForm to add a new business or location */}
           {formVisible && (
             <CreateNewBusinessForm
               onSubmit={handleCreateBusiness}
               onClose={() => setFormVisible(false)}
+              selectedBusiness={addLocationMode ? selectedBusiness : null} // Pass selected business if adding location
+              addLocationMode={addLocationMode} // Pass add location mode to control form fields
             />
           )}
 
