@@ -109,6 +109,28 @@ function CreateBusinessScreen() {
     }
   };
 
+  // Handle creating a new business or location
+  const handleCreateBusiness = async (newBusinessData) => {
+    try {
+      const businessData = {
+        ...newBusinessData,
+        userId: currentUserId, // Add the user's ID to the new business data
+      };
+
+      await axiosBase.post(`/businesses/business-name`, businessData, {
+        headers: { Authorization: `Bearer ${access_token}` },
+      });
+
+      alert("Success", "Business created successfully!");
+      setFormVisible(false); // Hide the form after successful creation
+      fetchBusinessNames(); // Refresh the list of businesses
+      navigation.navigate("Home");
+    } catch (error) {
+      console.error("Error creating business:", error);
+      alert("Error", "Failed to create business. Please try again.");
+    }
+  };
+
   return (
     <ScrollView style={tw`p-4 bg-white`}>
       {loading ? (
