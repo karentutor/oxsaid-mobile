@@ -16,6 +16,7 @@ import {
   COLLEGE_DATA,
   MATRICULATION_YEAR_DATA,
 } from "../data";
+import geoData from "../data/geoDataSorted"; // Import geoData for location and city
 import UserCard from "../components/ui/UserCard"; // Import the UserCard component
 
 const UserSearchScreen = () => {
@@ -25,6 +26,8 @@ const UserSearchScreen = () => {
   const [college, setCollege] = useState("");
   const [matriculationYear, setMatriculationYear] = useState("");
   const [industry, setIndustry] = useState("");
+  const [location, setLocation] = useState(""); // New state for location
+  const [city, setCity] = useState(""); // New state for city
   const [friends, setFriends] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [currentFilter, setCurrentFilter] = useState(null);
@@ -57,7 +60,13 @@ const UserSearchScreen = () => {
       // Determine what to send based on the search and filters
       if (search) {
         queryParams.append("search", search);
-      } else if (!college && !matriculationYear && !industry) {
+      } else if (
+        !college &&
+        !matriculationYear &&
+        !industry &&
+        !location &&
+        !city
+      ) {
         queryParams.append("search", "all"); // Only send 'all' if no filters are selected
       }
 
@@ -65,6 +74,8 @@ const UserSearchScreen = () => {
       if (matriculationYear)
         queryParams.append("matriculationYear", matriculationYear);
       if (industry) queryParams.append("occupation", industry);
+      if (location) queryParams.append("location", location); // Add location to search query
+      if (city) queryParams.append("city", city); // Add city to search query
 
       const queryString = queryParams.toString();
 
@@ -72,17 +83,20 @@ const UserSearchScreen = () => {
         const response = await axiosBase.get(`/users/query?${queryString}`, {
           headers: { Authorization: `Bearer ${auth.access_token}` },
         });
+
         if (response) {
           const filteredData = response.data.filter(
             (item) => item._id !== auth.user._id
           );
-          // Simulate 90 users by repeating the filtered data
-          const repeatedData = Array(1).fill(filteredData).flat();
-          const updatedOptions = repeatedData.map((option) => ({
-            ...option,
-            isFollowed: friends.includes(option._id),
-          }));
-          setOptions(updatedOptions);
+
+          setOptions(response.data);
+          // const updatedOptions = filteredData.map((option) => ({
+          //   ...option,
+          //   isFollowed: friends.includes(option._id), // Just add `isFollowed`, do not filter based on friends
+          // }));
+
+          // console.log("here two", updatedOptions);
+          // setOptions(updatedOptions); // Update state with all users, regardless of follow status
         }
       } catch (error) {
         console.error("Search error:", error);
@@ -98,6 +112,8 @@ const UserSearchScreen = () => {
     college,
     matriculationYear,
     industry,
+    location,
+    city,
     friends,
   ]);
 
@@ -106,15 +122,18 @@ const UserSearchScreen = () => {
     setCollege("");
     setMatriculationYear("");
     setIndustry("");
+    setLocation(""); // Reset location
+    setCity(""); // Reset city
     setOptions([]);
   };
 
   const searchAllUsers = () => {
-    // Clear the search term and reset filters before triggering the effect
     setSearch("");
     setCollege("");
     setMatriculationYear("");
     setIndustry("");
+    setLocation("");
+    setCity("");
   };
 
   const openFilterModal = (filterType) => {
@@ -126,6 +145,11 @@ const UserSearchScreen = () => {
     if (currentFilter === "college") setCollege(value);
     if (currentFilter === "matriculationYear") setMatriculationYear(value);
     if (currentFilter === "industry") setIndustry(value);
+    if (currentFilter === "location") {
+      setLocation(value);
+      setCity(""); // Reset city when location changes
+    }
+    if (currentFilter === "city") setCity(value);
     setModalVisible(false);
   };
 
@@ -137,6 +161,10 @@ const UserSearchScreen = () => {
         return MATRICULATION_YEAR_DATA.map((option) => option.toString());
       case "industry":
         return OCCUPATION_DATA.map((option) => option.name);
+      case "location":
+        return Object.keys(geoData); // Get list of countries
+      case "city":
+        return geoData[location] || []; // Get cities based on selected location
       default:
         return [];
     }
@@ -145,7 +173,6 @@ const UserSearchScreen = () => {
   return (
     <View style={tw`flex-1 items-center justify-start pt-10`}>
       <View style={tw`w-full px-6 flex-1`}>
-        {/* Add flex-1 here */}
         <TextInput
           placeholder="Search"
           value={search}
@@ -153,6 +180,7 @@ const UserSearchScreen = () => {
           style={tw`border border-gray-300 rounded-lg p-2 focus:outline-none focus:border-blue-500 w-full mb-4`}
         />
         <View style={tw`flex flex-wrap justify-start items-center mb-4`}>
+          {/* College Filter */}
           <TouchableOpacity
             style={tw`border border-gray-300 rounded-lg p-2 mb-2 w-full flex-row items-center justify-between`}
             onPress={() => openFilterModal("college")}
@@ -160,8 +188,8 @@ const UserSearchScreen = () => {
             <Text style={tw`text-black`}>
               {college ? `College: ${college}` : "Select College"}
             </Text>
-            {!college && <Text style={tw`text-black`}>▼</Text>}
           </TouchableOpacity>
+          {/* Matriculation Year Filter */}
           <TouchableOpacity
             style={tw`border border-gray-300 rounded-lg p-2 mb-2 w-full flex-row items-center justify-between`}
             onPress={() => openFilterModal("matriculationYear")}
@@ -171,8 +199,8 @@ const UserSearchScreen = () => {
                 ? `Year: ${matriculationYear}`
                 : "Select Matriculation Year"}
             </Text>
-            {!matriculationYear && <Text style={tw`text-black`}>▼</Text>}
           </TouchableOpacity>
+          {/* Industry Filter */}
           <TouchableOpacity
             style={tw`border border-gray-300 rounded-lg p-2 mb-2 w-full flex-row items-center justify-between`}
             onPress={() => openFilterModal("industry")}
@@ -180,9 +208,29 @@ const UserSearchScreen = () => {
             <Text style={tw`text-black`}>
               {industry ? `Industry: ${industry}` : "Select Industry"}
             </Text>
-            {!industry && <Text style={tw`text-black`}>▼</Text>}
           </TouchableOpacity>
+          {/* Location Filter */}
+          <TouchableOpacity
+            style={tw`border border-gray-300 rounded-lg p-2 mb-2 w-full flex-row items-center justify-between`}
+            onPress={() => openFilterModal("location")}
+          >
+            <Text style={tw`text-black`}>
+              {location ? `Location: ${location}` : "Select Location"}
+            </Text>
+          </TouchableOpacity>
+          {/* City Filter (only show if location is selected) */}
+          {location && (
+            <TouchableOpacity
+              style={tw`border border-gray-300 rounded-lg p-2 mb-2 w-full flex-row items-center justify-between`}
+              onPress={() => openFilterModal("city")}
+            >
+              <Text style={tw`text-black`}>
+                {city ? `City: ${city}` : "Select City"}
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
+
         <View style={tw`flex flex-row justify-start items-center mb-4`}>
           <TouchableOpacity
             style={tw`border border-gray-300 rounded-lg p-2 mb-2 w-1/2 bg-secondary500 mr-2`}
@@ -197,16 +245,17 @@ const UserSearchScreen = () => {
             <Text style={tw`text-black text-center`}>Reset Filters</Text>
           </TouchableOpacity>
         </View>
+
         <FlatList
           data={options}
-          keyExtractor={(item, index) => index.toString()} // Generate a unique key for each item
-          renderItem={({ item }) => <UserCard user={item} />} // Render each item using the UserCard component
+          keyExtractor={(item, index) => index.toString()}
+          renderItem={({ item }) => <UserCard user={item} />}
           ListHeaderComponent={
             loading ? <ActivityIndicator size="large" color="#0000ff" /> : null
-          } // Show ActivityIndicator if loading
-          contentContainerStyle={tw`pb-1`} // Ensure padding at the bottom
-          style={tw`mt-4 flex-grow`} // Style for FlatList container
-          showsVerticalScrollIndicator={false} // Optional: hide the vertical scroll indicator
+          }
+          contentContainerStyle={tw`pb-1`}
+          style={tw`mt-4 flex-grow`}
+          showsVerticalScrollIndicator={false}
         />
       </View>
 
@@ -220,7 +269,11 @@ const UserSearchScreen = () => {
             ? college
             : currentFilter === "matriculationYear"
             ? matriculationYear
-            : industry
+            : currentFilter === "industry"
+            ? industry
+            : currentFilter === "location"
+            ? location
+            : city
         }
       />
     </View>

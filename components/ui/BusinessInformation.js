@@ -3,8 +3,8 @@ import { View, Text } from "react-native";
 import tw from "../../lib/tailwind";
 
 const BusinessInformation = ({ business }) => {
-  if (!business) {
-    return null;
+  if (!business || !business.businessName || !business.businessDetail) {
+    return <Text>No business information available</Text>; // Handle missing data gracefully
   }
 
   // Destructure businessName and businessDetail from the passed business object

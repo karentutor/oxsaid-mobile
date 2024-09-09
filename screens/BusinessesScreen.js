@@ -12,8 +12,10 @@ import FilterModal from "../components/ui/FilterModal";
 import BusinessInformation from "../components/ui/BusinessInformation"; // Component to display each business
 import { OCCUPATION_DATA } from "../data"; // For industry and sub-industry data
 import geoData from "../data/geoDataSorted"; // For country and city data
+import useAuth from "../hooks/useAuth"; // Assuming you have a hook for authentication
 
 const BusinessesScreen = () => {
+  const { auth } = useAuth(); // Get the auth context, assuming it provides the token and user
   const [businesses, setBusinesses] = useState([]); // To hold the list of businesses
   const [selectedIndustry, setSelectedIndustry] = useState(""); // Selected industry
   const [selectedSubIndustry, setSelectedSubIndustry] = useState(""); // Selected sub-industry
@@ -39,10 +41,12 @@ const BusinessesScreen = () => {
   const COUNTRIES = Object.keys(geoData);
   const getCities = (country) => geoData[country] || [];
 
+  // Call API to fetch all businesses when component mounts
   useEffect(() => {
-    fetchAllBusinesses(); // Fetch all businesses on mount
+    fetchAllBusinesses();
   }, []);
 
+  // Fetch businesses when filters or search terms change
   useEffect(() => {
     if (
       selectedIndustry ||
@@ -51,7 +55,7 @@ const BusinessesScreen = () => {
       selectedCity ||
       search
     ) {
-      fetchBusinesses(); // Fetch businesses when filters or search change
+      fetchBusinesses();
     }
   }, [
     selectedIndustry,
@@ -61,12 +65,15 @@ const BusinessesScreen = () => {
     search,
   ]);
 
-  // Function to fetch all businesses
+  // Function to fetch all businesses with their details
   const fetchAllBusinesses = async () => {
     setLoading(true);
     try {
-      const response = await axiosBase.get("/businesses/all-businesses");
-      setBusinesses(response.data);
+      const response = await axiosBase.get("/businesses", {
+        headers: { Authorization: `Bearer ${auth.access_token}` }, // Send token in request
+      });
+      console.log("fetchAllBusiensses", response.data);
+      setBusinesses(response.data); // Expecting data with flattened business details
     } catch (error) {
       console.error("Error fetching all businesses:", error);
     } finally {
@@ -78,7 +85,7 @@ const BusinessesScreen = () => {
   const fetchBusinesses = async () => {
     setLoading(true);
     try {
-      const response = await axiosBase.get("/businesses/all-businesses", {
+      const response = await axiosBase.get("/businesses/query", {
         params: {
           industry: selectedIndustry,
           subIndustry: selectedSubIndustry,
@@ -86,8 +93,10 @@ const BusinessesScreen = () => {
           city: selectedCity,
           search: search || undefined, // Only include search if it's not empty
         },
+        headers: { Authorization: `Bearer ${auth.access_token}` }, // Send token in request
       });
-      setBusinesses(response.data);
+      console.log("fetchBusinessesfunction", response.data);
+      setBusinesses(response.data); // Expecting data with flattened business details
     } catch (error) {
       console.error("Error fetching businesses:", error);
     } finally {
@@ -106,9 +115,11 @@ const BusinessesScreen = () => {
     fetchAllBusinesses(); // Fetch all businesses again
   };
 
-  // Generate unique keys by combining timestamp with business name
+  // Generate unique keys by combining timestamp with business name and address
   const generateUniqueKey = (business) => {
-    return `${business.businessName.name}-${Date.now()}`;
+    return `${business.businessName.name}-${
+      business.businessDetail.address
+    }-${Date.now()}`;
   };
 
   // Open filter modal
@@ -118,7 +129,10 @@ const BusinessesScreen = () => {
   };
 
   const handleFilterSelect = (value) => {
-    if (currentFilter === "industry") setSelectedIndustry(value);
+    if (currentFilter === "industry") {
+      setSelectedIndustry(value);
+      setSelectedSubIndustry(""); // Reset sub-industry when industry is selected
+    }
     if (currentFilter === "subIndustry") setSelectedSubIndustry(value);
     if (currentFilter === "country") setSelectedCountry(value);
     if (currentFilter === "city") setSelectedCity(value);

@@ -1,5 +1,3 @@
-// UserCard.js
-
 import React from "react";
 import { View, Text, Image, TouchableOpacity } from "react-native";
 import { useNavigation } from "@react-navigation/native";
@@ -35,7 +33,6 @@ const UserCard = ({ user }) => {
       {/* Top Right Arrow and "View" Text */}
       <TouchableOpacity style={tw`absolute top-2 right-2 items-center`}>
         <Icon name="arrow-forward-ios" size={20} color="gray" />
-        {/* <Text style={tw`text-gray-500 text-xs`}>View</Text> */}
       </TouchableOpacity>
 
       {/* User Details */}
@@ -58,7 +55,12 @@ const UserCard = ({ user }) => {
             <Text style={tw`text-xl font-bold text-black`}>
               {user.firstName} {user.lastName}
             </Text>
-            {/* Additional User Info */}
+            {/* Displaying Location and City */}
+
+            {user.city && <Text style={tw`text-gray-500`}>{user.city},</Text>}
+            {user.location && (
+              <Text style={tw`text-gray-500`}>{user.location}</Text>
+            )}
           </View>
         </View>
       </TouchableOpacity>
@@ -72,7 +74,7 @@ const UserCard = ({ user }) => {
           <Text style={tw`text-white text-center`}>Chat</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          onPress={handleEmail} // Updated to navigate to EmailScreen
+          onPress={handleEmail}
           style={tw`bg-secondary500 rounded-lg p-2 w-1/2`}
         >
           <Text style={tw`text-center`}>Email</Text>
