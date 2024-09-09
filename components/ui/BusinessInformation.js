@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text } from "react-native";
+import { View, Text, Image } from "react-native";
 import tw from "../../lib/tailwind";
 
 const BusinessInformation = ({ business }) => {
@@ -22,6 +22,7 @@ const BusinessInformation = ({ business }) => {
     occupation,
     subOccupation,
     websiteUrl,
+    picturePath, // Get the picture path (Cloudinary URL)
   } = businessName;
 
   const { address, city, country, phone, email, description } = businessDetail;
@@ -31,8 +32,19 @@ const BusinessInformation = ({ business }) => {
       {/* Card container with more padding and a narrower width */}
       <View style={tw`bg-gray-100 rounded-lg shadow-lg p-6 w-10/12 max-w-md`}>
         <Text style={tw`text-xl font-bold text-center mb-4`}>
-          Business Information
+          {name ? name : ""}
         </Text>
+
+        {/* Display business image if available */}
+        {picturePath && (
+          <View style={tw`mb-4`}>
+            <Image
+              source={{ uri: picturePath }}
+              style={tw`w-full h-48 rounded-lg`} // Style the image
+              resizeMode="cover"
+            />
+          </View>
+        )}
 
         {/* Two-column layout inside the card */}
         <View style={tw`flex-row justify-between mb-4`}>

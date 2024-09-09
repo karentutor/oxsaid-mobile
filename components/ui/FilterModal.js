@@ -8,6 +8,7 @@ import {
   TextInput,
   Dimensions,
 } from "react-native";
+import { MaterialIcons } from "@expo/vector-icons"; // Import MaterialIcons
 import tw from "../../lib/tailwind"; // Adjust the import based on your setup
 
 const { height } = Dimensions.get("window");
@@ -70,14 +71,20 @@ const FilterModal = ({
         style={tw`flex-1 justify-center items-center bg-black bg-opacity-50`}
       >
         <View style={tw`bg-white rounded-lg p-6 w-3/4`}>
-          {/* Search Input */}
-          <TextInput
-            style={tw`border border-gray-300 rounded p-2 mb-4 text-black`}
-            placeholder="Type to search..."
-            placeholderTextColor="gray"
-            value={searchTerm}
-            onChangeText={setSearchTerm}
-          />
+          {/* Search Input with looking glass icon */}
+          <View
+            style={tw`flex-row items-center border border-gray-300 rounded p-2 mb-4`}
+          >
+            <MaterialIcons name="search" size={20} color="lightgray" />
+            {/* MaterialIcons search icon */}
+            <TextInput
+              style={tw`ml-2 flex-1 text-black`}
+              placeholder="Type to search..."
+              placeholderTextColor="gray"
+              value={searchTerm}
+              onChangeText={setSearchTerm}
+            />
+          </View>
 
           {/* Scrollable List */}
           <FlatList

@@ -211,7 +211,6 @@ function CreateBusinessScreen() {
 
               {/* Map over all the business details and render a card for each */}
               {businessDetailsList.map((details) => {
-                // Construct an object that combines businessName and businessDetail
                 const businessInfo = {
                   businessName: selectedBusiness, // Pass the selected business name
                   businessDetail: details, // Pass each business detail
@@ -219,7 +218,7 @@ function CreateBusinessScreen() {
 
                 return (
                   <TouchableOpacity
-                    key={details._id}
+                    key={`${details._id}-${Date.now()}`} // Use _id combined with timestamp
                     onPress={() => handleLinkBusinessDetails(details)} // Tap to link the selected address
                   >
                     <View style={tw`mb-4`}>

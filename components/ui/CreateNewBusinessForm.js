@@ -7,6 +7,8 @@ import {
   ScrollView,
   Image,
   Alert,
+  KeyboardAvoidingView, // Import KeyboardAvoidingView
+  Platform, // Import Platform to handle different OS behaviors
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import tw from "../../lib/tailwind";
@@ -59,30 +61,83 @@ const CreateNewBusinessForm = ({
   );
   const [image, setImage] = useState(null);
 
-  // Handle form submission
+  // Function to generate a dynamic image name
+  const generateImageName = (businessName) => {
+    // Remove spaces and special characters from the business name
+    const sanitizedBusinessName = businessName
+      .replace(/\s+/g, "_")
+      .replace(/[^a-zA-Z0-9_]/g, "");
+
+    // Generate a timestamp to ensure uniqueness
+    const timestamp = Date.now();
+
+    // Return the dynamically generated file name
+    return `${sanitizedBusinessName}_${timestamp}.jpg`;
+  };
+
+  // In your handleSubmit function
   const handleSubmit = () => {
     if (!email) {
       Alert.alert("Error", "Please fill in all required fields.");
       return;
     }
 
-    onSubmit({
-      name,
-      size,
-      isAlumniOwned,
-      yearFounded,
-      occupation,
-      subOccupation,
-      websiteUrl,
-      picturePath: image,
-      address,
-      city,
-      country,
-      phone,
-      email,
-      description,
-    });
+    // Create a new FormData object
+    const formData = new FormData();
+
+    // Append other form fields as usual
+    formData.append("name", name);
+    formData.append("size", size);
+    formData.append("isAlumniOwned", isAlumniOwned);
+    formData.append("yearFounded", yearFounded);
+    formData.append("occupation", occupation);
+    formData.append("subOccupation", subOccupation);
+    formData.append("websiteUrl", websiteUrl);
+    formData.append("address", address);
+    formData.append("city", city);
+    formData.append("country", country);
+    formData.append("phone", phone);
+    formData.append("email", email);
+    formData.append("description", description);
+
+    // If an image is selected, append it to the form data
+    if (image) {
+      const imageFile = {
+        uri: image,
+        type: "image/jpeg", // Adjust based on your image file type
+        name: generateImageName(name), // Generate the image file name dynamically
+      };
+      formData.append("image", imageFile);
+    }
+
+    // Send the formData object to the parent component
+    onSubmit(formData);
   };
+
+  // // Handle form submission
+  // const handleSubmit = () => {
+  //   if (!email) {
+  //     Alert.alert("Error", "Please fill in all required fields.");
+  //     return;
+  //   }
+
+  //   onSubmit({
+  //     name,
+  //     size,
+  //     isAlumniOwned,
+  //     yearFounded,
+  //     occupation,
+  //     subOccupation,
+  //     websiteUrl,
+  //     picturePath: image,
+  //     address,
+  //     city,
+  //     country,
+  //     phone,
+  //     email,
+  //     description,
+  //   });
+  // };
 
   // Function to handle image picking
   const pickImage = async () => {
@@ -96,7 +151,7 @@ const CreateNewBusinessForm = ({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       aspect: [4, 3],
-      quality: 1,
+      quality: 0.8,
     });
 
     if (!result.canceled) {
@@ -105,7 +160,11 @@ const CreateNewBusinessForm = ({
   };
 
   return (
-    <ScrollView style={tw`p-4 bg-white`}>
+    // <KeyboardAvoidingView
+    //   behavior={Platform.OS === "ios" ? "padding" : "height"} // Adjust behavior based on platform
+    //   style={tw`flex-1`}
+    // >
+    <ScrollView style={tw`p-4 bg-white`} removeClippedSubviews={true}>
       {/* Display company name when adding a new location */}
       {addLocationMode && selectedBusiness && (
         <Text style={tw`text-xl font-bold text-center mb-4`}>
@@ -159,7 +218,7 @@ const CreateNewBusinessForm = ({
       {/* Alumni Owned (only show when not in addLocationMode) */}
       {!addLocationMode && (
         <>
-          <Text style={tw`mb-2 font-bold`}>Alumni Owned</Text>
+          <Text style={tw`mb-2 font-bold`}>Majority Alumni Owned</Text>
           <TouchableOpacity
             style={tw`border p-2 mb-4`}
             onPress={() => setIsAlumniOwned(!isAlumniOwned)}
@@ -246,6 +305,7 @@ const CreateNewBusinessForm = ({
 
       {/* FilterModal for Country */}
       <FilterModal
+        key="country-filter-modal"
         visible={countryModalVisible}
         onClose={() => setCountryModalVisible(false)}
         data={Object.keys(geoData)}
@@ -266,6 +326,7 @@ const CreateNewBusinessForm = ({
 
           {/* FilterModal for City */}
           <FilterModal
+            key="city-filter-modal"
             visible={cityModalVisible}
             onClose={() => setCityModalVisible(false)}
             data={geoData[country]}
@@ -378,6 +439,7 @@ const CreateNewBusinessForm = ({
         <Text style={tw`text-center text-white`}>Cancel</Text>
       </TouchableOpacity>
     </ScrollView>
+    // </KeyboardAvoidingView>
   );
 };
 
