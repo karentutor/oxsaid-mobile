@@ -66,17 +66,17 @@ function MainDrawerNavigator() {
       <Drawer.Screen name="Home" component={HomeScreen} />
       <Drawer.Screen name="User Search" component={UserSearchScreen} />
       <Drawer.Screen name="Following List" component={FriendsListScreen} />
-      <Drawer.Screen name="Alumni Businesses" component={BusinessesScreen} />
-      <Drawer.Screen name="Groups" component={GroupsScene} />
-      <Drawer.Screen name="Events" component={EventsScene} />
+      <Drawer.Screen name="Businesses" component={BusinessesScreen} />
+      {/* <Drawer.Screen name="Groups" component={GroupsScene} />
+      <Drawer.Screen name="Events" component={EventsScene} /> */}
       <Drawer.Screen
         name="Chats"
         component={ChatListScreen}
         options={{
-          title: "Chats",
+          title: "1:1 Chats",
           drawerLabel: ({ color }) => (
             <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <Text style={{ color }}>Chats</Text>
+              <Text style={{ color }}>1:1 Chats</Text>
               {unreadCount > 0 && (
                 <View
                   style={tw`bg-red-500 rounded-full h-5 w-5 items-center justify-center ml-2`}

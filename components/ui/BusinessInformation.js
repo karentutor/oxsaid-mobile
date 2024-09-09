@@ -3,7 +3,6 @@ import { View, Text } from "react-native";
 import tw from "../../lib/tailwind";
 
 const BusinessInformation = ({ business }) => {
-  console.log("in business information componnet", business);
   if (!business) {
     return null;
   }
