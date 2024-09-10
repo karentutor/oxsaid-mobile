@@ -18,6 +18,7 @@ const UserProfileScreen = ({ route }) => {
   const { auth } = useAuth(); // The authenticated user
   const [isConnected, setIsConnected] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [business, setBusiness] = useState([]);
   const [posts, setPosts] = useState([]); // State to store user posts
   const navigation = useNavigation();
 
@@ -114,34 +115,58 @@ const UserProfileScreen = ({ route }) => {
     }
   };
 
+  useEffect(() => {
+    const fetchBusiness = async () => {
+      try {
+        const response = await axiosBase.get(`/users/business/${user._id}`, {
+          headers: { Authorization: `Bearer ${auth.access_token}` },
+        });
+        console.log(response.data);
+        setBusiness(response.data); // Store business info in state for display
+      } catch (error) {
+        if (error.response && error.response.status === 404) {
+          setBusiness(null); // If no business found, reset the state
+        } else {
+          console.error("Error fetching business:", error.message);
+        }
+      }
+    };
+
+    if (user._id && auth.access_token) {
+      fetchBusiness(); // Fetch business data when component mounts or dependencies change
+    }
+  }, [user._id, auth.access_token]); // Dependency array to rerun the effect if user._id or access_token changes
+
   return (
-    <ScrollView style={tw`flex-1 p-4`}>
-      <View style={tw`items-center justify-center`}>
+    <ScrollView style={tw`flex-1 p-4 bg-white`}>
+      <View style={tw`items-center`}>
         {/* User Profile Header */}
-        <Text style={tw`text-3xl font-bold mb-4`}>User Profile</Text>
+        <Text style={tw`text-3xl font-bold text-primary500 mb-6`}>Profile</Text>
 
         {/* User Picture */}
         {user.picturePath ? (
           <Image
             source={{ uri: user.picturePath }}
-            style={tw`w-32 h-32 rounded-full mb-4`}
+            style={tw`w-40 h-40 rounded-full mb-4 shadow-lg`}
           />
         ) : (
-          <View style={tw`w-32 h-32 rounded-full bg-gray-300 mb-4`} />
+          <View style={tw`w-40 h-40 rounded-full bg-gray-300 mb-4 shadow-lg`} />
         )}
 
         {/* User Details */}
-        <View style={tw`items-center`}>
-          <Text style={tw`text-xl font-bold text-black`}>
+        <View
+          style={tw`items-center bg-gray-50 p-4 rounded-lg shadow-sm w-full`}
+        >
+          <Text style={tw`text-2xl font-bold text-black mb-2`}>
             {user.firstName} {user.lastName}
           </Text>
-          <Text style={tw`text-base text-gray-700 mt-2`}>
+          <Text style={tw`text-base text-gray-700 mb-2`}>
             College: {user.college || "N/A"}
           </Text>
-          <Text style={tw`text-base text-gray-700 mt-2`}>
+          <Text style={tw`text-base text-gray-700 mb-2`}>
             Matriculation Year: {user.matriculationYear || "N/A"}
           </Text>
-          <Text style={tw`text-base text-gray-700 mt-2`}>
+          <Text style={tw`text-base text-gray-700 mb-2`}>
             Industry: {user.occupation || "N/A"}
           </Text>
         </View>
@@ -149,29 +174,104 @@ const UserProfileScreen = ({ route }) => {
         {/* Connect Button */}
         {!loading && (
           <TouchableOpacity
-            style={tw`mt-6 bg-primary500 px-4 py-2 rounded-lg`}
+            style={tw`mt-6 px-4 py-2 rounded-full shadow-md ${
+              isConnected ? "bg-yellow-500" : "bg-red-500"
+            }`}
+            onPress={isConnected ? handleDisconnect : handleConnect}
+          >
+            <Text style={tw`text-white text-base font-bold`}>
+              {isConnected ? "Following" : "Follow"}
+            </Text>
+          </TouchableOpacity>
+        )}
+
+        {/* Connect Button
+        {!loading && (
+          <TouchableOpacity
+            style={tw`mt-6 bg-red-500 px-6 py-3 rounded-full shadow-md`}
             onPress={isConnected ? handleDisconnect : handleConnect}
           >
             <Text style={tw`text-white text-lg font-bold`}>
               {isConnected ? "Following" : "Follow"}
             </Text>
           </TouchableOpacity>
-        )}
+        )} */}
 
         {/* User Posts */}
-        <View style={tw`mt-6 w-full`}>
-          <Text style={tw`text-xl font-bold mb-4`}>User's Posts</Text>
+        <View style={tw`mt-8 w-full`}>
+          <Text style={tw`text-xl font-bold text-gray-800 mb-4`}>Posts</Text>
           {posts.length > 0 ? (
             posts.map((post) => (
-              <PostCard key={post._id} post={post} onDelete={() => {}} /> // Display posts using PostCard component
+              <PostCard key={post._id} post={post} onDelete={() => {}} />
             ))
           ) : (
-            <Text>No posts to display</Text>
+            <Text style={tw`text-gray-600 text-center`}>
+              No posts to display
+            </Text>
           )}
         </View>
       </View>
     </ScrollView>
   );
+
+  // return (
+  //   <ScrollView style={tw`flex-1 p-4`}>
+  //     <View style={tw`items-center justify-center`}>
+  //       {/* User Profile Header */}
+  //       <Text style={tw`text-3xl font-bold mb-4`}>User Profile</Text>
+
+  //       {/* User Picture */}
+  //       {user.picturePath ? (
+  //         <Image
+  //           source={{ uri: user.picturePath }}
+  //           style={tw`w-32 h-32 rounded-full mb-4`}
+  //         />
+  //       ) : (
+  //         <View style={tw`w-32 h-32 rounded-full bg-gray-300 mb-4`} />
+  //       )}
+
+  //       {/* User Details */}
+  //       <View style={tw`items-center`}>
+  //         <Text style={tw`text-xl font-bold text-black`}>
+  //           {user.firstName} {user.lastName}
+  //         </Text>
+  //         <Text style={tw`text-base text-gray-700 mt-2`}>
+  //           College: {user.college || "N/A"}
+  //         </Text>
+  //         <Text style={tw`text-base text-gray-700 mt-2`}>
+  //           Matriculation Year: {user.matriculationYear || "N/A"}
+  //         </Text>
+  //         <Text style={tw`text-base text-gray-700 mt-2`}>
+  //           Industry: {user.occupation || "N/A"}
+  //         </Text>
+  //       </View>
+
+  //       {/* Connect Button */}
+  //       {!loading && (
+  //         <TouchableOpacity
+  //           style={tw`mt-6 bg-primary500 px-4 py-2 rounded-lg`}
+  //           onPress={isConnected ? handleDisconnect : handleConnect}
+  //         >
+  //           <Text style={tw`text-white text-lg font-bold`}>
+  //             {isConnected ? "Following" : "Follow"}
+  //           </Text>
+  //         </TouchableOpacity>
+  //       )}
+
+  //       {/* User Posts */}
+  //       <View style={tw`mt-6 w-full`}>
+  //         <Text style={tw`text-xl font-bold mb-4`}>User's Posts</Text>
+  //         {posts.length > 0 ? (
+  //           posts.map((post) => (
+  //             <PostCard key={post._id} post={post} onDelete={() => {}} /> // Display posts using PostCard component
+  //           ))
+  //         ) : (
+  //           <Text>No posts to display</Text>
+  //         )}
+  //       </View>
+  //     </View>
+  //   </ScrollView>
+  // );
 };
 
 export default UserProfileScreen;

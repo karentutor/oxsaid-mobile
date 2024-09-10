@@ -89,14 +89,7 @@ const UserSearchScreen = () => {
             (item) => item._id !== auth.user._id
           );
 
-          setOptions(response.data);
-          // const updatedOptions = filteredData.map((option) => ({
-          //   ...option,
-          //   isFollowed: friends.includes(option._id), // Just add `isFollowed`, do not filter based on friends
-          // }));
-
-          // console.log("here two", updatedOptions);
-          // setOptions(updatedOptions); // Update state with all users, regardless of follow status
+          setOptions(filteredData);
         }
       } catch (error) {
         console.error("Search error:", error);
@@ -169,39 +162,6 @@ const UserSearchScreen = () => {
         return [];
     }
   };
-
-  // const fetchBusinessData = async (userId) => {
-  //   try {
-  //     const businessResponse = await axiosBase.get(`/user/${userId}/business`, {
-  //       headers: { Authorization: `Bearer ${auth.access_token}` },
-  //     });
-  //     return businessResponse.data;
-  //   } catch (error) {
-  //     console.error("Error fetching business details:", error);
-  //     return null;
-  //   }
-  // };
-
-  // useEffect(() => {
-  //   const loadBusinesses = async () => {
-  //     const usersWithBusinesses = await Promise.all(
-  //       options.map(async (user) => {
-  //         if (user.businessName) {
-  //           const businessData = await fetchBusinessData(user._id);
-  //           return {
-  //             ...user,
-  //             businessName: businessData.businessName,
-  //             businessDetail: businessData.businessDetail,
-  //           };
-  //         }
-  //         return user;
-  //       })
-  //     );
-  //     setOptions(usersWithBusinesses);
-  //   };
-
-  //   loadBusinesses();
-  // }, [options]); // Run after users are loaded
 
   return (
     <View style={tw`flex-1 items-center justify-start pt-10`}>
