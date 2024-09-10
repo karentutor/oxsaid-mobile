@@ -82,6 +82,48 @@ function HomeScreen() {
     navigation.navigate("CreateBusiness", { userId: user._id });
   };
 
+  const handlePost = async ({ text, image }) => {
+    console.log("handlePost called with text:", text, "and image:", image);
+
+    try {
+      const formData = new FormData();
+      formData.append("userId", user._id);
+      formData.append("description", text);
+
+      if (image) {
+        const fileName = image.split("/").pop();
+        const fileType = fileName.split(".").pop();
+        formData.append("picture", {
+          uri: image,
+          name: fileName,
+          type: `image/${fileType}`,
+        });
+      }
+
+      const response = await axiosBase.post("/posts", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+          Authorization: `Bearer ${access_token}`,
+        },
+      });
+
+      console.log("Post created successfully:", response.data);
+
+      fetchPosts();
+    } catch (err) {
+      // Log the entire error response to understand the conflict
+      if (err.response) {
+        console.error(
+          "Server responded with a 409 status code:",
+          err.response.data
+        );
+      } else {
+        console.error("Error creating post:", err.message);
+      }
+      Alert.alert("Error creating post", err.message);
+    }
+  };
+
   const handleUnlinkBusiness = async () => {
     try {
       const response = await axiosBase.put(
@@ -174,7 +216,7 @@ function HomeScreen() {
           <Text>No User ID</Text>
         )}
 
-        <PostBox onPost={fetchPosts} onCancel={() => {}} />
+        <PostBox onPost={handlePost} onCancel={() => {}} />
 
         {Array.isArray(posts) && posts.length > 0 ? (
           posts.map((post) => (

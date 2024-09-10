@@ -110,26 +110,82 @@ function CreateBusinessScreen() {
   };
 
   // Handle creating a new business or location
-  const handleCreateBusiness = async (newBusinessData) => {
+  // Function: handleCreateBusiness (frontend)
+  const handleCreateBusiness = async (businessData) => {
     try {
-      const businessData = {
-        ...newBusinessData,
-        userId: currentUserId, // Add the user's ID to the new business data
-      };
+      const formData = new FormData();
+      // Loop through the businessData and append each key-value pair to formData
+      for (const key in businessData) {
+        if (key !== "image") {
+          formData.append(key, businessData[key]); // Append non-image data
+        }
+      }
 
-      await axiosBase.post(`/businesses/business-name`, businessData, {
-        headers: { Authorization: `Bearer ${access_token}` },
+      // Handle the image separately if it's present
+      if (businessData.image) {
+        const imageUri = businessData.image.uri;
+        const fileName = imageUri.split("/").pop();
+        const fileType = fileName.split(".").pop();
+        formData.append("picture", {
+          uri: imageUri,
+          name: fileName,
+          type: `image/${fileType}`,
+        });
+      }
+      await axiosBase.post(`/businesses/business-name`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+          Authorization: `Bearer ${access_token}`,
+        },
       });
 
       alert("Success", "Business created successfully!");
-      setFormVisible(false); // Hide the form after successful creation
-      fetchBusinessNames(); // Refresh the list of businesses
+      setFormVisible(false); // Hide the form
+      fetchBusinessNames(); // Refresh business list
       navigation.navigate("Home");
     } catch (error) {
       console.error("Error creating business:", error);
       alert("Error", "Failed to create business. Please try again.");
     }
   };
+
+  // const handleCreateBusiness = async (newBusinessData) => {
+  //   try {
+  //     const formData = new FormData();
+  //     formData.append("userId", currentUserId); // Add the user's ID
+
+  //     // Append other fields to FormData
+  //     Object.keys(newBusinessData).forEach((key) => {
+  //       formData.append(key, newBusinessData[key]);
+  //     });
+
+  //     // If an image is selected, append it
+  //     if (image) {
+  //       const imageFile = {
+  //         uri: image,
+  //         type: "image/jpeg", // Adjust based on the file type
+  //         name: generateImageName(newBusinessData.name),
+  //       };
+  //       formData.append("image", imageFile);
+  //     }
+
+  //     // Send the form data via Axios
+  //     await axiosBase.post(`/businesses/business-name`, formData, {
+  //       headers: {
+  //         "Content-Type": "multipart/form-data",
+  //         Authorization: `Bearer ${access_token}`,
+  //       },
+  //     });
+
+  //     alert("Success", "Business created successfully!");
+  //     setFormVisible(false); // Hide the form
+  //     fetchBusinessNames(); // Refresh business list
+  //     navigation.navigate("Home");
+  //   } catch (error) {
+  //     console.error("Error creating business:", error);
+  //     alert("Error", "Failed to create business. Please try again.");
+  //   }
+  // };
 
   return (
     <ScrollView style={tw`p-4 bg-white`}>

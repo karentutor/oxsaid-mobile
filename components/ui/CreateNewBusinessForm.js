@@ -77,41 +77,41 @@ const CreateNewBusinessForm = ({
 
   // In your handleSubmit function
   const handleSubmit = () => {
+    // Append other form fields as usual
     if (!email) {
       Alert.alert("Error", "Please fill in all required fields.");
       return;
     }
 
-    // Create a new FormData object
-    const formData = new FormData();
+    // Create a new business object
+    const businessData = {
+      name,
+      size,
+      isAlumniOwned,
+      yearFounded,
+      occupation,
+      subOccupation,
+      websiteUrl,
+      address,
+      city,
+      country,
+      phone,
+      email,
+      description,
+    };
 
-    // Append other form fields as usual
-    formData.append("name", name);
-    formData.append("size", size);
-    formData.append("isAlumniOwned", isAlumniOwned);
-    formData.append("yearFounded", yearFounded);
-    formData.append("occupation", occupation);
-    formData.append("subOccupation", subOccupation);
-    formData.append("websiteUrl", websiteUrl);
-    formData.append("address", address);
-    formData.append("city", city);
-    formData.append("country", country);
-    formData.append("phone", phone);
-    formData.append("email", email);
-    formData.append("description", description);
-
-    // If an image is selected, append it to the form data
+    // If an image is selected, include it in the object
     if (image) {
       const imageFile = {
         uri: image,
         type: "image/jpeg", // Adjust based on your image file type
         name: generateImageName(name), // Generate the image file name dynamically
       };
-      formData.append("image", imageFile);
+      businessData.image = imageFile;
     }
 
-    // Send the formData object to the parent component
-    onSubmit(formData);
+    // Send the businessData object to the parent component
+    onSubmit(businessData);
   };
 
   // // Handle form submission
