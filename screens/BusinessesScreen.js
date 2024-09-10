@@ -73,7 +73,7 @@ const BusinessesScreen = () => {
       const response = await axiosBase.get("/businesses", {
         headers: { Authorization: `Bearer ${auth.access_token}` }, // Send token in request
       });
-      console.log("fetchAllBusiensses", response.data);
+      //  console.log("fetchAllBusiensses", response.data);
       setBusinesses(response.data); // Expecting data with flattened business details
     } catch (error) {
       console.error("Error fetching all businesses:", error);
@@ -242,17 +242,11 @@ const BusinessesScreen = () => {
         businesses.map((business) => (
           <View
             key={generateUniqueKey(business)}
-            //            style={tw`mb-4 p-4 bg-white rounded-lg shadow-md`}
             style={tw`mb-4 p-4 bg-white rounded-lg bg-blue-100 shadow-md border border-gray-200`}
           >
             <BusinessInformation business={business} />
           </View>
         ))
-        // businesses.map((business) => (
-        //   <View key={generateUniqueKey(business)} style={tw`mb-4`}>
-        //     <BusinessInformation business={business} />
-        //   </View>
-        // ))
       )}
 
       {/* Filter Modal */}

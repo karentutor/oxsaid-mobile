@@ -170,6 +170,39 @@ const UserSearchScreen = () => {
     }
   };
 
+  // const fetchBusinessData = async (userId) => {
+  //   try {
+  //     const businessResponse = await axiosBase.get(`/user/${userId}/business`, {
+  //       headers: { Authorization: `Bearer ${auth.access_token}` },
+  //     });
+  //     return businessResponse.data;
+  //   } catch (error) {
+  //     console.error("Error fetching business details:", error);
+  //     return null;
+  //   }
+  // };
+
+  // useEffect(() => {
+  //   const loadBusinesses = async () => {
+  //     const usersWithBusinesses = await Promise.all(
+  //       options.map(async (user) => {
+  //         if (user.businessName) {
+  //           const businessData = await fetchBusinessData(user._id);
+  //           return {
+  //             ...user,
+  //             businessName: businessData.businessName,
+  //             businessDetail: businessData.businessDetail,
+  //           };
+  //         }
+  //         return user;
+  //       })
+  //     );
+  //     setOptions(usersWithBusinesses);
+  //   };
+
+  //   loadBusinesses();
+  // }, [options]); // Run after users are loaded
+
   return (
     <View style={tw`flex-1 items-center justify-start pt-10`}>
       <View style={tw`w-full px-6 flex-1`}>
@@ -249,7 +282,15 @@ const UserSearchScreen = () => {
         <FlatList
           data={options}
           keyExtractor={(item, index) => index.toString()}
-          renderItem={({ item }) => <UserCard user={item} />}
+          renderItem={({ item }) => (
+            <View
+              style={tw`mb-4 p-4 bg-blue-50 rounded-lg border border-gray-200 shadow-lg`} // Tailwind styles
+            >
+              <View style={tw`bg-white rounded-lg p-4 shadow-md`}>
+                <UserCard user={item} />
+              </View>
+            </View>
+          )}
           ListHeaderComponent={
             loading ? <ActivityIndicator size="large" color="#0000ff" /> : null
           }

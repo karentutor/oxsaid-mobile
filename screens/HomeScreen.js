@@ -67,7 +67,6 @@ function HomeScreen() {
       const response = await axiosBase.get(`/users/business/${user._id}`, {
         headers: { Authorization: `Bearer ${access_token}` },
       });
-      console.log(response.data); // Log business data to verify it's being fetched correctly
       setBusiness(response.data); // Store business info in state for display
     } catch (error) {
       if (error.response && error.response.status === 404) {
@@ -83,7 +82,7 @@ function HomeScreen() {
   };
 
   const handlePost = async ({ text, image }) => {
-    console.log("handlePost called with text:", text, "and image:", image);
+    // console.log("handlePost called with text:", text, "and image:", image);
 
     try {
       const formData = new FormData();
@@ -107,7 +106,7 @@ function HomeScreen() {
         },
       });
 
-      console.log("Post created successfully:", response.data);
+      // console.log("Post created successfully:", response.data);
 
       fetchPosts();
     } catch (err) {
