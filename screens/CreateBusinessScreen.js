@@ -149,44 +149,6 @@ function CreateBusinessScreen() {
     }
   };
 
-  // const handleCreateBusiness = async (newBusinessData) => {
-  //   try {
-  //     const formData = new FormData();
-  //     formData.append("userId", currentUserId); // Add the user's ID
-
-  //     // Append other fields to FormData
-  //     Object.keys(newBusinessData).forEach((key) => {
-  //       formData.append(key, newBusinessData[key]);
-  //     });
-
-  //     // If an image is selected, append it
-  //     if (image) {
-  //       const imageFile = {
-  //         uri: image,
-  //         type: "image/jpeg", // Adjust based on the file type
-  //         name: generateImageName(newBusinessData.name),
-  //       };
-  //       formData.append("image", imageFile);
-  //     }
-
-  //     // Send the form data via Axios
-  //     await axiosBase.post(`/businesses/business-name`, formData, {
-  //       headers: {
-  //         "Content-Type": "multipart/form-data",
-  //         Authorization: `Bearer ${access_token}`,
-  //       },
-  //     });
-
-  //     alert("Success", "Business created successfully!");
-  //     setFormVisible(false); // Hide the form
-  //     fetchBusinessNames(); // Refresh business list
-  //     navigation.navigate("Home");
-  //   } catch (error) {
-  //     console.error("Error creating business:", error);
-  //     alert("Error", "Failed to create business. Please try again.");
-  //   }
-  // };
-
   return (
     <ScrollView style={tw`p-4 bg-white`}>
       {loading ? (
@@ -253,16 +215,16 @@ function CreateBusinessScreen() {
                 onPress={handleAddLocation} // Open form for adding a new location
               > */}
               <Text
-                style={tw`text-center text-black text-blue-500 mb-4`}
+                style={tw`text-center text-black font-bold text-blue-500 mb-4`}
                 onPress={handleAddLocation}
               >
-                Tap if you work at this company but at a different location
+                Tap if HERE you work at this company but at a different location
               </Text>
               {/* </TouchableOpacity> */}
 
               {/* Instruction to tap on the business location */}
-              <Text style={tw`text-center mb-4 text-red-500`}>
-                Tap the business card if you work there
+              <Text style={tw`text-center mb-4 font-bold text-red-500`}>
+                Tap the business card BELOW if you work there
               </Text>
 
               {/* Map over all the business details and render a card for each */}
@@ -302,158 +264,3 @@ function CreateBusinessScreen() {
 }
 
 export default CreateBusinessScreen;
-
-// import React, { useState, useEffect } from "react";
-// import {
-//   Alert,
-//   View,
-//   Text,
-//   TouchableOpacity,
-//   ActivityIndicator,
-//   ScrollView,
-// } from "react-native";
-// import { axiosBase } from "../services/BaseService";
-// import useAuth from "../hooks/useAuth";
-// import tw from "twrnc";
-// import Ionicons from "react-native-vector-icons/Ionicons";
-// import FilterModal from "../components/ui/FilterModal";
-// import BusinessInformation from "../components/ui/BusinessInformation";
-// import { useNavigation } from "@react-navigation/native";
-
-// function CreateBusinessScreen() {
-//   const { auth } = useAuth();
-//   const { access_token } = auth;
-//   const currentUserId = auth.user._id;
-//   const navigation = useNavigation(); // For navigation within the app
-
-//   const [businesses, setBusinesses] = useState([]);
-//   const [loading, setLoading] = useState(true);
-//   const [modalVisible, setModalVisible] = useState(false);
-//   const [formVisible, setFormVisible] = useState(false);
-//   const [addLocationMode, setAddLocationMode] = useState(false); // Track if we are in add location mode
-//   const [selectedBusiness, setSelectedBusiness] = useState(null);
-//   const [businessDetailsList, setBusinessDetailsList] = useState([]); // New state to hold BusinessDetails
-
-//   useEffect(() => {
-//     fetchBusinessNames();
-//   }, []);
-
-//   // Fetch list of business names
-//   const fetchBusinessNames = async () => {
-//     setLoading(true);
-//     try {
-//       const response = await axiosBase.get("/businesses/business-name", {
-//         headers: { Authorization: `Bearer ${access_token}` },
-//       });
-//       setBusinesses(response.data);
-//     } catch (error) {
-//       console.error("Error fetching business names:", error.message);
-//       alert("Failed to fetch business names. Please try again.");
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-
-//   // Handle selecting a business from the modal
-//   const handleSelectBusiness = async (business) => {
-//     try {
-//       const response = await axiosBase.get(
-//         `/businesses/business-name/${business._id}/details`,
-//         {
-//           headers: { Authorization: `Bearer ${access_token}` },
-//         }
-//       );
-
-//       setSelectedBusiness(business); // Store the selected BusinessName
-//       setBusinessDetailsList(response.data); // Store all the BusinessDetails for that BusinessName
-//       setModalVisible(false);
-//       setFormVisible(false);
-//     } catch (error) {
-//       console.error("Error fetching business details:", error);
-//       alert("Error fetching business details");
-//     }
-//   };
-
-//   return (
-//     <ScrollView style={tw`p-4 bg-white`}>
-//       {loading ? (
-//         <View style={tw`flex-1 justify-center items-center`}>
-//           <ActivityIndicator size="large" color="#0000ff" />
-//         </View>
-//       ) : (
-//         <View>
-//           {/* Top left back arrow */}
-//           <TouchableOpacity
-//             style={tw`p-2 mb-4`}
-//             onPress={() => navigation.goBack()} // Go back to the previous screen
-//           >
-//             <Ionicons name="arrow-back" size={24} color="black" />
-//           </TouchableOpacity>
-
-//           {!formVisible && !selectedBusiness && (
-//             <>
-//               {/* Business Selector */}
-//               <TouchableOpacity
-//                 style={tw`border border-gray-300 rounded-lg p-2 w-full flex-row items-center justify-between`}
-//                 onPress={() => setModalVisible(true)}
-//               >
-//                 <Text style={tw`text-black`}>
-//                   {selectedBusiness
-//                     ? `Selected Business: ${selectedBusiness.name}`
-//                     : "Select or enter a new business"}
-//                 </Text>
-//                 <Text style={tw`text-black`}>▼</Text>
-//               </TouchableOpacity>
-
-//               {/* Button for entering new business */}
-//               <TouchableOpacity
-//                 style={tw`mt-4 bg-blue-500 p-4 rounded`}
-//                 onPress={() => setFormVisible(true)}
-//               >
-//                 <Text style={tw`text-center text-white`}>
-//                   I do not see my business name
-//                 </Text>
-//               </TouchableOpacity>
-//             </>
-//           )}
-
-//           {/* Show all BusinessDetails cards for the selected BusinessName */}
-//           {selectedBusiness && (
-//             <View style={tw`mt-4`}>
-//               <Text style={tw`text-lg font-bold text-center mb-4`}>
-//                 {selectedBusiness.name}
-//               </Text>
-
-//               {/* Map over all the business details and render a card for each */}
-//               {businessDetailsList.map((details) => {
-//                 // Construct an object that combines businessName and businessDetail
-//                 const businessInfo = {
-//                   businessName: selectedBusiness, // Pass the selected business name
-//                   businessDetail: details, // Pass each business detail
-//                 };
-
-//                 return (
-//                   <View key={details._id} style={tw`mb-4`}>
-//                     <BusinessInformation business={businessInfo} />
-//                   </View>
-//                 );
-//               })}
-//             </View>
-//           )}
-
-//           {/* FilterModal for selecting business */}
-//           <FilterModal
-//             visible={modalVisible}
-//             onClose={() => setModalVisible(false)}
-//             data={businesses}
-//             onSelect={handleSelectBusiness}
-//             selectedValue={selectedBusiness?.name}
-//             object={true} // Pass object=true to return the full object
-//           />
-//         </View>
-//       )}
-//     </ScrollView>
-//   );
-// }
-
-// export default CreateBusinessScreen;

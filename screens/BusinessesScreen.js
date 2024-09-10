@@ -13,6 +13,7 @@ import BusinessInformation from "../components/ui/BusinessInformation"; // Compo
 import { OCCUPATION_DATA } from "../data"; // For industry and sub-industry data
 import geoData from "../data/geoDataSorted"; // For country and city data
 import useAuth from "../hooks/useAuth"; // Assuming you have a hook for authentication
+import { generateUniqueKey } from "../utils/helperFunctions";
 
 const BusinessesScreen = () => {
   const { auth } = useAuth(); // Get the auth context, assuming it provides the token and user
@@ -115,13 +116,6 @@ const BusinessesScreen = () => {
     fetchAllBusinesses(); // Fetch all businesses again
   };
 
-  // Generate unique keys by combining timestamp with business name and address
-  const generateUniqueKey = (business) => {
-    return `${business.businessName.name}-${
-      business.businessDetail.address
-    }-${Date.now()}`;
-  };
-
   // Open filter modal
   const openFilterModal = (filterType) => {
     setCurrentFilter(filterType);
@@ -155,7 +149,7 @@ const BusinessesScreen = () => {
   };
 
   return (
-    <ScrollView style={tw`p-4 bg-white`}>
+    <ScrollView style={tw`p-4 bg-white flex-1`}>
       <View style={tw`mb-4`}>
         <Text style={tw`text-lg font-bold text-center`}>
           Oxsaid Alum Businesses
@@ -246,10 +240,19 @@ const BusinessesScreen = () => {
         <Text style={tw`text-center`}>Loading...</Text>
       ) : (
         businesses.map((business) => (
-          <View key={generateUniqueKey(business)} style={tw`mb-4`}>
+          <View
+            key={generateUniqueKey(business)}
+            //            style={tw`mb-4 p-4 bg-white rounded-lg shadow-md`}
+            style={tw`mb-4 p-4 bg-white rounded-lg bg-blue-100 shadow-md border border-gray-200`}
+          >
             <BusinessInformation business={business} />
           </View>
         ))
+        // businesses.map((business) => (
+        //   <View key={generateUniqueKey(business)} style={tw`mb-4`}>
+        //     <BusinessInformation business={business} />
+        //   </View>
+        // ))
       )}
 
       {/* Filter Modal */}

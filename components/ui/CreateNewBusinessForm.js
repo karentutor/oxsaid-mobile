@@ -34,7 +34,7 @@ const CreateNewBusinessForm = ({
   const [cityModalVisible, setCityModalVisible] = useState(false);
 
   // Form state
-  const [name, setName] = useState(selectedBusiness?.businessName?.name || "");
+  const [name, setName] = useState(selectedBusiness?.name || "");
   const [size, setSize] = useState(selectedBusiness?.size || "");
   const [isAlumniOwned, setIsAlumniOwned] = useState(
     selectedBusiness?.isAlumniOwned || false
@@ -168,7 +168,7 @@ const CreateNewBusinessForm = ({
       {/* Display company name when adding a new location */}
       {addLocationMode && selectedBusiness && (
         <Text style={tw`text-xl font-bold text-center mb-4`}>
-          Adding a new location to {selectedBusiness.businessName.name}
+          Adding a new location to {selectedBusiness.name}
         </Text>
       )}
 
