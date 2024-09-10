@@ -120,7 +120,7 @@ function CreateBusinessScreen() {
           formData.append(key, businessData[key]); // Append non-image data
         }
       }
-
+      formData.append("userId", currentUserId);
       // Handle the image separately if it's present
       if (businessData.image) {
         const imageUri = businessData.image.uri;
