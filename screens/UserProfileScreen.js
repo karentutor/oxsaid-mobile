@@ -6,12 +6,14 @@ import {
   TouchableOpacity,
   ScrollView,
   Alert,
+  Switch,
 } from "react-native";
 import { axiosBase } from "../services/BaseService";
 import useAuth from "../hooks/useAuth";
 import tw from "../lib/tailwind";
 import { useNavigation } from "@react-navigation/native";
 import PostCard from "../components/ui/PostCard"; // Import the PostCard component
+import BusinessInformation from "../components/ui/BusinessInformation"; // Adjust the import path accordingly
 
 const UserProfileScreen = ({ route }) => {
   const { user } = route.params; // The user whose profile you're viewing
@@ -19,6 +21,7 @@ const UserProfileScreen = ({ route }) => {
   const [isConnected, setIsConnected] = useState(false);
   const [loading, setLoading] = useState(true);
   const [business, setBusiness] = useState([]);
+  const [showBusiness, setShowBusiness] = useState(false);
   const [posts, setPosts] = useState([]); // State to store user posts
   const navigation = useNavigation();
 
@@ -185,17 +188,24 @@ const UserProfileScreen = ({ route }) => {
           </TouchableOpacity>
         )}
 
-        {/* Connect Button
-        {!loading && (
-          <TouchableOpacity
-            style={tw`mt-6 bg-red-500 px-6 py-3 rounded-full shadow-md`}
-            onPress={isConnected ? handleDisconnect : handleConnect}
-          >
-            <Text style={tw`text-white text-lg font-bold`}>
-              {isConnected ? "Following" : "Follow"}
+        {/* Toggle to Show/Hide Business */}
+        {business && (
+          <View style={tw`mt-6 flex-row items-center`}>
+            <Text style={tw`text-base text-black font-bold`}>
+              Show Business Info
             </Text>
-          </TouchableOpacity>
-        )} */}
+            <Switch
+              value={showBusiness}
+              onValueChange={() => setShowBusiness(!showBusiness)}
+              style={tw`ml-2`}
+            />
+          </View>
+        )}
+
+        {/* Business Information */}
+        {showBusiness && business && (
+          <BusinessInformation business={business} />
+        )}
 
         {/* User Posts */}
         <View style={tw`mt-8 w-full`}>
@@ -213,65 +223,6 @@ const UserProfileScreen = ({ route }) => {
       </View>
     </ScrollView>
   );
-
-  // return (
-  //   <ScrollView style={tw`flex-1 p-4`}>
-  //     <View style={tw`items-center justify-center`}>
-  //       {/* User Profile Header */}
-  //       <Text style={tw`text-3xl font-bold mb-4`}>User Profile</Text>
-
-  //       {/* User Picture */}
-  //       {user.picturePath ? (
-  //         <Image
-  //           source={{ uri: user.picturePath }}
-  //           style={tw`w-32 h-32 rounded-full mb-4`}
-  //         />
-  //       ) : (
-  //         <View style={tw`w-32 h-32 rounded-full bg-gray-300 mb-4`} />
-  //       )}
-
-  //       {/* User Details */}
-  //       <View style={tw`items-center`}>
-  //         <Text style={tw`text-xl font-bold text-black`}>
-  //           {user.firstName} {user.lastName}
-  //         </Text>
-  //         <Text style={tw`text-base text-gray-700 mt-2`}>
-  //           College: {user.college || "N/A"}
-  //         </Text>
-  //         <Text style={tw`text-base text-gray-700 mt-2`}>
-  //           Matriculation Year: {user.matriculationYear || "N/A"}
-  //         </Text>
-  //         <Text style={tw`text-base text-gray-700 mt-2`}>
-  //           Industry: {user.occupation || "N/A"}
-  //         </Text>
-  //       </View>
-
-  //       {/* Connect Button */}
-  //       {!loading && (
-  //         <TouchableOpacity
-  //           style={tw`mt-6 bg-primary500 px-4 py-2 rounded-lg`}
-  //           onPress={isConnected ? handleDisconnect : handleConnect}
-  //         >
-  //           <Text style={tw`text-white text-lg font-bold`}>
-  //             {isConnected ? "Following" : "Follow"}
-  //           </Text>
-  //         </TouchableOpacity>
-  //       )}
-
-  //       {/* User Posts */}
-  //       <View style={tw`mt-6 w-full`}>
-  //         <Text style={tw`text-xl font-bold mb-4`}>User's Posts</Text>
-  //         {posts.length > 0 ? (
-  //           posts.map((post) => (
-  //             <PostCard key={post._id} post={post} onDelete={() => {}} /> // Display posts using PostCard component
-  //           ))
-  //         ) : (
-  //           <Text>No posts to display</Text>
-  //         )}
-  //       </View>
-  //     </View>
-  //   </ScrollView>
-  // );
 };
 
 export default UserProfileScreen;
