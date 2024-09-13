@@ -215,16 +215,17 @@ function CreateBusinessScreen() {
                 onPress={handleAddLocation} // Open form for adding a new location
               > */}
               <Text
-                style={tw`text-center text-black font-bold text-blue-500 mb-4`}
+                style={tw`text-center text-lg text-black font-bold text-blue-500 my-8`}
                 onPress={handleAddLocation}
               >
-                Tap if HERE you work at this company but at a different location
+                Tap if HERE you work at this company but cannot see your
+                location
               </Text>
               {/* </TouchableOpacity> */}
 
               {/* Instruction to tap on the business location */}
-              <Text style={tw`text-center mb-4 font-bold text-red-500`}>
-                Tap the business card BELOW if you work there
+              <Text style={tw`text-center mb-4 font-bold text-lg text-red-500`}>
+                Find and TAP the business card BELOW if you find your location
               </Text>
 
               {/* Map over all the business details and render a card for each */}

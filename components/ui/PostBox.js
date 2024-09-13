@@ -3,12 +3,14 @@
 import React, { useState } from "react";
 import {
   View,
+  Platform,
   TextInput,
   Image,
   Button,
   TouchableOpacity,
   Text,
   ScrollView,
+  StyleSheet,
   Alert,
 } from "react-native";
 import tw from "twrnc";
@@ -51,19 +53,11 @@ const PostBox = ({ onPost, onCancel }) => {
   };
 
   return (
-    <View style={tw`w-full mb-4`}>
-      <View
-        style={[
-          tw`w-full rounded-lg shadow-sm p-4 relative`,
-          {
-            borderWidth: 1, // Explicitly define border width to ensure pencil width
-            borderColor: "black", // Change to the color you want for the pencil width
-          },
-        ]}
-      >
+    <View style={styles.container}>
+      <View style={styles.card}>
         <ScrollView nestedScrollEnabled={true}>
           <TextInput
-            style={tw`text-base h-16`} // h-16 makes it 3 lines high
+            style={styles.input}
             placeholder="What's on your mind?"
             multiline={true}
             numberOfLines={3}
@@ -72,26 +66,26 @@ const PostBox = ({ onPost, onCancel }) => {
           />
 
           {selectedImage && (
-            <View style={tw`w-full mt-2`}>
+            <View style={styles.imageContainer}>
               <Image
                 source={{ uri: selectedImage }}
-                style={tw`w-full h-48 rounded-lg`}
+                style={styles.image}
                 resizeMode="contain"
               />
             </View>
           )}
         </ScrollView>
 
-        <View style={tw`absolute bottom-2 left-2`}>
+        <View style={styles.iconContainer}>
           <TouchableOpacity onPress={handleImagePick}>
             <Icon name="photo" size={30} color="gray" />
           </TouchableOpacity>
         </View>
       </View>
 
-      <View style={tw`flex-row justify-between mt-2`}>
-        <TouchableOpacity style={tw`px-4 py-2`} onPress={handleCancel}>
-          <Text style={tw`text-red-500`}>Cancel</Text>
+      <View style={styles.buttonContainer}>
+        <TouchableOpacity onPress={handleCancel}>
+          <Text style={styles.cancelText}>Cancel</Text>
         </TouchableOpacity>
 
         <Button title="Post" onPress={handlePostSubmit} />
@@ -99,5 +93,62 @@ const PostBox = ({ onPost, onCancel }) => {
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    width: "100%",
+    marginBottom: 16,
+    marginTop: 16,
+  },
+  card: {
+    width: "100%",
+    borderRadius: 8,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 0.1,
+    borderColor: "gray",
+    backgroundColor: "#FEFCE8",
+    ...Platform.select({
+      ios: {
+        shadowColor: "black",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 3.84,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
+  },
+  input: {
+    height: 64, // Approximately three lines high
+    fontSize: 16,
+  },
+  imageContainer: {
+    width: "100%",
+    marginTop: 8,
+  },
+  image: {
+    width: "100%",
+    height: 192,
+    borderRadius: 8,
+  },
+  iconContainer: {
+    position: "absolute",
+    bottom: 8,
+    left: 8,
+  },
+  buttonContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 8,
+  },
+  cancelText: {
+    fontSize: 16,
+    color: "#EF4444", // Tailwind's red-500
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+});
 
 export default PostBox;

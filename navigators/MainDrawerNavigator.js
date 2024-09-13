@@ -12,7 +12,8 @@ import IconButton from "../components/ui/IconButton";
 import useAuth from "../hooks/useAuth";
 import tw from "twrnc";
 import { axiosBase } from "../services/BaseService";
-import { View, Text } from "react-native"; // Import necessary components
+import { View, Text, TouchableOpacity } from "react-native"; // Import necessary components
+import { MaterialIcons } from "@expo/vector-icons";
 
 const Drawer = createDrawerNavigator();
 
@@ -43,9 +44,20 @@ function MainDrawerNavigator() {
 
   return (
     <Drawer.Navigator
-      screenOptions={{
+      screenOptions={({ navigation }) => ({
+        headerShown: true,
         headerStyle: { backgroundColor: Colors.primary500 },
         headerTintColor: "white",
+        headerLeft: () => (
+          <TouchableOpacity onPress={() => navigation.toggleDrawer()}>
+            <MaterialIcons
+              name="menu"
+              size={28}
+              color="white"
+              style={{ marginLeft: 10 }}
+            />
+          </TouchableOpacity>
+        ),
         headerRight: ({ tintColor }) => (
           <IconButton
             icon="exit"
@@ -61,14 +73,12 @@ function MainDrawerNavigator() {
         drawerInactiveTintColor: Colors.secondary500,
         drawerActiveTintColor: Colors.primary500,
         drawerActiveBackgroundColor: Colors.primary100,
-      }}
+      })}
     >
       <Drawer.Screen name="Home" component={HomeScreen} />
       <Drawer.Screen name="User Search" component={UserSearchScreen} />
       <Drawer.Screen name="Following List" component={FriendsListScreen} />
       <Drawer.Screen name="Businesses" component={BusinessesScreen} />
-      {/* <Drawer.Screen name="Groups" component={GroupsScene} />
-      <Drawer.Screen name="Events" component={EventsScene} /> */}
       <Drawer.Screen
         name="Chats"
         component={ChatListScreen}
@@ -89,6 +99,70 @@ function MainDrawerNavigator() {
         }}
       />
     </Drawer.Navigator>
+
+    // <Drawer.Navigator
+    //   screenOptions={{
+    //     headerShown: true,
+    //     // headerStyle: {
+    //     //   backgroundColor: Colors.primary500,
+    //     //   borderWidth: 1,
+    //     //   borderColor: "red",
+    //     // }, // Temporary debug styles
+    //     headerStyle: { backgroundColor: Colors.primary500 },
+    //     headerTintColor: "white",
+    //     headerLeft: () => (
+    //       <TouchableOpacity onPress={() => navigation.toggleDrawer()}>
+    //         <MaterialIcons
+    //           name="menu"
+    //           size={28}
+    //           color="white"
+    //           style={{ marginLeft: 10 }}
+    //         />
+    //       </TouchableOpacity>
+    //     ),
+    //     headerRight: ({ tintColor }) => (
+    //       <IconButton
+    //         icon="exit"
+    //         color={tintColor}
+    //         size={24}
+    //         onPress={logout}
+    //       />
+    //     ),
+    //     drawerContentStyle: {
+    //       backgroundColor: Colors.primary800,
+    //       paddingTop: 30,
+    //     },
+    //     drawerInactiveTintColor: Colors.secondary500,
+    //     drawerActiveTintColor: Colors.primary500,
+    //     drawerActiveBackgroundColor: Colors.primary100,
+    //   }}
+    // >
+    //   <Drawer.Screen name="Home" component={HomeScreen} />
+    //   <Drawer.Screen name="User Search" component={UserSearchScreen} />
+    //   <Drawer.Screen name="Following List" component={FriendsListScreen} />
+    //   <Drawer.Screen name="Businesses" component={BusinessesScreen} />
+    //   {/* <Drawer.Screen name="Groups" component={GroupsScene} />
+    //   <Drawer.Screen name="Events" component={EventsScene} /> */}
+    //   <Drawer.Screen
+    //     name="Chats"
+    //     component={ChatListScreen}
+    //     options={{
+    //       title: "1:1 Chats",
+    //       drawerLabel: ({ color }) => (
+    //         <View style={{ flexDirection: "row", alignItems: "center" }}>
+    //           <Text style={{ color }}>1:1 Chats</Text>
+    //           {unreadCount > 0 && (
+    //             <View
+    //               style={tw`bg-red-500 rounded-full h-5 w-5 items-center justify-center ml-2`}
+    //             >
+    //               <Text style={tw`text-white text-xs`}>{unreadCount}</Text>
+    //             </View>
+    //           )}
+    //         </View>
+    //       ),
+    //     }}
+    //   />
+    // </Drawer.Navigator>
   );
 }
 

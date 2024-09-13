@@ -14,16 +14,38 @@ import tw from "../lib/tailwind";
 import { useNavigation } from "@react-navigation/native";
 import PostCard from "../components/ui/PostCard"; // Import the PostCard component
 import BusinessInformation from "../components/ui/BusinessInformation"; // Adjust the import path accordingly
-
+import { contactOptions } from "../data";
 const UserProfileScreen = ({ route }) => {
   const { user } = route.params; // The user whose profile you're viewing
   const { auth } = useAuth(); // The authenticated user
   const [isConnected, setIsConnected] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [contactPreferences, setContactPreferences] = useState([]); // State for contact preferences
   const [business, setBusiness] = useState([]);
   const [showBusiness, setShowBusiness] = useState(false);
   const [posts, setPosts] = useState([]); // State to store user posts
   const navigation = useNavigation();
+  const [showPosts, setShowPosts] = useState(false); // State to toggle post display
+  const [showContactPreferences, setShowContactPreferences] = useState(false);
+
+  useEffect(() => {
+    // Fetch contact preferences on component mount
+    const fetchContactPreferences = async () => {
+      try {
+        const response = await axiosBase.get(
+          `/contact-preferences/${user._id}`,
+          {
+            headers: { Authorization: `Bearer ${auth.access_token}` },
+          }
+        );
+        setContactPreferences(response.data);
+      } catch (error) {
+        console.error("Error fetching contact preferences:", error);
+      }
+    };
+
+    fetchContactPreferences(); // Call the function inside useEffect
+  }, [auth.user._id, auth.access_token]);
 
   useEffect(() => {
     const checkConnection = async () => {
@@ -140,6 +162,31 @@ const UserProfileScreen = ({ route }) => {
     }
   }, [user._id, auth.access_token]); // Dependency array to rerun the effect if user._id or access_token changes
 
+  // Function to toggle a contact preference
+  const toggleContactPreference = async (option) => {
+    const isSelected = contactPreferences.includes(option);
+
+    let updatedPreferences = [];
+    if (isSelected) {
+      updatedPreferences = contactPreferences.filter((pref) => pref !== option);
+    } else {
+      updatedPreferences = [...contactPreferences, option];
+    }
+
+    try {
+      await axiosBase.post(
+        `/contact-preferences/${user._id}`,
+        { contactPreferences: updatedPreferences },
+        {
+          headers: { Authorization: `Bearer ${auth.access_token}` },
+        }
+      );
+      setContactPreferences(updatedPreferences); // Update the state after the change
+    } catch (error) {
+      console.error("Error updating contact preferences:", error);
+    }
+  };
+
   return (
     <ScrollView style={tw`flex-1 p-4 bg-white`}>
       <View style={tw`items-center`}>
@@ -174,7 +221,66 @@ const UserProfileScreen = ({ route }) => {
           </Text>
         </View>
 
-        {/* Connect Button */}
+        {/* Toggle Switches for Contact Preferences, Business Info, and Posts */}
+        <View style={tw`w-full mt-6 p-4 bg-gray-100 rounded-lg shadow-sm`}>
+          <Text style={tw`text-xl font-bold mb-4`}>Show</Text>
+
+          {/* Toggle to Show/Hide Contact Preferences */}
+          <View style={tw`flex-row items-center justify-between mb-4`}>
+            <Text style={tw`text-base text-black`}>Contact Preferences</Text>
+            <Switch
+              value={showContactPreferences}
+              onValueChange={() =>
+                setShowContactPreferences(!showContactPreferences)
+              }
+              style={tw`ml-2`}
+            />
+          </View>
+
+          {/* Toggle to Show/Hide Business Info */}
+          {business && (
+            <View style={tw`flex-row items-center justify-between mb-4`}>
+              <Text style={tw`text-base text-black`}>Show Business Info</Text>
+              <Switch
+                value={showBusiness}
+                onValueChange={() => setShowBusiness(!showBusiness)}
+                style={tw`ml-2`}
+              />
+            </View>
+          )}
+
+          {/* Toggle to Show/Hide Posts */}
+          <View style={tw`flex-row items-center justify-between`}>
+            <Text style={tw`text-base text-black`}>Show Posts</Text>
+            <Switch
+              value={showPosts}
+              onValueChange={() => setShowPosts(!showPosts)}
+              style={tw`ml-2`}
+            />
+          </View>
+        </View>
+
+        {/* Contact Preferences Section */}
+        {showContactPreferences && (
+          <View style={tw`w-full p-4 bg-gray-100 rounded-lg mb-6`}>
+            <Text style={tw`text-xl font-bold mb-4`}>Contact Preferences</Text>
+            {contactOptions.map((option) => (
+              <View key={option} style={tw`flex-row justify-between mb-4`}>
+                <Text style={tw`text-base`}>{option}</Text>
+                <Text style={tw`text-base`}>
+                  {contactPreferences.includes(option) ? "Enabled" : "Disabled"}
+                </Text>
+              </View>
+            ))}
+          </View>
+        )}
+
+        {/* Business Information */}
+        {showBusiness && business && (
+          <BusinessInformation business={business} />
+        )}
+
+        {/* Follow/Unfollow Button */}
         {!loading && (
           <TouchableOpacity
             style={tw`mt-6 px-4 py-2 rounded-full shadow-md ${
@@ -188,38 +294,23 @@ const UserProfileScreen = ({ route }) => {
           </TouchableOpacity>
         )}
 
-        {/* Toggle to Show/Hide Business */}
-        {business && (
-          <View style={tw`mt-6 flex-row items-center`}>
-            <Text style={tw`text-base text-black font-bold`}>
-              Show Business Info
+        {/* User Posts */}
+        {showPosts && (
+          <View style={tw`mt-8 w-full`}>
+            <Text style={tw`text-xl font-bold text-gray-800 mb-4 text-center`}>
+              Posts
             </Text>
-            <Switch
-              value={showBusiness}
-              onValueChange={() => setShowBusiness(!showBusiness)}
-              style={tw`ml-2`}
-            />
+            {posts.length > 0 ? (
+              posts.map((post) => (
+                <PostCard key={post._id} post={post} onDelete={() => {}} />
+              ))
+            ) : (
+              <Text style={tw`text-gray-600 text-center`}>
+                No posts to display
+              </Text>
+            )}
           </View>
         )}
-
-        {/* Business Information */}
-        {showBusiness && business && (
-          <BusinessInformation business={business} />
-        )}
-
-        {/* User Posts */}
-        <View style={tw`mt-8 w-full`}>
-          <Text style={tw`text-xl font-bold text-gray-800 mb-4`}>Posts</Text>
-          {posts.length > 0 ? (
-            posts.map((post) => (
-              <PostCard key={post._id} post={post} onDelete={() => {}} />
-            ))
-          ) : (
-            <Text style={tw`text-gray-600 text-center`}>
-              No posts to display
-            </Text>
-          )}
-        </View>
       </View>
     </ScrollView>
   );

@@ -1,7 +1,15 @@
 // PostCard.js
 
 import React from "react";
-import { View, Text, Image, TouchableOpacity, Alert } from "react-native";
+import {
+  Alert,
+  StyleSheet,
+  View,
+  Text,
+  Image,
+  TouchableOpacity,
+  Platform,
+} from "react-native";
 import Icon from "react-native-vector-icons/FontAwesome";
 import tw from "twrnc";
 import useAuth from "../../hooks/useAuth";
@@ -29,54 +37,139 @@ const PostCard = ({ post, onDelete }) => {
   };
 
   return (
-    <View
-      style={[
-        tw`w-full mb-4 rounded-lg shadow-sm p-4`,
-        {
-          borderWidth: 1, // Explicitly define border width to ensure pencil width
-          borderColor: "black", // Change to the color you want for the pencil width
-        },
-      ]}
-    >
-      <View style={tw`flex-row items-center mb-2`}>
-        {post.userPicturePath ? (
-          <Image
-            source={{ uri: post.userPicturePath }}
-            style={tw`w-10 h-10 rounded-full mr-2`}
-          />
-        ) : (
-          <View
-            style={tw`w-10 h-10 rounded-full mr-2 bg-gray-300 flex items-center justify-center`}
-          >
-            <Text style={tw`text-xs text-gray-500`}>No Image</Text>
+    <View style={styles.cardContainer}>
+      <View style={styles.shadowContainer}>
+        <View style={styles.contentContainer}>
+          <View style={styles.userInfoContainer}>
+            {post.userPicturePath ? (
+              <Image
+                source={{ uri: post.userPicturePath }}
+                style={styles.userImage}
+              />
+            ) : (
+              <View style={styles.noImageContainer}>
+                <Text style={styles.noImageText}>No Image</Text>
+              </View>
+            )}
+
+            <View style={styles.textContainer}>
+              <Text style={styles.userName}>
+                {post.firstName} {post.lastName}
+              </Text>
+              <Text style={styles.userLocation}>{post.location}</Text>
+            </View>
+
+            {post.userId === auth.user._id && (
+              <TouchableOpacity
+                onPress={handleDelete}
+                style={styles.deleteButton}
+              >
+                <Icon name="trash" size={20} color="red" />
+              </TouchableOpacity>
+            )}
           </View>
-        )}
 
-        <View style={tw`flex-1`}>
-          <Text style={tw`text-lg font-bold`}>
-            {post.firstName} {post.lastName}
-          </Text>
-          <Text style={tw`text-sm text-gray-500`}>{post.location}</Text>
+          <Text style={styles.description}>{post.description}</Text>
+
+          {post.picturePath && (
+            <Image
+              source={{ uri: post.picturePath }}
+              style={styles.postImage}
+              resizeMode="contain"
+            />
+          )}
         </View>
-
-        {post.userId === auth.user._id && (
-          <TouchableOpacity onPress={handleDelete}>
-            <Icon name="trash" size={20} color="red" />
-          </TouchableOpacity>
-        )}
       </View>
-
-      <Text style={tw`text-base mb-2`}>{post.description}</Text>
-
-      {post.picturePath && (
-        <Image
-          source={{ uri: post.picturePath }}
-          style={tw`w-full h-48 rounded-lg`}
-          resizeMode="contain"
-        />
-      )}
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  cardContainer: {
+    width: "100%",
+    marginBottom: 20,
+    backgroundColor: "#ebf8ff", // Set background color to light blue
+  },
+  shadowContainer: {
+    borderRadius: 10,
+    backgroundColor: "#ebf8ff", // Ensure the background color matches
+    ...Platform.select({
+      ios: {
+        shadowColor: "black",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1, // Reduce opacity for a gentler shadow
+        shadowRadius: 3, // Reduce radius for a softer blur
+      },
+      android: {
+        elevation: 2, // Lower elevation for a subtler shadow
+      },
+    }),
+  },
+  contentContainer: {
+    borderWidth: 1,
+    borderColor: "#E0E0E0",
+    padding: 16,
+    borderRadius: 10,
+    backgroundColor: "transparent", // Ensure content does not have its own background
+  },
+  userInfoContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  userImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginRight: 8,
+    ...Platform.select({
+      ios: {
+        shadowColor: "black",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1, // Reduce opacity for a gentler shadow
+        shadowRadius: 2, // Reduce radius for a softer blur
+      },
+      android: {
+        elevation: 2, // Lower elevation for a subtler shadow
+      },
+    }),
+  },
+  noImageContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginRight: 8,
+    backgroundColor: "#CCCCCC",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  noImageText: {
+    fontSize: 12,
+    color: "#555555",
+  },
+  textContainer: {
+    flex: 1,
+  },
+  userName: {
+    fontSize: 18,
+    fontWeight: "bold",
+  },
+  userLocation: {
+    fontSize: 14,
+    color: "#666666",
+  },
+  description: {
+    fontSize: 16,
+    marginBottom: 8,
+  },
+  postImage: {
+    width: "100%",
+    height: 192,
+    borderRadius: 10,
+  },
+  deleteButton: {
+    padding: 8,
+  },
+});
 
 export default PostCard;
