@@ -11,6 +11,8 @@ import MainDrawerNavigator from "./navigators/MainDrawerNavigator";
 import LoginScreen from "./screens/LoginScreen";
 import { Colors } from "./constants/styles";
 import { axiosBase } from "./services/BaseService";
+import ChatScreen from "./screens/ChatScreen"; // Import ChatScreen
+import EmailScreen from "./screens/EmailScreen"; // Import EmailScreen
 
 // Set up notification handler for background badge updates
 Notifications.setNotificationHandler({
@@ -119,6 +121,8 @@ function AuthenticatedStack() {
         component={MainDrawerNavigator}
         options={{ headerShown: false }}
       />
+      <Stack.Screen name="ChatScreen" component={ChatScreen} />
+      <Stack.Screen name="EmailScreen" component={EmailScreen} />
     </Stack.Navigator>
   );
 }

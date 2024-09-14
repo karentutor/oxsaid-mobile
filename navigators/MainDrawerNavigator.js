@@ -80,7 +80,7 @@ function MainDrawerNavigator() {
       <Drawer.Screen name="Following List" component={FriendsListScreen} />
       <Drawer.Screen name="Businesses" component={BusinessesScreen} />
       <Drawer.Screen
-        name="Chats"
+        name="ChatList"
         component={ChatListScreen}
         options={{
           title: "1:1 Chats",
