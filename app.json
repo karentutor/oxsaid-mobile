@@ -2,7 +2,7 @@
   "expo": {
     "name": "oxsaid-mobile",
     "slug": "oxsaid-mobile",
-    "version": "1.0.0",
+    "version": "0.0.1",
     "orientation": "portrait",
     "icon": "./assets/oxsaid-i-quadruple-size.png",
     "userInterfaceStyle": "light",
@@ -35,6 +35,9 @@
     },
     "updates": {
       "url": "https://u.expo.dev/f035c329-b14b-446a-a560-8b4649147e9b"
-    }
+    },
+    "plugins": [
+      "expo-font"
+    ]
   }
 }
