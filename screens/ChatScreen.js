@@ -25,7 +25,6 @@ export default function ChatScreen() {
   const route = useRoute();
   const recipientUser = route.params?.user;
   const hasNewMessages = route.params?.new;
-
   const currentUsername = auth.user.firstName;
   const currentUserId = auth.user._id;
   const recipientUsername = recipientUser?.firstName;
@@ -62,12 +61,14 @@ export default function ChatScreen() {
     });
 
     socket.on("connect_error", (err) => {
-      console.error("Connection error:", err.message);
+      //console.error("Connection error:", err.message);
       setConnected(false);
     });
 
     if (recipientUserId) {
       fetchChatHistory();
+    } else {
+      setMessages([]); // Reset messages if no recipient
     }
 
     return () => {
@@ -110,7 +111,7 @@ export default function ChatScreen() {
         setMessages([]);
       }
     } catch (error) {
-      console.error("Error fetching chat history:", error);
+      //console.error("Error fetching chat history:", error);
     }
   };
 
@@ -166,7 +167,7 @@ export default function ChatScreen() {
               {messages.length === 0 ? (
                 <View style={tw`flex-1 items-center justify-center`}>
                   <Text style={tw`text-xl font-bold text-gray-500`}>
-                    Start Your Chat
+                    Start Your Chat Below
                   </Text>
                 </View>
               ) : (
