@@ -15,6 +15,7 @@ import { useNavigation } from "@react-navigation/native";
 import PostCard from "../components/ui/PostCard"; // Import the PostCard component
 import BusinessInformation from "../components/ui/BusinessInformation"; // Adjust the import path accordingly
 import { contactOptions } from "../data";
+
 const UserProfileScreen = ({ route }) => {
   const { user } = route.params; // The user whose profile you're viewing
   const { auth } = useAuth(); // The authenticated user
@@ -146,7 +147,6 @@ const UserProfileScreen = ({ route }) => {
         const response = await axiosBase.get(`/users/business/${user._id}`, {
           headers: { Authorization: `Bearer ${auth.access_token}` },
         });
-        console.log(response.data);
         setBusiness(response.data); // Store business info in state for display
       } catch (error) {
         if (error.response && error.response.status === 404) {
@@ -268,7 +268,7 @@ const UserProfileScreen = ({ route }) => {
               <View key={option} style={tw`flex-row justify-between mb-4`}>
                 <Text style={tw`text-base`}>{option}</Text>
                 <Text style={tw`text-base`}>
-                  {contactPreferences.includes(option) ? "Enabled" : "Disabled"}
+                  {contactPreferences.includes(option) ? "Yes" : "No thanks"}
                 </Text>
               </View>
             ))}

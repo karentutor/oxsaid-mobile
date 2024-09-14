@@ -19,7 +19,7 @@ const UserCard = ({ user }) => {
 
   return (
     <TouchableOpacity
-      onPress={() => navigation.navigate("UserProfile", { user })}
+      onPress={() => navigation.navigate("UserProfileScreen", { user })}
       style={tw`rounded-lg p-4 mt-2 w-full`}
       activeOpacity={0.7} // Ripple effect for Android and iOS (0.7 for slight transparency on tap)
     >

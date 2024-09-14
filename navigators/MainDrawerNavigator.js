@@ -3,7 +3,7 @@ import { createDrawerNavigator } from "@react-navigation/drawer";
 import HomeScreen from "../screens/HomeScreen";
 import UserSearchScreen from "../screens/UserSearchScreen";
 import FriendsListScreen from "../screens/FriendsListScreen";
-import GroupsScene from "../screens/GroupsScene";
+import GroupsScreen from "../screens/GroupsScreen";
 import BusinessesScreen from "../screens/BusinessesScreen";
 import EventsScene from "../screens/EventsScene";
 import ChatListScreen from "../screens/ChatListScreen"; // Import ChatListScreen
@@ -79,6 +79,7 @@ function MainDrawerNavigator() {
       <Drawer.Screen name="User Search" component={UserSearchScreen} />
       <Drawer.Screen name="Following List" component={FriendsListScreen} />
       <Drawer.Screen name="Businesses" component={BusinessesScreen} />
+      <Drawer.Screen name="Groups" component={GroupsScreen} />
       <Drawer.Screen
         name="ChatList"
         component={ChatListScreen}
