@@ -58,7 +58,12 @@ const FilterModal = ({
     );
   };
 
-  const keyExtractor = (item) => (object ? item._id : item);
+  //const keyExtractor = (item) => (object ? item._id : item);
+
+  const keyExtractor = (item, index) => {
+    const uniqueId = object ? item._id : `${item}-${index}-${Math.random()}`;
+    return uniqueId;
+  };
 
   return (
     <Modal

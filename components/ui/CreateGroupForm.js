@@ -1,14 +1,16 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
   TextInput,
   Button,
   Image,
+  FlatList,
   Alert,
   ScrollView,
   Switch,
   TouchableOpacity,
+  ActivityIndicator,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker"; // For image upload
 import { axiosBase } from "../../services/BaseService";
@@ -26,6 +28,67 @@ const CreateGroupForm = ({ onClose }) => {
   const [groupCoverImage, setGroupCoverImage] = useState(null); // For image upload
   const [countryModalVisible, setCountryModalVisible] = useState(false); // Modal state
 
+  const [isUserModalVisible, setIsUserModalVisible] = useState(false); // For inviting users
+  const [users, setUsers] = useState([]); // All users fetched from API
+  const [selectedUsers, setSelectedUsers] = useState([]); // Users selected for the invite
+  const [isLoading, setIsLoading] = useState(false); // Loading state
+
+  // Fetch users from the backend
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const response = await axiosBase.get("/users", {
+          headers: { Authorization: `Bearer ${auth.access_token}` },
+        });
+        console.log("fetch data", response.data);
+        setUsers(response.data);
+      } catch (error) {
+        console.error("Error fetching users:", error);
+      }
+    };
+    fetchUsers();
+  }, []);
+
+  const handleSelectUser = (selectedUser) => {
+    // Find the user by name and add them to the selectedUsers if not already selected
+    const foundUser = users.find(
+      (user) => `${user.firstName} ${user.lastName}` === selectedUser
+    );
+
+    if (
+      foundUser &&
+      !selectedUsers.some((user) => user._id === foundUser._id)
+    ) {
+      setSelectedUsers([...selectedUsers, foundUser]);
+    }
+  };
+
+  // Function to send chat invite to the selected user
+  const sendChatInvite = async (recipientId) => {
+    try {
+      const response = await axiosBase.post(
+        "/chats/send-invite",
+        {
+          fromId: auth.user._id, // The ID of the current user (who is creating the group)
+          toId: recipientId, // The ID of the recipient (user being invited)
+          message: `You have been invited to join the group: ${name}`,
+        },
+        {
+          headers: { Authorization: `Bearer ${auth.access_token}` },
+        }
+      );
+
+      Alert.alert("Success", "Invite sent via chat");
+    } catch (error) {
+      console.error("Error sending chat invite:", error);
+    }
+  };
+
+  // Handle removing a user from the selected list
+  const handleRemoveUser = (userId) => {
+    setSelectedUsers(selectedUsers.filter((user) => user._id !== userId));
+  };
+
   // Function to handle image picker
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -36,7 +99,7 @@ const CreateGroupForm = ({ onClose }) => {
     });
 
     if (!result.canceled) {
-      setGroupCoverImage(result.uri);
+      setGroupCoverImage(result.assets[0].uri);
     }
   };
 
@@ -46,14 +109,18 @@ const CreateGroupForm = ({ onClose }) => {
       Alert.alert("Error", "Name and description are required");
       return;
     }
-
+    setIsLoading(true); // Start loading spinner
     const formData = new FormData();
+
+    // Convert selected users' IDs into a comma-separated string
+    const groupMembers = selectedUsers.map((user) => user._id).join(",");
 
     // Append form data fields
     formData.append("name", name);
     formData.append("description", description);
     formData.append("country", country);
     formData.append("isPrivate", isPrivate);
+    formData.append("groupMembers", groupMembers); // Ensure groupMembers is sent as part of formData
 
     if (groupCoverImage) {
       // Append image if selected
@@ -78,82 +145,139 @@ const CreateGroupForm = ({ onClose }) => {
     } catch (error) {
       console.error("Error creating group:", error);
       Alert.alert("Error", "Failed to create group");
+    } finally {
+      setIsLoading(false); // Stop loading spinner
     }
   };
 
   return (
-    <ScrollView style={tw`p-4 bg-gray-100 rounded-lg mt-4`}>
-      <Text style={tw`text-2xl font-bold mb-4`}>Create New Group</Text>
+    // **Replaced ScrollView with FlatList**
+    <FlatList
+      data={[]} // Empty data since we're not rendering the list directly here
+      ListHeaderComponent={
+        <>
+          <View style={tw`p-4 bg-gray-100 rounded-lg mt-4`}>
+            <Text style={tw`text-2xl font-bold mb-4`}>Create New Group</Text>
 
-      {/* Name Input */}
-      <TextInput
-        placeholder="Group Name"
-        value={name}
-        onChangeText={setName}
-        style={tw`border p-2 mb-4`}
-      />
+            {isLoading ? ( // Show spinner when loading
+              <ActivityIndicator size="large" color="#0000ff" />
+            ) : (
+              <>
+                {/* Name Input */}
+                <TextInput
+                  placeholder="Group Name"
+                  value={name}
+                  onChangeText={setName}
+                  style={tw`border p-2 mb-4`}
+                />
+                {/* Description Input */}
+                <TextInput
+                  placeholder="Group Description"
+                  value={description}
+                  onChangeText={setDescription}
+                  style={tw`border p-2 mb-4 h-32`}
+                  multiline={true}
+                  numberOfLines={5}
+                  textAlignVertical="top"
+                />
+                {/* Country Input */}
+                {/* <TouchableOpacity
+              style={tw`border p-2 mb-4`}
+              onPress={() => setCountryModalVisible(true)}
+            >
+              <Text>{country ? country : "Select country"}</Text>
+            </TouchableOpacity> */}
+                {/* FilterModal for Country */}
+                {/* <FilterModal
+              key="country-filter-modal"
+              visible={countryModalVisible}
+              onClose={() => setCountryModalVisible(false)}
+              data={Object.keys(geoData)}
+              onSelect={setCountry}
+              selectedValue={country}
+            />
 
-      {/* Description Input */}
-      <TextInput
-        placeholder="Group Description"
-        value={description}
-        onChangeText={setDescription}
-        style={tw`border p-2 mb-4`}
-      />
+            {/* Image Upload */}
+                <TouchableOpacity
+                  style={tw`border p-2 mb-4`}
+                  onPress={pickImage}
+                >
+                  <Text>Select Cover Image</Text>
+                </TouchableOpacity>
 
-      {/* Country Input */}
-      <Text style={tw`mb-2 font-bold`}>Country</Text>
-      <TouchableOpacity
-        style={tw`border p-2 mb-4`}
-        onPress={() => setCountryModalVisible(true)}
-      >
-        <Text>{country ? country : "Select country"}</Text>
-      </TouchableOpacity>
-
-      {/* FilterModal for Country */}
-      <FilterModal
-        key="country-filter-modal"
-        visible={countryModalVisible}
-        onClose={() => setCountryModalVisible(false)}
-        data={Object.keys(geoData)} // geoData for country selection
-        onSelect={setCountry}
-        selectedValue={country}
-      />
-
-      {/* Image Upload (Left Justified) */}
-      <TouchableOpacity style={tw`border p-2 mb-4`} onPress={pickImage}>
-        <Text>Select Cover Image</Text>
-      </TouchableOpacity>
-
-      {groupCoverImage && (
-        <Image source={{ uri: groupCoverImage }} style={tw`w-full h-40 mt-4`} />
-      )}
-
-      {/* Private/Global Toggle */}
-      {/* <View style={tw`flex-row justify-between items-center mb-4`}>
-        <Text>Private Group?</Text>
-        <Switch
-          value={isPrivate}
-          onValueChange={() => setIsPrivate(!isPrivate)}
-        />
-      </View>  */}
-
-      {/* Submit Button */}
-      <TouchableOpacity
-        style={tw`bg-blue-500 p-3 mt-4 rounded-lg`}
-        onPress={handleSubmit}
-      >
-        <Text style={tw`text-white text-center`}>Create Group</Text>
-      </TouchableOpacity>
-
-      {/* Cancel Button */}
-      <TouchableOpacity
-        style={tw`bg-red-500 p-3 mt-4 rounded-lg`}
-        onPress={onClose}
-      >
-        <Text style={tw`text-white text-center`}>Cancel</Text>
-      </TouchableOpacity>
-    </ScrollView>
+                {groupCoverImage && (
+                  <Image
+                    source={{ uri: groupCoverImage }}
+                    style={tw`w-full h-40 mt-4`}
+                  />
+                )}
+                {/* Invite Users Section */}
+                <Text style={tw`text-xl font-bold mb-4`}>Invite Members</Text>
+                {/* Button to open the user modal */}
+                <TouchableOpacity
+                  style={tw`bg-blue-500 p-3 mb-4 rounded-lg`}
+                  onPress={() => setIsUserModalVisible(true)}
+                >
+                  <Text style={tw`text-white text-center`}>
+                    Search and Invite Users
+                  </Text>
+                </TouchableOpacity>
+                {/* FilterModal for Users */}
+                <FilterModal
+                  key="user-filter-modal"
+                  visible={isUserModalVisible}
+                  onClose={() => setIsUserModalVisible(false)}
+                  data={users.map(
+                    (user) => `${user.firstName} ${user.lastName}`
+                  )}
+                  onSelect={handleSelectUser}
+                  selectedValue={null}
+                />
+                {/* Display selected users */}
+                <Text style={tw`text-lg font-bold mb-2`}>Selected Users:</Text>
+                {selectedUsers.length > 0 ? (
+                  <FlatList
+                    data={selectedUsers}
+                    keyExtractor={(item) => item._id}
+                    renderItem={({ item }) => (
+                      <View
+                        style={tw`flex-row justify-between items-center p-2 border-b`}
+                      >
+                        <Text>
+                          {item.firstName} {item.lastName}
+                        </Text>
+                        <TouchableOpacity
+                          style={tw`bg-red-500 p-2 rounded`}
+                          onPress={() => handleRemoveUser(item._id)}
+                        >
+                          <Text style={tw`text-white`}>Remove</Text>
+                        </TouchableOpacity>
+                      </View>
+                    )}
+                  />
+                ) : (
+                  <Text style={tw`text-gray-500`}>No users selected</Text>
+                )}
+                {/* Submit Button */}
+                <TouchableOpacity
+                  style={tw`bg-blue-500 p-3 mt-4 rounded-lg`}
+                  onPress={handleSubmit}
+                >
+                  <Text style={tw`text-white text-center`}>Create Group</Text>
+                </TouchableOpacity>
+                {/* Cancel Button */}
+                <TouchableOpacity
+                  style={tw`bg-red-500 p-3 mt-4 rounded-lg`}
+                  onPress={onClose}
+                >
+                  <Text style={tw`text-white text-center`}>Cancel</Text>
+                </TouchableOpacity>
+              </>
+            )}
+          </View>
+        </>
+      }
+    />
   );
 };
 
