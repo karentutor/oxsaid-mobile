@@ -13,6 +13,7 @@ import { Colors } from "./constants/styles";
 import { axiosBase } from "./services/BaseService";
 import ChatScreen from "./screens/ChatScreen"; // Import ChatScreen
 import EmailScreen from "./screens/EmailScreen"; // Import EmailScreen
+import GroupProfileScreen from "./screens/GroupProfileScreen"; // Import EmailScreen
 import UserProfileScreen from "./screens/UserProfileScreen"; // Import EmailScreen
 
 // Set up notification handler for background badge updates
@@ -125,6 +126,7 @@ function AuthenticatedStack() {
       <Stack.Screen name="ChatScreen" component={ChatScreen} />
       <Stack.Screen name="EmailScreen" component={EmailScreen} />
       <Stack.Screen name="UserProfileScreen" component={UserProfileScreen} />
+      <Stack.Screen name="GroupProfileScreen" component={GroupProfileScreen} />
     </Stack.Navigator>
   );
 }

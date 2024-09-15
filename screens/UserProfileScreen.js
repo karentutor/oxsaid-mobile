@@ -17,8 +17,10 @@ import BusinessInformation from "../components/ui/BusinessInformation"; // Adjus
 import { contactOptions } from "../data";
 
 const UserProfileScreen = ({ route }) => {
-  const { user } = route.params; // The user whose profile you're viewing
+  const { user: initialUser } = route.params || {}; // Check if 'user' is passed
+  const { userId } = route.params || {}; // Check if 'userId' is passed
   const { auth } = useAuth(); // The authenticated user
+  const [user, setUser] = useState(initialUser || null); // Set 'user' if passed, otherwise set to null
   const [isConnected, setIsConnected] = useState(false);
   const [loading, setLoading] = useState(true);
   const [contactPreferences, setContactPreferences] = useState([]); // State for contact preferences
@@ -29,8 +31,28 @@ const UserProfileScreen = ({ route }) => {
   const [showPosts, setShowPosts] = useState(false); // State to toggle post display
   const [showContactPreferences, setShowContactPreferences] = useState(false);
 
+  // Fetch user if only userId is available
   useEffect(() => {
-    // Fetch contact preferences on component mount
+    const fetchUser = async () => {
+      if (!user && userId) {
+        try {
+          const response = await axiosBase.get(`/users/${userId}`, {
+            headers: { Authorization: `Bearer ${auth.access_token}` },
+          });
+          setUser(response.data.user); // Set the fetched user data to state
+        } catch (error) {
+          console.error("Error fetching user data:", error);
+        }
+      }
+    };
+
+    fetchUser(); // Fetch the user if necessary
+  }, [userId, user, auth.access_token]);
+
+  // Fetch contact preferences
+  useEffect(() => {
+    if (!user || !user._id) return; // Prevent further execution if user is null
+
     const fetchContactPreferences = async () => {
       try {
         const response = await axiosBase.get(
@@ -46,9 +68,12 @@ const UserProfileScreen = ({ route }) => {
     };
 
     fetchContactPreferences(); // Call the function inside useEffect
-  }, [auth.user._id, auth.access_token]);
+  }, [auth.user._id, auth.access_token, user]);
 
+  // Check connection with the user and fetch posts
   useEffect(() => {
+    if (!user || !user._id) return; // Ensure user is defined before making API calls
+
     const checkConnection = async () => {
       try {
         const response = await axiosBase.get(
@@ -68,10 +93,12 @@ const UserProfileScreen = ({ route }) => {
 
     checkConnection();
     fetchUserPosts(); // Fetch user posts on component mount
-  }, [auth.user._id, auth.access_token, user._id]);
+  }, [auth.user._id, auth.access_token, user]);
 
   // Function to fetch user's posts
   const fetchUserPosts = async () => {
+    if (!user || !user._id) return; // Ensure user is defined before making API calls
+
     try {
       const response = await axiosBase.get(`/posts/${user._id}`, {
         headers: { Authorization: `Bearer ${auth.access_token}` },
@@ -83,7 +110,10 @@ const UserProfileScreen = ({ route }) => {
     }
   };
 
+  // Ensure that all calls using user._id are protected
   const handleConnect = async () => {
+    if (!user || !user._id) return; // Ensure user is defined before making API calls
+
     try {
       await axiosBase.post(
         `/users/follow/${user._id}`,
@@ -99,6 +129,8 @@ const UserProfileScreen = ({ route }) => {
   };
 
   const handleDisconnect = async () => {
+    if (!user || !user._id) return; // Ensure user is defined before making API calls
+
     try {
       await axiosBase.post(
         `/users/unfollow/${user._id}`,
@@ -114,6 +146,8 @@ const UserProfileScreen = ({ route }) => {
   };
 
   const handleChatPress = async () => {
+    if (!user || !user._id) return; // Ensure user is defined before making API calls
+
     try {
       const response = await axiosBase.post(
         `/chats/create-or-get`,
@@ -141,7 +175,10 @@ const UserProfileScreen = ({ route }) => {
     }
   };
 
+  // Fetch business information
   useEffect(() => {
+    if (!user || !user._id || !auth.access_token) return; // Ensure user is defined
+
     const fetchBusiness = async () => {
       try {
         const response = await axiosBase.get(`/users/business/${user._id}`, {
@@ -157,161 +194,173 @@ const UserProfileScreen = ({ route }) => {
       }
     };
 
-    if (user._id && auth.access_token) {
-      fetchBusiness(); // Fetch business data when component mounts or dependencies change
-    }
-  }, [user._id, auth.access_token]); // Dependency array to rerun the effect if user._id or access_token changes
+    fetchBusiness(); // Fetch business data when component mounts or dependencies change
+  }, [user, auth.access_token]); // Dependency array to rerun the effect if user or access_token changes
 
   // Function to toggle a contact preference
-  const toggleContactPreference = async (option) => {
-    const isSelected = contactPreferences.includes(option);
+  // const toggleContactPreference = async (option) => {
+  //   const isSelected = contactPreferences.includes(option);
 
-    let updatedPreferences = [];
-    if (isSelected) {
-      updatedPreferences = contactPreferences.filter((pref) => pref !== option);
-    } else {
-      updatedPreferences = [...contactPreferences, option];
-    }
+  //   let updatedPreferences = [];
+  //   if (isSelected) {
+  //     updatedPreferences = contactPreferences.filter((pref) => pref !== option);
+  //   } else {
+  //     updatedPreferences = [...contactPreferences, option];
+  //   }
 
-    try {
-      await axiosBase.post(
-        `/contact-preferences/${user._id}`,
-        { contactPreferences: updatedPreferences },
-        {
-          headers: { Authorization: `Bearer ${auth.access_token}` },
-        }
-      );
-      setContactPreferences(updatedPreferences); // Update the state after the change
-    } catch (error) {
-      console.error("Error updating contact preferences:", error);
-    }
-  };
+  //   try {
+  //     await axiosBase.post(
+  //       `/contact-preferences/${user._id}`,
+  //       { contactPreferences: updatedPreferences },
+  //       {
+  //         headers: { Authorization: `Bearer ${auth.access_token}` },
+  //       }
+  //     );
+  //     setContactPreferences(updatedPreferences); // Update the state after the change
+  //   } catch (error) {
+  //     console.error("Error updating contact preferences:", error);
+  //   }
+  // };
 
   return (
     <ScrollView style={tw`flex-1 p-4 bg-white`}>
-      <View style={tw`items-center`}>
-        {/* User Profile Header */}
-        <Text style={tw`text-3xl font-bold text-primary500 mb-6`}>Profile</Text>
-
-        {/* User Picture */}
-        {user.picturePath ? (
-          <Image
-            source={{ uri: user.picturePath }}
-            style={tw`w-40 h-40 rounded-full mb-4 shadow-lg`}
-          />
-        ) : (
-          <View style={tw`w-40 h-40 rounded-full bg-gray-300 mb-4 shadow-lg`} />
-        )}
-
-        {/* User Details */}
-        <View
-          style={tw`items-center bg-gray-50 p-4 rounded-lg shadow-sm w-full`}
-        >
-          <Text style={tw`text-2xl font-bold text-black mb-2`}>
-            {user.firstName} {user.lastName}
+      {user && user._id ? (
+        <View style={tw`items-center`}>
+          {/* User Profile Header */}
+          <Text style={tw`text-3xl font-bold text-primary500 mb-6`}>
+            Profile
           </Text>
-          <Text style={tw`text-base text-gray-700 mb-2`}>
-            College: {user.college || "N/A"}
-          </Text>
-          <Text style={tw`text-base text-gray-700 mb-2`}>
-            Matriculation Year: {user.matriculationYear || "N/A"}
-          </Text>
-          <Text style={tw`text-base text-gray-700 mb-2`}>
-            Industry: {user.occupation || "N/A"}
-          </Text>
-        </View>
 
-        {/* Toggle Switches for Contact Preferences, Business Info, and Posts */}
-        <View style={tw`w-full mt-6 p-4 bg-gray-100 rounded-lg shadow-sm`}>
-          <Text style={tw`text-xl font-bold mb-4`}>Show</Text>
-
-          {/* Toggle to Show/Hide Contact Preferences */}
-          <View style={tw`flex-row items-center justify-between mb-4`}>
-            <Text style={tw`text-base text-black`}>Contact Preferences</Text>
-            <Switch
-              value={showContactPreferences}
-              onValueChange={() =>
-                setShowContactPreferences(!showContactPreferences)
-              }
-              style={tw`ml-2`}
+          {/* User Picture */}
+          {user.picturePath ? (
+            <Image
+              source={{ uri: user.picturePath }}
+              style={tw`w-40 h-40 rounded-full mb-4 shadow-lg`}
             />
+          ) : (
+            <View
+              style={tw`w-40 h-40 rounded-full bg-gray-300 mb-4 shadow-lg`}
+            />
+          )}
+
+          {/* User Details */}
+          <View
+            style={tw`items-center bg-gray-50 p-4 rounded-lg shadow-sm w-full`}
+          >
+            <Text style={tw`text-2xl font-bold text-black mb-2`}>
+              {user.firstName} {user.lastName}
+            </Text>
+            <Text style={tw`text-base text-gray-700 mb-2`}>
+              College: {user.college || "N/A"}
+            </Text>
+            <Text style={tw`text-base text-gray-700 mb-2`}>
+              Matriculation Year: {user.matriculationYear || "N/A"}
+            </Text>
+            <Text style={tw`text-base text-gray-700 mb-2`}>
+              Industry: {user.occupation || "N/A"}
+            </Text>
           </View>
 
-          {/* Toggle to Show/Hide Business Info */}
-          {business && (
+          {/* Toggle Switches for Contact Preferences, Business Info, and Posts */}
+          <View style={tw`w-full mt-6 p-4 bg-gray-100 rounded-lg shadow-sm`}>
+            <Text style={tw`text-xl font-bold mb-4`}>Show</Text>
+
+            {/* Toggle to Show/Hide Contact Preferences */}
             <View style={tw`flex-row items-center justify-between mb-4`}>
-              <Text style={tw`text-base text-black`}>Show Business Info</Text>
+              <Text style={tw`text-base text-black`}>Contact Preferences</Text>
               <Switch
-                value={showBusiness}
-                onValueChange={() => setShowBusiness(!showBusiness)}
+                value={showContactPreferences}
+                onValueChange={() =>
+                  setShowContactPreferences(!showContactPreferences)
+                }
                 style={tw`ml-2`}
               />
             </View>
+
+            {/* Toggle to Show/Hide Business Info */}
+            {business && (
+              <View style={tw`flex-row items-center justify-between mb-4`}>
+                <Text style={tw`text-base text-black`}>Show Business Info</Text>
+                <Switch
+                  value={showBusiness}
+                  onValueChange={() => setShowBusiness(!showBusiness)}
+                  style={tw`ml-2`}
+                />
+              </View>
+            )}
+
+            {/* Toggle to Show/Hide Posts */}
+            <View style={tw`flex-row items-center justify-between`}>
+              <Text style={tw`text-base text-black`}>Show Posts</Text>
+              <Switch
+                value={showPosts}
+                onValueChange={() => setShowPosts(!showPosts)}
+                style={tw`ml-2`}
+              />
+            </View>
+          </View>
+
+          {/* Contact Preferences Section */}
+          {showContactPreferences && (
+            <View style={tw`w-full p-4 bg-gray-100 rounded-lg mb-6`}>
+              <Text style={tw`text-xl font-bold mb-4`}>
+                Contact Preferences
+              </Text>
+              {contactOptions.map((option) => (
+                <View key={option} style={tw`flex-row justify-between mb-4`}>
+                  <Text style={tw`text-base`}>{option}</Text>
+                  <Text style={tw`text-base`}>
+                    {contactPreferences.includes(option) ? "Yes" : "No thanks"}
+                  </Text>
+                </View>
+              ))}
+            </View>
           )}
 
-          {/* Toggle to Show/Hide Posts */}
-          <View style={tw`flex-row items-center justify-between`}>
-            <Text style={tw`text-base text-black`}>Show Posts</Text>
-            <Switch
-              value={showPosts}
-              onValueChange={() => setShowPosts(!showPosts)}
-              style={tw`ml-2`}
-            />
-          </View>
-        </View>
+          {/* Business Information */}
+          {showBusiness && business && (
+            <BusinessInformation business={business} />
+          )}
 
-        {/* Contact Preferences Section */}
-        {showContactPreferences && (
-          <View style={tw`w-full p-4 bg-gray-100 rounded-lg mb-6`}>
-            <Text style={tw`text-xl font-bold mb-4`}>Contact Preferences</Text>
-            {contactOptions.map((option) => (
-              <View key={option} style={tw`flex-row justify-between mb-4`}>
-                <Text style={tw`text-base`}>{option}</Text>
-                <Text style={tw`text-base`}>
-                  {contactPreferences.includes(option) ? "Yes" : "No thanks"}
-                </Text>
-              </View>
-            ))}
-          </View>
-        )}
-
-        {/* Business Information */}
-        {showBusiness && business && (
-          <BusinessInformation business={business} />
-        )}
-
-        {/* Follow/Unfollow Button */}
-        {!loading && (
-          <TouchableOpacity
-            style={tw`mt-6 px-4 py-2 rounded-full shadow-md ${
-              isConnected ? "bg-yellow-500" : "bg-red-500"
-            }`}
-            onPress={isConnected ? handleDisconnect : handleConnect}
-          >
-            <Text style={tw`text-white text-base font-bold`}>
-              {isConnected ? "Following" : "Follow"}
-            </Text>
-          </TouchableOpacity>
-        )}
-
-        {/* User Posts */}
-        {showPosts && (
-          <View style={tw`mt-8 w-full`}>
-            <Text style={tw`text-xl font-bold text-gray-800 mb-4 text-center`}>
-              Posts
-            </Text>
-            {posts.length > 0 ? (
-              posts.map((post) => (
-                <PostCard key={post._id} post={post} onDelete={() => {}} />
-              ))
-            ) : (
-              <Text style={tw`text-gray-600 text-center`}>
-                No posts to display
+          {/* Follow/Unfollow Button */}
+          {!loading && (
+            <TouchableOpacity
+              style={tw`mt-6 px-4 py-2 rounded-full shadow-md ${
+                isConnected ? "bg-yellow-500" : "bg-red-500"
+              }`}
+              onPress={isConnected ? handleDisconnect : handleConnect}
+            >
+              <Text style={tw`text-white text-base font-bold`}>
+                {isConnected ? "Following" : "Follow"}
               </Text>
-            )}
-          </View>
-        )}
-      </View>
+            </TouchableOpacity>
+          )}
+
+          {/* User Posts */}
+          {showPosts && (
+            <View style={tw`mt-8 w-full`}>
+              <Text
+                style={tw`text-xl font-bold text-gray-800 mb-4 text-center`}
+              >
+                Posts
+              </Text>
+              {posts.length > 0 ? (
+                posts.map((post) => (
+                  <PostCard key={post._id} post={post} onDelete={() => {}} />
+                ))
+              ) : (
+                <Text style={tw`text-gray-600 text-center`}>
+                  No posts to display
+                </Text>
+              )}
+            </View>
+          )}
+        </View>
+      ) : (
+        <Text style={tw`text-center mt-8 text-gray-600`}>
+          Loading user data...
+        </Text>
+      )}
     </ScrollView>
   );
 };

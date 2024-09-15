@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, FlatList, TouchableOpacity } from "react-native";
+import { View, Text, FlatList } from "react-native";
 import tw from "twrnc";
 import { useNavigation } from "@react-navigation/native";
 import { axiosBase } from "../services/BaseService"; // Using axiosBase
 import useAuth from "../hooks/useAuth"; // Custom authentication hook
+import GroupCard from "../components/ui/GroupCard"; // Import GroupCard component
 
 const GroupsScreen = () => {
   const [groups, setGroups] = useState([]);
@@ -32,21 +33,8 @@ const GroupsScreen = () => {
 
   // Navigate to Group Details
   const handleGroupPress = (groupId) => {
-    navigation.navigate("GroupDetails", { groupId });
+    navigation.navigate("GroupProfileScreen", { groupId });
   };
-
-  const renderGroupItem = ({ item }) => (
-    <TouchableOpacity
-      style={tw`w-full mb-4 p-4 rounded-lg border border-gray-200 bg-white shadow`}
-      onPress={() => handleGroupPress(item._id)}
-    >
-      <Text style={tw`text-lg font-bold`}>{item.name}</Text>
-      <Text style={tw`text-gray-500`}>{item.description}</Text>
-      <Text style={tw`text-sm text-gray-400 mt-2`}>
-        Members: {item.groupMembers.length}
-      </Text>
-    </TouchableOpacity>
-  );
 
   if (loading) {
     return (
@@ -62,7 +50,9 @@ const GroupsScreen = () => {
       <FlatList
         data={groups}
         keyExtractor={(item) => item._id}
-        renderItem={renderGroupItem}
+        renderItem={({ item }) => (
+          <GroupCard group={item} onPress={() => handleGroupPress(item._id)} />
+        )}
         contentContainerStyle={tw`pb-8`}
         ListEmptyComponent={
           <Text style={tw`text-center`}>No groups found.</Text>
