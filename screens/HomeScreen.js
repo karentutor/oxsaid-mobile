@@ -121,7 +121,7 @@ function HomeScreen() {
   };
 
   const handleCreateBusiness = () => {
-    navigation.navigate("CreateBusiness", { userId: user._id });
+    navigation.navigate("CreateBusinessScreen", { userId: user._id });
   };
 
   const handlePost = async ({ text, image }) => {

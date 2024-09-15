@@ -8,12 +8,14 @@ import * as SplashScreen from "expo-splash-screen";
 import * as Notifications from "expo-notifications";
 import AuthContextProvider, { AuthContext } from "./context/auth-context";
 import MainDrawerNavigator from "./navigators/MainDrawerNavigator";
-import LoginScreen from "./screens/LoginScreen";
+//screens
 import { Colors } from "./constants/styles";
 import { axiosBase } from "./services/BaseService";
 import ChatScreen from "./screens/ChatScreen"; // Import ChatScreen
+import CreateBusinessScreen from "./screens/CreateBusinessScreen"; // Import ChatScreen
 import EmailScreen from "./screens/EmailScreen"; // Import EmailScreen
 import GroupProfileScreen from "./screens/GroupProfileScreen"; // Import EmailScreen
+import LoginScreen from "./screens/LoginScreen";
 import UserProfileScreen from "./screens/UserProfileScreen"; // Import EmailScreen
 
 // Set up notification handler for background badge updates
@@ -124,6 +126,10 @@ function AuthenticatedStack() {
         options={{ headerShown: false }}
       />
       <Stack.Screen name="ChatScreen" component={ChatScreen} />
+      <Stack.Screen
+        name="CreateBusinessScreen"
+        component={CreateBusinessScreen}
+      />
       <Stack.Screen name="EmailScreen" component={EmailScreen} />
       <Stack.Screen name="UserProfileScreen" component={UserProfileScreen} />
       <Stack.Screen name="GroupProfileScreen" component={GroupProfileScreen} />
