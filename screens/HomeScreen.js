@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   Text,
   View,
@@ -8,14 +8,16 @@ import {
   ScrollView,
   Alert,
   Image,
+  FlatList,
   Switch,
 } from "react-native";
 import useAuth from "../hooks/useAuth";
 import PostBox from "../components/ui/PostBox";
 import PostCard from "../components/ui/PostCard";
+import GroupListCard from "../components/ui/GroupListCard";
 import BusinessInformation from "../components/ui/BusinessInformation"; // Import BusinessInformation component
 import { axiosBase } from "../services/BaseService";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import tw from "../lib/tailwind";
 import { contactOptions } from "../data";
 
@@ -29,6 +31,52 @@ function HomeScreen() {
   const [showContactPreferences, setShowContactPreferences] = useState(false); // State for toggling Contact Preferences visibility
   const [showPosts, setShowPosts] = useState(false); // State for toggling Posts visibility
   const [showBusinessInfo, setShowBusinessInfo] = useState(false); // State for toggling Business info
+  const [groups, setGroups] = useState([]); // State for storing groups
+  const [showGroups, setShowGroups] = useState(false); // State for toggling Groups visibility
+
+  // Fetch groups when the screen is in focus
+  // Fetch groups function
+  const fetchGroups = async () => {
+    try {
+      const response = await axiosBase.get(`/groups/${user._id}`, {
+        headers: { Authorization: `Bearer ${access_token}` },
+      });
+      console.log("HomeScreen, fetch Groups", response.data.groups);
+      setGroups(response.data.groups); // Store groups in state
+    } catch (error) {
+      console.error("Error fetching groups:", error.message);
+    }
+  };
+
+  // Fetch groups when the screen is in focus
+  useFocusEffect(
+    useCallback(() => {
+      if (user && access_token) {
+        fetchGroups(); // Call the function to fetch groups when the screen is focused
+      }
+    }, [user, access_token]) // Dependencies
+  );
+
+  const handleDeleteGroup = async (groupId) => {
+    try {
+      const response = await axiosBase.delete(`/groups/${groupId}`, {
+        headers: { Authorization: `Bearer ${access_token}` },
+      });
+      if (response.data.isSuccess) {
+        Alert.alert("Group deleted", "The group was deleted successfully.");
+        fetchGroups(); // Re-fetch the groups after deletion
+      } else {
+        Alert.alert("Error", response.data.msg);
+      }
+    } catch (error) {
+      console.error("Error deleting group:", error.message);
+      Alert.alert("Error deleting group", error.message);
+    }
+  };
+
+  const handleEditGroup = (groupId) => {
+    navigation.navigate("EditGroupScreen", { groupId }); // Navigate to EditGroupScreen
+  };
 
   useEffect(() => {
     fetchPosts();
@@ -205,144 +253,342 @@ function HomeScreen() {
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-      <ScrollView style={tw`flex-1 p-8 bg-white`}>
-        <Text style={tw`text-2xl font-bold mb-4 text-center`}>Home!</Text>
+      <FlatList
+        data={groups} // Main data for the FlatList
+        keyExtractor={(item) => item._id}
+        ListHeaderComponent={
+          <>
+            {/* User Profile Section */}
+            <Text style={tw`text-2xl font-bold mb-4 text-center`}>Home!</Text>
 
-        {user ? (
-          <View style={tw`items-center mb-8`}>
-            {user.picturePath ? (
-              <Image
-                source={{ uri: user.picturePath }}
-                style={tw`w-24 h-24 rounded-full mb-4`}
-              />
-            ) : (
-              <View
-                style={tw`w-24 h-24 rounded-full mb-4 bg-gray-300 flex items-center justify-center`}
-              >
-                <Text style={tw`text-lg text-gray-500`}>No Image</Text>
-              </View>
-            )}
-            <Text style={tw`text-xl font-bold`}>
-              {user.firstName} {user.lastName}
-            </Text>
-            <Text style={tw`text-sm text-gray-500 mb-2`}>
-              {user.occupation}
-            </Text>
-
-            {/* Preferences Form */}
-            <View style={tw`w-full p-4 bg-gray-100 rounded-lg shadow-md mb-8`}>
-              <Text style={tw`text-xl font-bold mb-4 text-center`}>Show</Text>
-
-              {/* Show/Hide Contact Preferences */}
-              <View style={tw`flex-row justify-between items-center mb-4`}>
-                <Text style={tw`text-base text-black`}>
-                  Show Contact Preferences
-                </Text>
-                <Switch
-                  value={showContactPreferences}
-                  onValueChange={() =>
-                    setShowContactPreferences(!showContactPreferences)
-                  }
-                />
-              </View>
-
-              {/* Show/Hide Business Info */}
-              <View style={tw`flex-row justify-between items-center mb-4`}>
-                <Text style={tw`text-base text-black`}>Show Business Info</Text>
-                <Switch
-                  value={showBusinessInfo}
-                  onValueChange={() => setShowBusinessInfo(!showBusinessInfo)}
-                />
-              </View>
-
-              {/* Show/Hide Posts */}
-              <View style={tw`flex-row justify-between items-center mb-4`}>
-                <Text style={tw`text-base text-black`}>Show Posts</Text>
-                <Switch
-                  value={showPosts}
-                  onValueChange={() => setShowPosts(!showPosts)}
-                />
-              </View>
-            </View>
-
-            {/* Conditionally Render Business Information */}
-            {showBusinessInfo && business && (
-              <>
-                {/* Check if businessName is available, otherwise show a fallback message */}
-                {business.businessName && business.businessName.name ? (
-                  <Text style={tw`text-lg font-bold mb-2 text-gray-700`}>
-                    {business.businessName.name}
-                  </Text>
+            {user ? (
+              <View style={tw`items-center mb-8`}>
+                {user.picturePath ? (
+                  <Image
+                    source={{ uri: user.picturePath }}
+                    style={tw`w-24 h-24 rounded-full mb-4`}
+                  />
                 ) : (
-                  <Text style={tw`text-lg font-bold mb-2 text-gray-700 mt-8`}>
-                    No business name available
-                  </Text>
-                )}
-
-                <TouchableOpacity
-                  onPress={handleCreateBusiness}
-                  style={tw`bg-red-500 rounded-lg py-2 px-4 mb-8`}
-                >
-                  <Text style={tw`text-white text-base font-bold text-center`}>
-                    Update Business
-                  </Text>
-                </TouchableOpacity>
-
-                {/* <TouchableOpacity onPress={handleCreateBusiness}>
-                  <Text
-                    style={tw`text-red-500 text-base font-bold text-lg mb-5`}
+                  <View
+                    style={tw`w-24 h-24 rounded-full mb-4 bg-gray-300 flex items-center justify-center`}
                   >
-                    Update Business
-                  </Text>
-                </TouchableOpacity> */}
-
-                <BusinessInformation business={business} />
-              </>
-            )}
-
-            {/* Conditionally Render Posts and PostBox */}
-            {showPosts && (
-              <>
-                <PostBox onPost={handlePost} onCancel={() => {}} />
-
-                {Array.isArray(posts) && posts.length > 0 ? (
-                  posts.map((post) => (
-                    <PostCard
-                      key={post._id}
-                      post={post}
-                      onDelete={() => handleDeletePost(post._id)} // Pass handleDeletePost with post._id
-                    />
-                  ))
-                ) : (
-                  <Text>No posts to display</Text>
+                    <Text style={tw`text-lg text-gray-500`}>No Image</Text>
+                  </View>
                 )}
-              </>
-            )}
-          </View>
-        ) : (
-          <Text>No User ID</Text>
-        )}
+                <Text style={tw`text-xl font-bold`}>
+                  {user.firstName} {user.lastName}
+                </Text>
+                <Text style={tw`text-sm text-gray-500 mb-2`}>
+                  {user.occupation}
+                </Text>
 
-        {/* Contact Preferences Form */}
-        {showContactPreferences && (
-          <View style={tw`w-full p-4 bg-gray-100 rounded-lg mb-6`}>
-            <Text style={tw`text-xl font-bold mb-4 text-center`}>
-              Contact Preferences
-            </Text>
-            {contactOptions.map((option) => (
-              <View key={option} style={tw`flex-row justify-between mb-4`}>
-                <Text style={tw`text-base`}>{option}</Text>
-                <Switch
-                  value={contactPreferences.includes(option)}
-                  onValueChange={() => toggleContactPreference(option)}
-                />
+                {/* Preferences Form */}
+                <View
+                  style={tw`w-full p-4 bg-gray-100 rounded-lg shadow-md mb-8`}
+                >
+                  <Text style={tw`text-xl font-bold mb-4 text-center`}>
+                    Show
+                  </Text>
+
+                  {/* Show/Hide Contact Preferences */}
+                  <View style={tw`flex-row justify-between items-center mb-4`}>
+                    <Text style={tw`text-base text-black`}>
+                      Show Contact Preferences
+                    </Text>
+                    <Switch
+                      value={showContactPreferences}
+                      onValueChange={() =>
+                        setShowContactPreferences(!showContactPreferences)
+                      }
+                    />
+                  </View>
+
+                  {/* Show/Hide Business Info */}
+                  <View style={tw`flex-row justify-between items-center mb-4`}>
+                    <Text style={tw`text-base text-black`}>
+                      Show Business Info
+                    </Text>
+                    <Switch
+                      value={showBusinessInfo}
+                      onValueChange={() =>
+                        setShowBusinessInfo(!showBusinessInfo)
+                      }
+                    />
+                  </View>
+
+                  {/* Show/Hide Posts */}
+                  <View style={tw`flex-row justify-between items-center mb-4`}>
+                    <Text style={tw`text-base text-black`}>Show Posts</Text>
+                    <Switch
+                      value={showPosts}
+                      onValueChange={() => setShowPosts(!showPosts)}
+                    />
+                  </View>
+
+                  {/* Show/Hide Groups */}
+                  <View style={tw`flex-row justify-between items-center mb-4`}>
+                    <Text style={tw`text-base text-black`}>Show Groups</Text>
+                    <Switch
+                      value={showGroups}
+                      onValueChange={() => setShowGroups(!showGroups)}
+                    />
+                  </View>
+                </View>
+
+                {/* Conditionally Render Business Information */}
+                {showBusinessInfo && business && (
+                  <>
+                    {business.businessName && business.businessName.name ? (
+                      <Text style={tw`text-lg font-bold mb-2 text-gray-700`}>
+                        {business.businessName.name}
+                      </Text>
+                    ) : (
+                      <Text
+                        style={tw`text-lg font-bold mb-2 text-gray-700 mt-8`}
+                      >
+                        No business name available
+                      </Text>
+                    )}
+
+                    <TouchableOpacity
+                      onPress={handleCreateBusiness}
+                      style={tw`bg-red-500 rounded-lg py-2 px-4 mb-8`}
+                    >
+                      <Text
+                        style={tw`text-white text-base font-bold text-center`}
+                      >
+                        Update Business
+                      </Text>
+                    </TouchableOpacity>
+
+                    <BusinessInformation business={business} />
+                  </>
+                )}
+
+                {/* Conditionally Render Posts */}
+                {showPosts && (
+                  <>
+                    <PostBox onPost={handlePost} onCancel={() => {}} />
+
+                    {Array.isArray(posts) && posts.length > 0 ? (
+                      posts.map((post) => (
+                        <PostCard
+                          key={post._id}
+                          post={post}
+                          onDelete={() => handleDeletePost(post._id)} // Pass handleDeletePost with post._id
+                        />
+                      ))
+                    ) : (
+                      <Text>No posts to display</Text>
+                    )}
+                  </>
+                )}
               </View>
-            ))}
-          </View>
-        )}
-      </ScrollView>
+            ) : (
+              <Text>No User ID</Text>
+            )}
+
+            {/* Contact Preferences Form */}
+            {showContactPreferences && (
+              <View style={tw`w-full p-4 bg-gray-100 rounded-lg mb-6`}>
+                <Text style={tw`text-xl font-bold mb-4 text-center`}>
+                  Contact Preferences
+                </Text>
+                {contactOptions.map((option) => (
+                  <View key={option} style={tw`flex-row justify-between mb-4`}>
+                    <Text style={tw`text-base`}>{option}</Text>
+                    <Switch
+                      value={contactPreferences.includes(option)}
+                      onValueChange={() => toggleContactPreference(option)}
+                    />
+                  </View>
+                ))}
+              </View>
+            )}
+          </>
+        }
+        renderItem={({ item }) =>
+          showGroups && (
+            <GroupListCard
+              group={item}
+              onEdit={() => handleEditGroup(item._id)}
+              onDelete={() => handleDeleteGroup(item._id)}
+            />
+          )
+        }
+        ListEmptyComponent={showGroups && <Text>No groups to display</Text>}
+      />
     </TouchableWithoutFeedback>
   );
+
+  // return (
+  //   <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+  //     <ScrollView style={tw`flex-1 p-8 bg-white`}>
+  //       <Text style={tw`text-2xl font-bold mb-4 text-center`}>Home!</Text>
+
+  //       {user ? (
+  //         <View style={tw`items-center mb-8`}>
+  //           {user.picturePath ? (
+  //             <Image
+  //               source={{ uri: user.picturePath }}
+  //               style={tw`w-24 h-24 rounded-full mb-4`}
+  //             />
+  //           ) : (
+  //             <View
+  //               style={tw`w-24 h-24 rounded-full mb-4 bg-gray-300 flex items-center justify-center`}
+  //             >
+  //               <Text style={tw`text-lg text-gray-500`}>No Image</Text>
+  //             </View>
+  //           )}
+  //           <Text style={tw`text-xl font-bold`}>
+  //             {user.firstName} {user.lastName}
+  //           </Text>
+  //           <Text style={tw`text-sm text-gray-500 mb-2`}>
+  //             {user.occupation}
+  //           </Text>
+
+  //           {/* Preferences Form */}
+  //           <View style={tw`w-full p-4 bg-gray-100 rounded-lg shadow-md mb-8`}>
+  //             <Text style={tw`text-xl font-bold mb-4 text-center`}>Show</Text>
+
+  //             {/* Show/Hide Contact Preferences */}
+  //             <View style={tw`flex-row justify-between items-center mb-4`}>
+  //               <Text style={tw`text-base text-black`}>
+  //                 Show Contact Preferences
+  //               </Text>
+  //               <Switch
+  //                 value={showContactPreferences}
+  //                 onValueChange={() =>
+  //                   setShowContactPreferences(!showContactPreferences)
+  //                 }
+  //               />
+  //             </View>
+
+  //             {/* Show/Hide Business Info */}
+  //             <View style={tw`flex-row justify-between items-center mb-4`}>
+  //               <Text style={tw`text-base text-black`}>Show Business Info</Text>
+  //               <Switch
+  //                 value={showBusinessInfo}
+  //                 onValueChange={() => setShowBusinessInfo(!showBusinessInfo)}
+  //               />
+  //             </View>
+
+  //             {/* Show/Hide Posts */}
+  //             <View style={tw`flex-row justify-between items-center mb-4`}>
+  //               <Text style={tw`text-base text-black`}>Show Posts</Text>
+  //               <Switch
+  //                 value={showPosts}
+  //                 onValueChange={() => setShowPosts(!showPosts)}
+  //               />
+  //             </View>
+  //             {/* Show/Hide Groups */}
+  //             <View style={tw`flex-row justify-between items-center mb-4`}>
+  //               <Text style={tw`text-base text-black`}>Show Groups</Text>
+  //               <Switch
+  //                 value={showGroups}
+  //                 onValueChange={() => setShowGroups(!showGroups)}
+  //               />
+  //             </View>
+  //           </View>
+
+  //           {/* Conditionally Render Business Information */}
+  //           {showBusinessInfo && business && (
+  //             <>
+  //               {/* Check if businessName is available, otherwise show a fallback message */}
+  //               {business.businessName && business.businessName.name ? (
+  //                 <Text style={tw`text-lg font-bold mb-2 text-gray-700`}>
+  //                   {business.businessName.name}
+  //                 </Text>
+  //               ) : (
+  //                 <Text style={tw`text-lg font-bold mb-2 text-gray-700 mt-8`}>
+  //                   No business name available
+  //                 </Text>
+  //               )}
+
+  //               <TouchableOpacity
+  //                 onPress={handleCreateBusiness}
+  //                 style={tw`bg-red-500 rounded-lg py-2 px-4 mb-8`}
+  //               >
+  //                 <Text style={tw`text-white text-base font-bold text-center`}>
+  //                   Update Business
+  //                 </Text>
+  //               </TouchableOpacity>
+
+  //               {/* <TouchableOpacity onPress={handleCreateBusiness}>
+  //                 <Text
+  //                   style={tw`text-red-500 text-base font-bold text-lg mb-5`}
+  //                 >
+  //                   Update Business
+  //                 </Text>
+  //               </TouchableOpacity> */}
+
+  //               <BusinessInformation business={business} />
+  //             </>
+  //           )}
+
+  //           {/* Conditionally Render Posts and PostBox */}
+  //           {showPosts && (
+  //             <>
+  //               <PostBox onPost={handlePost} onCancel={() => {}} />
+
+  //               {Array.isArray(posts) && posts.length > 0 ? (
+  //                 posts.map((post) => (
+  //                   <PostCard
+  //                     key={post._id}
+  //                     post={post}
+  //                     onDelete={() => handleDeletePost(post._id)} // Pass handleDeletePost with post._id
+  //                   />
+  //                 ))
+  //               ) : (
+  //                 <Text>No posts to display</Text>
+  //               )}
+  //             </>
+  //           )}
+  //         </View>
+  //       ) : (
+  //         <Text>No User ID</Text>
+  //       )}
+
+  //       {/* Contact Preferences Form */}
+  //       {showContactPreferences && (
+  //         <View style={tw`w-full p-4 bg-gray-100 rounded-lg mb-6`}>
+  //           <Text style={tw`text-xl font-bold mb-4 text-center`}>
+  //             Contact Preferences
+  //           </Text>
+  //           {contactOptions.map((option) => (
+  //             <View key={option} style={tw`flex-row justify-between mb-4`}>
+  //               <Text style={tw`text-base`}>{option}</Text>
+  //               <Switch
+  //                 value={contactPreferences.includes(option)}
+  //                 onValueChange={() => toggleContactPreference(option)}
+  //               />
+  //             </View>
+  //           ))}
+  //         </View>
+  //       )}
+  //       {/* Show groups  */}
+  //       {showGroups && (
+  //         <>
+  //           {groups.length > 0 ? (
+  //             <FlatList
+  //               data={groups}
+  //               keyExtractor={(item) => item._id}
+  //               renderItem={({ item }) => (
+  //                 <GroupListCard
+  //                   group={item}
+  //                   onEdit={() => handleEditGroup(item._id)}
+  //                   onDelete={() => handleDeleteGroup(item._id)}
+  //                 />
+  //               )}
+  //             />
+  //           ) : (
+  //             <Text>No groups to display</Text>
+  //           )}
+  //         </>
+  //       )}
+  //     </ScrollView>
+  //   </TouchableWithoutFeedback>
+  // );
 }
 
 export default HomeScreen;
