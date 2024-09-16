@@ -145,36 +145,6 @@ const UserProfileScreen = ({ route }) => {
     }
   };
 
-  const handleChatPress = async () => {
-    if (!user || !user._id) return; // Ensure user is defined before making API calls
-
-    try {
-      const response = await axiosBase.post(
-        `/chats/create-or-get`,
-        {
-          userId: auth.user._id,
-          recipientId: user._id,
-        },
-        {
-          headers: { Authorization: `Bearer ${auth.access_token}` },
-        }
-      );
-
-      const { _id: chatId } = response.data;
-
-      navigation.navigate("Chats", {
-        screen: "Chat",
-        params: {
-          chatId,
-          userId: auth.user._id,
-          userName: `${user.firstName} ${user.lastName}`,
-        },
-      });
-    } catch (error) {
-      console.error("Error starting chat:", error);
-    }
-  };
-
   // Fetch business information
   useEffect(() => {
     if (!user || !user._id || !auth.access_token) return; // Ensure user is defined
@@ -197,30 +167,13 @@ const UserProfileScreen = ({ route }) => {
     fetchBusiness(); // Fetch business data when component mounts or dependencies change
   }, [user, auth.access_token]); // Dependency array to rerun the effect if user or access_token changes
 
-  // Function to toggle a contact preference
-  // const toggleContactPreference = async (option) => {
-  //   const isSelected = contactPreferences.includes(option);
+  const handleChat = () => {
+    navigation.navigate("ChatScreen", { user });
+  };
 
-  //   let updatedPreferences = [];
-  //   if (isSelected) {
-  //     updatedPreferences = contactPreferences.filter((pref) => pref !== option);
-  //   } else {
-  //     updatedPreferences = [...contactPreferences, option];
-  //   }
-
-  //   try {
-  //     await axiosBase.post(
-  //       `/contact-preferences/${user._id}`,
-  //       { contactPreferences: updatedPreferences },
-  //       {
-  //         headers: { Authorization: `Bearer ${auth.access_token}` },
-  //       }
-  //     );
-  //     setContactPreferences(updatedPreferences); // Update the state after the change
-  //   } catch (error) {
-  //     console.error("Error updating contact preferences:", error);
-  //   }
-  // };
+  const handleEmail = () => {
+    navigation.navigate("EmailScreen", { user });
+  };
 
   return (
     <ScrollView style={tw`flex-1 p-4 bg-white`}>
@@ -324,16 +277,34 @@ const UserProfileScreen = ({ route }) => {
 
           {/* Follow/Unfollow Button */}
           {!loading && (
-            <TouchableOpacity
-              style={tw`mt-6 px-4 py-2 rounded-full shadow-md ${
-                isConnected ? "bg-yellow-500" : "bg-red-500"
-              }`}
-              onPress={isConnected ? handleDisconnect : handleConnect}
-            >
-              <Text style={tw`text-white text-base font-bold`}>
-                {isConnected ? "Following" : "Follow"}
-              </Text>
-            </TouchableOpacity>
+            <>
+              {/* Chat and Email Buttons */}
+              <View style={tw`flex-row justify-center mt-6`}>
+                <TouchableOpacity
+                  onPress={handleChat}
+                  style={tw`bg-blue-500 rounded-lg p-2 w-1/2 mr-2`}
+                >
+                  <Text style={tw`text-white text-center`}>Chat</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={handleEmail}
+                  style={tw`bg-secondary500 rounded-lg p-2 w-1/2`}
+                >
+                  <Text style={tw`text-center`}>Email</Text>
+                </TouchableOpacity>
+              </View>
+
+              <TouchableOpacity
+                style={tw`mt-6 px-4 py-2 rounded-full shadow-md ${
+                  isConnected ? "bg-yellow-500" : "bg-red-500"
+                }`}
+                onPress={isConnected ? handleDisconnect : handleConnect}
+              >
+                <Text style={tw`text-white text-base font-bold`}>
+                  {isConnected ? "Following" : "Follow"}
+                </Text>
+              </TouchableOpacity>
+            </>
           )}
 
           {/* User Posts */}
