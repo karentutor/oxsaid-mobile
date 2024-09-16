@@ -3,31 +3,29 @@ import {
   View,
   Text,
   TextInput,
-  Button,
   Image,
   FlatList,
   Alert,
-  ScrollView,
-  Switch,
   TouchableOpacity,
   ActivityIndicator,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker"; // For image upload
-import { axiosBase } from "../../services/BaseService";
-import tw from "../../lib/tailwind"; // Adjust based on your Tailwind setup
-import useAuth from "../../hooks/useAuth"; // To get the auth token
-import FilterModal from "./FilterModal"; // Import FilterModal
-import geoData from "../../data/geoDataSorted"; // Your geoData with country information
+import { axiosBase } from "../services/BaseService";
+import tw from "../lib/tailwind"; // Adjust based on your Tailwind setup
+import useAuth from "../hooks/useAuth"; // To get the auth token
+import FilterModal from "../components/ui/FilterModal"; // Import FilterModal
+import geoData from "../data/geoDataSorted"; // Your geoData with country information
 
-const CreateGroupForm = ({ onClose }) => {
+const UpsertGroupScreen = ({ route, navigation }) => {
+  const { groupId } = route.params || {}; // Get groupId if passed for editing
   const { auth } = useAuth(); // Get authentication info
+
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [country, setCountry] = useState("");
   const [isPrivate, setIsPrivate] = useState(false); // Default to false
   const [groupCoverImage, setGroupCoverImage] = useState(null); // For image upload
-  const [countryModalVisible, setCountryModalVisible] = useState(false); // Modal state
-
+  //   const [countryModalVisible, setCountryModalVisible] = useState(false); // Modal state
   const [isUserModalVisible, setIsUserModalVisible] = useState(false); // For inviting users
   const [users, setUsers] = useState([]); // All users fetched from API
   const [selectedUsers, setSelectedUsers] = useState([]); // Users selected for the invite
@@ -40,21 +38,48 @@ const CreateGroupForm = ({ onClose }) => {
         const response = await axiosBase.get("/users", {
           headers: { Authorization: `Bearer ${auth.access_token}` },
         });
-        console.log("fetch data", response.data);
         setUsers(response.data);
       } catch (error) {
         console.error("Error fetching users:", error);
       }
     };
     fetchUsers();
-  }, []);
+  }, [auth.access_token]);
+
+  // Fetch group details if editing an existing group
+  useEffect(() => {
+    if (groupId) {
+      const fetchGroupDetails = async () => {
+        try {
+          const response = await axiosBase.get(`/groups/${groupId}`, {
+            headers: { Authorization: `Bearer ${auth.access_token}` },
+          });
+          const {
+            name,
+            description,
+            country,
+            isPrivate,
+            groupCoverImage,
+            groupMembers,
+          } = response.data;
+          setName(name);
+          setDescription(description);
+          setCountry(country);
+          setIsPrivate(isPrivate);
+          setGroupCoverImage(groupCoverImage);
+          setSelectedUsers(groupMembers);
+        } catch (error) {
+          console.error("Error fetching group details:", error);
+        }
+      };
+      fetchGroupDetails();
+    }
+  }, [groupId, auth.access_token]);
 
   const handleSelectUser = (selectedUser) => {
-    // Find the user by name and add them to the selectedUsers if not already selected
     const foundUser = users.find(
       (user) => `${user.firstName} ${user.lastName}` === selectedUser
     );
-
     if (
       foundUser &&
       !selectedUsers.some((user) => user._id === foundUser._id)
@@ -63,33 +88,10 @@ const CreateGroupForm = ({ onClose }) => {
     }
   };
 
-  // Function to send chat invite to the selected user
-  const sendChatInvite = async (recipientId) => {
-    try {
-      const response = await axiosBase.post(
-        "/chats/send-invite",
-        {
-          fromId: auth.user._id, // The ID of the current user (who is creating the group)
-          toId: recipientId, // The ID of the recipient (user being invited)
-          message: `You have been invited to join the group: ${name}`,
-        },
-        {
-          headers: { Authorization: `Bearer ${auth.access_token}` },
-        }
-      );
-
-      Alert.alert("Success", "Invite sent via chat");
-    } catch (error) {
-      console.error("Error sending chat invite:", error);
-    }
-  };
-
-  // Handle removing a user from the selected list
   const handleRemoveUser = (userId) => {
     setSelectedUsers(selectedUsers.filter((user) => user._id !== userId));
   };
 
-  // Function to handle image picker
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -97,33 +99,25 @@ const CreateGroupForm = ({ onClose }) => {
       aspect: [4, 3],
       quality: 1,
     });
-
     if (!result.canceled) {
       setGroupCoverImage(result.assets[0].uri);
     }
   };
 
-  // Handle form submission
   const handleSubmit = async () => {
     if (!name || !description) {
       Alert.alert("Error", "Name and description are required");
       return;
     }
-    setIsLoading(true); // Start loading spinner
+    setIsLoading(true);
     const formData = new FormData();
-
-    // Convert selected users' IDs into a comma-separated string
     const groupMembers = selectedUsers.map((user) => user._id).join(",");
-
-    // Append form data fields
     formData.append("name", name);
     formData.append("description", description);
     formData.append("country", country);
     formData.append("isPrivate", isPrivate);
-    formData.append("groupMembers", groupMembers); // Ensure groupMembers is sent as part of formData
-
+    formData.append("groupMembers", groupMembers);
     if (groupCoverImage) {
-      // Append image if selected
       const fileType = groupCoverImage.split(".").pop();
       formData.append("groupCoverImage", {
         uri: groupCoverImage,
@@ -133,44 +127,55 @@ const CreateGroupForm = ({ onClose }) => {
     }
 
     try {
-      const response = await axiosBase.post("/groups", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-          Authorization: `Bearer ${auth.access_token}`,
-        },
-      });
-
-      Alert.alert("Success", "Group created successfully");
-      onClose(); // Close the form after success
+      let response;
+      if (groupId) {
+        // Update group
+        response = await axiosBase.put(`/groups/${groupId}`, formData, {
+          headers: {
+            "Content-Type": "multipart/form-data",
+            Authorization: `Bearer ${auth.access_token}`,
+          },
+        });
+        Alert.alert("Success", "Group updated successfully");
+      } else {
+        // Create group
+        response = await axiosBase.post("/groups", formData, {
+          headers: {
+            "Content-Type": "multipart/form-data",
+            Authorization: `Bearer ${auth.access_token}`,
+          },
+        });
+        Alert.alert("Success", "Group created successfully");
+      }
+      navigation.goBack(); // Navigate back after success
     } catch (error) {
-      console.error("Error creating group:", error);
-      Alert.alert("Error", "Failed to create group");
+      console.error("Error submitting group form:", error);
+      Alert.alert("Error", "Failed to submit group form");
     } finally {
-      setIsLoading(false); // Stop loading spinner
+      setIsLoading(false);
     }
   };
 
   return (
-    // **Replaced ScrollView with FlatList**
     <FlatList
-      data={[]} // Empty data since we're not rendering the list directly here
+      data={[]}
       ListHeaderComponent={
         <>
           <View style={tw`p-4 bg-gray-100 rounded-lg mt-4`}>
-            <Text style={tw`text-2xl font-bold mb-4`}>Create New Group</Text>
+            <Text style={tw`text-2xl font-bold mb-4`}>
+              {groupId ? "Edit Group" : "Create New Group"}
+            </Text>
 
-            {isLoading ? ( // Show spinner when loading
+            {isLoading ? (
               <ActivityIndicator size="large" color="#0000ff" />
             ) : (
               <>
-                {/* Name Input */}
                 <TextInput
                   placeholder="Group Name"
                   value={name}
                   onChangeText={setName}
                   style={tw`border p-2 mb-4`}
                 />
-                {/* Description Input */}
                 <TextInput
                   placeholder="Group Description"
                   value={description}
@@ -180,23 +185,6 @@ const CreateGroupForm = ({ onClose }) => {
                   numberOfLines={5}
                   textAlignVertical="top"
                 />
-                {/* Country Input */}
-                {/* <TouchableOpacity
-              style={tw`border p-2 mb-4`}
-              onPress={() => setCountryModalVisible(true)}
-            >
-              <Text>{country ? country : "Select country"}</Text>
-            </TouchableOpacity> */}
-                {/* FilterModal for Country */}
-                {/* <FilterModal
-              key="country-filter-modal"
-              visible={countryModalVisible}
-              onClose={() => setCountryModalVisible(false)}
-              data={Object.keys(geoData)}
-              onSelect={setCountry}
-              selectedValue={country}
-            />
-                {/* Group Cover Image Section */}
                 <Text style={tw`mb-2 font-bold`}>Group Cover Image</Text>
                 {groupCoverImage ? (
                   <View style={tw`mb-4`}>
@@ -205,14 +193,12 @@ const CreateGroupForm = ({ onClose }) => {
                       style={{ width: 200, height: 200, resizeMode: "cover" }}
                     />
                     <View style={tw`flex-row justify-between mt-2`}>
-                      {/* Update Image Button */}
                       <TouchableOpacity
                         style={tw`bg-yellow-500 p-2 rounded`}
                         onPress={pickImage}
                       >
                         <Text style={tw`text-white`}>Update Image</Text>
                       </TouchableOpacity>
-                      {/* Delete Image Button */}
                       <TouchableOpacity
                         style={tw`bg-red-500 p-2 rounded`}
                         onPress={() => setGroupCoverImage(null)}
@@ -230,9 +216,7 @@ const CreateGroupForm = ({ onClose }) => {
                   </TouchableOpacity>
                 )}
 
-                {/* Invite Users Section */}
                 <Text style={tw`text-xl font-bold mb-4`}>Invite Members</Text>
-                {/* Button to open the user modal */}
                 <TouchableOpacity
                   style={tw`bg-blue-500 p-3 mb-4 rounded-lg`}
                   onPress={() => setIsUserModalVisible(true)}
@@ -241,7 +225,6 @@ const CreateGroupForm = ({ onClose }) => {
                     Search and Invite Users
                   </Text>
                 </TouchableOpacity>
-                {/* FilterModal for Users */}
                 <FilterModal
                   key="user-filter-modal"
                   visible={isUserModalVisible}
@@ -252,7 +235,6 @@ const CreateGroupForm = ({ onClose }) => {
                   onSelect={handleSelectUser}
                   selectedValue={null}
                 />
-                {/* Display selected users */}
                 <Text style={tw`text-lg font-bold mb-2`}>Selected Users:</Text>
                 {selectedUsers.length > 0 ? (
                   <FlatList
@@ -277,17 +259,17 @@ const CreateGroupForm = ({ onClose }) => {
                 ) : (
                   <Text style={tw`text-gray-500`}>No users selected</Text>
                 )}
-                {/* Submit Button */}
                 <TouchableOpacity
                   style={tw`bg-blue-500 p-3 mt-4 rounded-lg`}
                   onPress={handleSubmit}
                 >
-                  <Text style={tw`text-white text-center`}>Create Group</Text>
+                  <Text style={tw`text-white text-center`}>
+                    {groupId ? "Update Group" : "Create Group"}
+                  </Text>
                 </TouchableOpacity>
-                {/* Cancel Button */}
                 <TouchableOpacity
                   style={tw`bg-red-500 p-3 mt-4 rounded-lg`}
-                  onPress={onClose}
+                  onPress={() => navigation.goBack()}
                 >
                   <Text style={tw`text-white text-center`}>Cancel</Text>
                 </TouchableOpacity>
@@ -300,4 +282,4 @@ const CreateGroupForm = ({ onClose }) => {
   );
 };
 
-export default CreateGroupForm;
+export default UpsertGroupScreen;

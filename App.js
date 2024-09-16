@@ -17,6 +17,7 @@ import EmailScreen from "./screens/EmailScreen"; // Import EmailScreen
 import GroupProfileScreen from "./screens/GroupProfileScreen"; // Import EmailScreen
 import LoginScreen from "./screens/LoginScreen";
 import UserProfileScreen from "./screens/UserProfileScreen"; // Import EmailScreen
+import UpsertGroupScreen from "./screens/UpsertGroupScreen"; // Import EmailScreen
 
 // Set up notification handler for background badge updates
 Notifications.setNotificationHandler({
@@ -133,6 +134,7 @@ function AuthenticatedStack() {
       <Stack.Screen name="EmailScreen" component={EmailScreen} />
       <Stack.Screen name="UserProfileScreen" component={UserProfileScreen} />
       <Stack.Screen name="GroupProfileScreen" component={GroupProfileScreen} />
+      <Stack.Screen name="UpsertGroupScreen" component={UpsertGroupScreen} />
     </Stack.Navigator>
   );
 }

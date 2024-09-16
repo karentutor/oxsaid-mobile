@@ -6,11 +6,10 @@ import { useNavigation } from "@react-navigation/native";
 import { axiosBase } from "../services/BaseService"; // Using axiosBase
 import useAuth from "../hooks/useAuth"; // Custom authentication hook
 import GroupCard from "../components/ui/GroupCard"; // Import GroupCard component
-import CreateGroupForm from "../components/ui/CreateGroupForm";
+
 const GroupsScreen = () => {
   const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [showCreateGroup, setShowCreateGroup] = useState(false);
 
   //hooks
   const { auth } = useAuth(); // Accessing authentication context
@@ -47,6 +46,11 @@ const GroupsScreen = () => {
     navigation.navigate("GroupProfileScreen", { groupId });
   };
 
+  // Navigate to Create Group Screen
+  const handleCreateGroupPress = () => {
+    navigation.navigate("UpsertGroupScreen"); // Navigate to UpsertGroupScreen
+  };
+
   if (loading) {
     return (
       <View style={tw`flex-1 justify-center items-center`}>
@@ -59,36 +63,25 @@ const GroupsScreen = () => {
     <View style={tw`flex-1 bg-gray-100 p-4`}>
       <Text style={tw`text-2xl font-bold mb-4`}>Groups</Text>
       {/* Create New Group Button */}
-      {!showCreateGroup && (
-        <>
-          <TouchableOpacity
-            style={tw`bg-blue-500 p-3 rounded-lg mb-4`} // Button styling
-            onPress={() => setShowCreateGroup(true)} // Show the create group form
-          >
-            <Text style={tw`text-white text-center text-lg`}>
-              Create New Group
-            </Text>
-          </TouchableOpacity>
-          <FlatList
-            data={groups}
-            keyExtractor={(item) => item._id}
-            renderItem={({ item }) => (
-              <GroupCard
-                group={item}
-                onPress={() => handleGroupPress(item._id)}
-              />
-            )}
-            contentContainerStyle={tw`pb-8`}
-            ListEmptyComponent={
-              <Text style={tw`text-center`}>No groups found.</Text>
-            }
-          />
-        </>
-      )}
-      {/* Render CreateGroupForm when button is pressed */}
-      {showCreateGroup && (
-        <CreateGroupForm onClose={() => setShowCreateGroup(false)} />
-      )}
+      <TouchableOpacity
+        style={tw`bg-blue-500 p-3 rounded-lg mb-4`} // Button styling
+        onPress={handleCreateGroupPress} // Navigate to the new screen
+      >
+        <Text style={tw`text-white text-center text-lg`}>Create New Group</Text>
+      </TouchableOpacity>
+
+      {/* List of Groups */}
+      <FlatList
+        data={groups}
+        keyExtractor={(item) => item._id}
+        renderItem={({ item }) => (
+          <GroupCard group={item} onPress={() => handleGroupPress(item._id)} />
+        )}
+        contentContainerStyle={tw`pb-8`}
+        ListEmptyComponent={
+          <Text style={tw`text-center`}>No groups found.</Text>
+        }
+      />
     </View>
   );
 };

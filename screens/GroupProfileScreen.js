@@ -1,5 +1,12 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, Image, ScrollView, TouchableOpacity } from "react-native";
+import {
+  Alert,
+  View,
+  Text,
+  Image,
+  ScrollView,
+  TouchableOpacity,
+} from "react-native";
 import { useRoute, useNavigation } from "@react-navigation/native";
 import { axiosBase } from "../services/BaseService";
 import useAuth from "../hooks/useAuth";
@@ -13,27 +20,50 @@ const GroupProfileScreen = () => {
   const [loading, setLoading] = useState(false);
   const { auth } = useAuth();
 
+  const access_token = auth.access_token;
+
   const handleUserPress = (userId) => {
     navigation.navigate("UserProfileScreen", { userId }); // Navigate to UserProfile
   };
 
-  // Fetch group details
-  useEffect(() => {
-    const fetchGroup = async () => {
-      setLoading(true);
-      try {
-        const response = await axiosBase.get(`/groups/group/${groupId}`, {
-          headers: { Authorization: `Bearer ${auth.access_token}` },
-        });
-        console.log(response.data);
-        setGroup(response.data.group);
-      } catch (error) {
-        console.error("Error fetching group details:", error);
-      } finally {
-        setLoading(false);
+  const handleDeleteGroup = async () => {
+    try {
+      const response = await axiosBase.delete(`/groups/${groupId}`, {
+        headers: { Authorization: `Bearer ${access_token}` },
+      });
+      if (response.data.isSuccess) {
+        Alert.alert("Group deleted", "The group was deleted successfully.");
+        fetchGroup(); // Re-fetch the groups after deletion
+      } else {
+        Alert.alert("Error", response.data.msg);
       }
-    };
+    } catch (error) {
+      console.error("Error deleting group:", error.message);
+      Alert.alert("Error deleting group", error.message);
+    }
+  };
 
+  const handleEditGroup = () => {
+    navigation.navigate("UpsertGroupScreen", { groupId }); // Navigate to EditGroupScreen
+  };
+
+  // Fetch group details
+  const fetchGroup = async () => {
+    setLoading(true);
+    try {
+      const response = await axiosBase.get(`/groups/group/${groupId}`, {
+        headers: { Authorization: `Bearer ${auth.access_token}` },
+      });
+      console.log(response.data);
+      setGroup(response.data.group);
+    } catch (error) {
+      console.error("Error fetching group details:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchGroup();
   }, [groupId, auth.access_token]);
 
@@ -52,6 +82,10 @@ const GroupProfileScreen = () => {
       </View>
     );
   }
+
+  const isAdmin = group.adminMembers.some(
+    (admin) => admin._id === auth.user._id
+  );
 
   return (
     <ScrollView
@@ -145,6 +179,23 @@ const GroupProfileScreen = () => {
       <Text style={tw`text-base text-gray-400 mt-4 text-center`}>
         Created on: {new Date(group.createdAt).toLocaleDateString()}
       </Text>
+
+      {isAdmin && (
+        <View style={tw`flex-row justify-center mt-8`}>
+          <TouchableOpacity
+            onPress={handleEditGroup}
+            style={tw`bg-blue-500 py-2 px-6 rounded-lg mr-4`}
+          >
+            <Text style={tw`text-white text-center text-lg`}>Edit</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={handleDeleteGroup}
+            style={tw`bg-red-500 py-2 px-6 rounded-lg`}
+          >
+            <Text style={tw`text-white text-center text-lg`}>Delete</Text>
+          </TouchableOpacity>
+        </View>
+      )}
     </ScrollView>
   );
 };
