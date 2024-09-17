@@ -41,7 +41,6 @@ function HomeScreen() {
       const response = await axiosBase.get(`/groups/${user._id}`, {
         headers: { Authorization: `Bearer ${access_token}` },
       });
-      console.log("HomeScreen, fetch Groups", response.data.groups);
       setGroups(response.data.groups); // Store groups in state
     } catch (error) {
       console.error("Error fetching groups:", error.message);
@@ -411,6 +410,9 @@ function HomeScreen() {
           showGroups && (
             <GroupListCard
               group={item}
+              onPress={() =>
+                navigation.navigate("GroupProfileScreen", { groupId: item._id })
+              } // Navigate to GroupProfileScreen
               onEdit={() => handleEditGroup(item._id)}
               onDelete={() => handleDeleteGroup(item._id)}
             />

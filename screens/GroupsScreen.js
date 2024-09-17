@@ -25,7 +25,6 @@ const GroupsScreen = () => {
             headers: { Authorization: `Bearer ${auth.access_token}` }, // Sending token in request
           });
           setGroups(response.data.groups);
-          console.log(response.data.groups);
         } catch (error) {
           console.error("Error fetching groups:", error);
         } finally {

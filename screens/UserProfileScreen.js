@@ -29,7 +29,7 @@ const UserProfileScreen = ({ route }) => {
   const [posts, setPosts] = useState([]); // State to store user posts
   const navigation = useNavigation();
   const [showPosts, setShowPosts] = useState(false); // State to toggle post display
-  const [showContactPreferences, setShowContactPreferences] = useState(false);
+  const [showContactPreferences, setShowContactPreferences] = useState(true);
 
   // Fetch user if only userId is available
   useEffect(() => {
