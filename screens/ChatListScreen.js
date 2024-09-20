@@ -17,44 +17,56 @@ const ChatListScreen = () => {
         try {
           const response = await axiosBase.get(`/chats/${auth.user._id}`);
 
+          console.log("Full API Response:", response.data); // Log the full response
+
           if (response.data && response.data.chats.length > 0) {
             const chatsByUser = response.data.chats.reduce((acc, chat) => {
+              // Manually attach user IDs to fromUser and toUser
+              chat.fromUser._id = chat.latestMessage.fromId; // Attach fromId to fromUser
+              chat.toUser._id = chat.latestMessage.toId; // Attach toId to toUser
+
               const otherUser =
-                chat.fromId._id === auth.user._id ? chat.toId : chat.fromId;
+                chat.latestMessage.fromId === auth.user._id
+                  ? chat.toUser
+                  : chat.fromUser;
+
+              console.log("Other User:", otherUser); // Log the other user to inspect its structure
+
+              if (!otherUser || !otherUser._id) {
+                console.error(
+                  "Error: User data is missing or malformed for this chat:",
+                  chat
+                );
+                return acc; // Skip if otherUser is missing or malformed
+              }
+
               const userId = otherUser._id;
 
-              if (!acc[userId]) {
+              if (userId && !acc[userId]) {
                 acc[userId] = {
-                  user: otherUser,
-                  hasUnread: !chat.isRead, // Check if the chat has unread messages
+                  user: otherUser, // Now populated with firstName, lastName, and _id
+                  hasUnread: !chat.latestMessage.isRead,
+                  latestMessage: chat.latestMessage.message, // Access the message here
                 };
-              } else if (!chat.isRead) {
+              } else if (userId && !chat.latestMessage.isRead) {
                 acc[userId].hasUnread = true;
               }
 
               return acc;
             }, {});
 
+            console.log("Chats by User after reduce:", chatsByUser); // Log the reduced chat data
+
             const chatList = Object.values(chatsByUser);
             setChatList(chatList);
-
-            // Update unread message count directly from the response
-            const unreadCount = response.data.unreadCount;
-            setUnreadCount(unreadCount); // Update the unread count
+            setUnreadCount(response.data.unreadCount);
           } else {
             console.log("No chats found for this user.");
             setChatList([]);
           }
         } catch (error) {
-          if (error.response && error.response.status === 404) {
-            // Line 34
-            console.log("No chats available for this user."); // Line 35
-            setChatList([]); // Line 36
-            setUnreadCount(0); // Line 37
-          } else {
-            console.error("Error fetching chat list:", error); // Line 39
-            setChatList([]); // Line 40
-          }
+          console.error("Error fetching chat list:", error); // Log any errors during fetching
+          setChatList([]);
         }
       };
 
@@ -75,12 +87,17 @@ const ChatListScreen = () => {
       {chatList.length > 0 ? (
         <FlatList
           data={chatList}
-          keyExtractor={(item) => item.user._id.toString()}
+          keyExtractor={(item) =>
+            item.user && item.user._id
+              ? item.user._id.toString()
+              : Math.random().toString()
+          }
           renderItem={({ item }) => (
             <ChatListItem
               user={item.user}
               hasUnread={item.hasUnread}
-              onPress={handlePress} // Pass the user and unread status
+              latestMessage={item.latestMessage} // Correctly pass the latest message to the item
+              onPress={() => handlePress(item.user, item.hasUnread)}
             />
           )}
         />
@@ -91,7 +108,10 @@ const ChatListScreen = () => {
           <Text style={{ fontSize: 18, marginBottom: 20 }}>
             No chats found. Would you like to start one?
           </Text>
-          <Button title="Start a New Chat" onPress={handleStartChat} />
+          <Button
+            title="Start a New Chat"
+            onPress={() => navigation.navigate("User Search")}
+          />
         </View>
       )}
     </View>

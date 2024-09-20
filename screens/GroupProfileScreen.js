@@ -32,6 +32,28 @@ const GroupProfileScreen = () => {
   const { auth } = useAuth();
   const access_token = auth.access_token;
 
+  const handleLeaveGroup = async () => {
+    try {
+      const response = await axiosBase.put(
+        `/groups/${groupId}/leave`,
+        {},
+        {
+          headers: { Authorization: `Bearer ${access_token}` },
+        }
+      );
+
+      if (response.data.isSuccess) {
+        Alert.alert("Group Left", "You have successfully left the group.");
+        setIsMember(false); // Update state to reflect that the user is no longer a member
+      } else {
+        Alert.alert("Error", response.data.msg);
+      }
+    } catch (error) {
+      console.error("Error leaving group:", error.message);
+      Alert.alert("Error", "Could not leave the group.");
+    }
+  };
+
   const handleUserPress = (userId) => {
     navigation.navigate("UserProfileScreen", { userId }); // Navigate to UserProfile
   };
@@ -115,10 +137,11 @@ const GroupProfileScreen = () => {
         headers: { Authorization: `Bearer ${auth.access_token}` },
       });
 
-      setIsMember(response.data.isMember); // Check if user is a member
-      setIsMemberAdmin(response.data.isAdmin); // Check if user is an admin
+      console.log("Group Data:", response.data); // Log the entire group data
+      setIsMember(response.data.isMember); // Check if the user is a member
+      setIsMemberAdmin(response.data.isAdmin); // Check if the user is an admin
+      setIsInvited(response.data.isInvited); // Check if the user has an invite
       setGroup(response.data.group);
-      setIsInvited(response.data.isInvited); // Check if user has an invite
     } catch (error) {
       console.error("Error fetching group details:", error);
     } finally {
