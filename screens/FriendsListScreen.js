@@ -1,5 +1,5 @@
 import React, { useState, useContext, useCallback } from "react";
-import { View, FlatList, ActivityIndicator } from "react-native";
+import { View, FlatList, ActivityIndicator, Text } from "react-native";
 import { useFocusEffect } from "@react-navigation/native"; // Import useFocusEffect
 import UserCard from "../components/ui/UserCard"; // Adjust the path as necessary
 import tw from "twrnc";
@@ -41,6 +41,9 @@ const FriendsListScreen = () => {
 
   return (
     <View style={tw`flex-1`}>
+      <Text style={tw`text-center font-bold text-xl mb-4 mt-10`}>
+        Go to User Search and then User Profile to Follow
+      </Text>
       <FlatList
         data={friends}
         keyExtractor={(item) => item._id.toString()} // Use the _id field as the key

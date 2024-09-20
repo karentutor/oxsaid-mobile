@@ -43,7 +43,22 @@ function HomeScreen() {
       });
       setGroups(response.data.groups); // Store groups in state
     } catch (error) {
-      console.error("Error fetching groups:", error.message);
+      if (error.response) {
+        // Server responded with a status other than 2xx
+        if (error.response.status === 404) {
+          console.log("No groups found for this user.");
+          setGroups([]); // Clear groups if no groups found
+        } else {
+          console.error(`Error fetching groups: ${error.response.status}`);
+          // You can handle other specific status codes here (e.g., 500, 403, etc.)
+        }
+      } else if (error.request) {
+        // Request was made but no response was received
+        console.error("No response from server. Please check your network.");
+      } else {
+        // Something happened in setting up the request that triggered an error
+        console.error("Error setting up request:", error.message);
+      }
     }
   };
 
@@ -74,7 +89,7 @@ function HomeScreen() {
   };
 
   const handleEditGroup = (groupId) => {
-    navigation.navigate("EditGroupScreen", { groupId }); // Navigate to EditGroupScreen
+    navigation.navigate("UpsertGroupScreen", { groupId }); // Navigate to EditGroupScreen
   };
 
   useEffect(() => {
@@ -140,12 +155,42 @@ function HomeScreen() {
         headers: { Authorization: `Bearer ${access_token}` },
       });
 
+      const groupPostsResponse = await axiosBase.get("/posts/groups", {
+        headers: { Authorization: `Bearer ${access_token}` },
+      });
+
+      // Combine all posts into one array
       const allPosts = [
         ...ownPostsResponse.data,
         ...followedPostsResponse.data,
+        ...groupPostsResponse.data,
       ];
-      allPosts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-      setPosts(allPosts);
+
+      // Create a map of posts by their ID, prioritizing posts with a fully populated groupId.name
+      const postsMap = new Map();
+      allPosts.forEach((post) => {
+        if (!postsMap.has(post._id)) {
+          postsMap.set(post._id, post);
+        } else {
+          const existingPost = postsMap.get(post._id);
+          // If the existing post does not have groupId.name, replace it with the new one
+          if (
+            existingPost.groupId &&
+            typeof existingPost.groupId === "string" &&
+            post.groupId?.name
+          ) {
+            postsMap.set(post._id, post); // Replace with the fully populated version
+          }
+        }
+      });
+
+      // Convert the map back into an array
+      const uniquePosts = Array.from(postsMap.values());
+
+      // Sort posts by creation date in descending order
+      uniquePosts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+      setPosts(uniquePosts);
     } catch (err) {
       console.error("Error fetching posts:", err.message);
       Alert.alert("Error fetching posts", err.message);
@@ -418,7 +463,7 @@ function HomeScreen() {
             />
           )
         }
-        ListEmptyComponent={showGroups && <Text>No groups to display</Text>}
+        ListEmptyComponent={showGroups && <Text>No group assigned</Text>}
       />
     </TouchableWithoutFeedback>
   );

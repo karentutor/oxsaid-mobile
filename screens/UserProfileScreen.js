@@ -214,6 +214,38 @@ const UserProfileScreen = ({ route }) => {
             </Text>
           </View>
 
+          {/* Follow/Unfollow Button */}
+          {!loading && (
+            <>
+              {/* Chat and Email Buttons */}
+              <View style={tw`flex-row justify-center mt-6`}>
+                <TouchableOpacity
+                  onPress={handleChat}
+                  style={tw`bg-blue-500 rounded-lg p-2 w-1/2 mr-2`}
+                >
+                  <Text style={tw`text-white text-center`}>Chat</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={handleEmail}
+                  style={tw`bg-secondary500 rounded-lg p-2 w-1/2`}
+                >
+                  <Text style={tw`text-center`}>Email</Text>
+                </TouchableOpacity>
+              </View>
+
+              <TouchableOpacity
+                style={tw`mt-6 px-4 py-2 rounded-full shadow-md ${
+                  isConnected ? "bg-yellow-500" : "bg-red-500"
+                }`}
+                onPress={isConnected ? handleDisconnect : handleConnect}
+              >
+                <Text style={tw`text-white text-base font-bold`}>
+                  {isConnected ? "Following" : "Follow"}
+                </Text>
+              </TouchableOpacity>
+            </>
+          )}
+
           {/* Toggle Switches for Contact Preferences, Business Info, and Posts */}
           <View style={tw`w-full mt-6 p-4 bg-gray-100 rounded-lg shadow-sm`}>
             <Text style={tw`text-xl font-bold mb-4`}>Show</Text>
@@ -273,38 +305,6 @@ const UserProfileScreen = ({ route }) => {
           {/* Business Information */}
           {showBusiness && business && (
             <BusinessInformation business={business} />
-          )}
-
-          {/* Follow/Unfollow Button */}
-          {!loading && (
-            <>
-              {/* Chat and Email Buttons */}
-              <View style={tw`flex-row justify-center mt-6`}>
-                <TouchableOpacity
-                  onPress={handleChat}
-                  style={tw`bg-blue-500 rounded-lg p-2 w-1/2 mr-2`}
-                >
-                  <Text style={tw`text-white text-center`}>Chat</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={handleEmail}
-                  style={tw`bg-secondary500 rounded-lg p-2 w-1/2`}
-                >
-                  <Text style={tw`text-center`}>Email</Text>
-                </TouchableOpacity>
-              </View>
-
-              <TouchableOpacity
-                style={tw`mt-6 px-4 py-2 rounded-full shadow-md ${
-                  isConnected ? "bg-yellow-500" : "bg-red-500"
-                }`}
-                onPress={isConnected ? handleDisconnect : handleConnect}
-              >
-                <Text style={tw`text-white text-base font-bold`}>
-                  {isConnected ? "Following" : "Follow"}
-                </Text>
-              </TouchableOpacity>
-            </>
           )}
 
           {/* User Posts */}

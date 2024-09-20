@@ -63,27 +63,6 @@ const CreateGroupForm = ({ onClose }) => {
     }
   };
 
-  // Function to send chat invite to the selected user
-  const sendChatInvite = async (recipientId) => {
-    try {
-      const response = await axiosBase.post(
-        "/chats/send-invite",
-        {
-          fromId: auth.user._id, // The ID of the current user (who is creating the group)
-          toId: recipientId, // The ID of the recipient (user being invited)
-          message: `You have been invited to join the group: ${name}`,
-        },
-        {
-          headers: { Authorization: `Bearer ${auth.access_token}` },
-        }
-      );
-
-      Alert.alert("Success", "Invite sent via chat");
-    } catch (error) {
-      console.error("Error sending chat invite:", error);
-    }
-  };
-
   // Handle removing a user from the selected list
   const handleRemoveUser = (userId) => {
     setSelectedUsers(selectedUsers.filter((user) => user._id !== userId));

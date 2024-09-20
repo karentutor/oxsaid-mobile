@@ -20,6 +20,7 @@ export default function ChatScreen() {
   const [connected, setConnected] = useState(false);
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState(""); //
 
   const { auth } = useAuth();
   const route = useRoute();
@@ -58,6 +59,11 @@ export default function ChatScreen() {
       if (!data.isSentByCurrentUser) {
         markMessagesAsRead(currentUserId, recipientUserId);
       }
+    });
+
+    // Listen for message length error
+    socket.on("messageError", (error) => {
+      setErrorMessage(error.error); // Set error message in state
     });
 
     socket.on("connect_error", (err) => {
@@ -141,6 +147,7 @@ export default function ChatScreen() {
       socket.emit("sendMessage", newMessage);
 
       setInputMessage("");
+      setErrorMessage(""); // Clear error message if any
     }
   };
 
@@ -164,6 +171,11 @@ export default function ChatScreen() {
         <View style={tw`flex-1 bg-white`}>
           {connected ? (
             <>
+              {errorMessage ? (
+                <View style={tw`p-4 bg-red-100`}>
+                  <Text style={tw`text-red-500 font-bold`}>{errorMessage}</Text>
+                </View>
+              ) : null}
               {messages.length === 0 ? (
                 <View style={tw`flex-1 items-center justify-center`}>
                   <Text style={tw`text-xl font-bold text-gray-500`}>
@@ -188,15 +200,19 @@ export default function ChatScreen() {
                             : "bg-gray-200 self-start"
                         }`}
                       >
+                        {/* Meta Info (Sender Name and Time) */}
                         <Text style={tw`text-sm text-gray-500`}>
                           {msg.isSentByCurrentUser ? "You" : msg.from} •{" "}
-                          {messageDate.toLocaleTimeString()} {/* Time */}
+                          {messageDate.toLocaleTimeString()}
                         </Text>
                         <Text style={tw`text-xs text-gray-400`}>
-                          {messageDate.toLocaleDateString()}{" "}
-                          {/* Date: Month Day, Year */}
+                          {messageDate.toLocaleDateString()}
                         </Text>
-                        <Text style={tw`text-base text-black mt-1`}>
+
+                        {/* Adjust message text to handle wrapping */}
+                        <Text
+                          style={tw`text-base text-black mt-1 flex-shrink-0`}
+                        >
                           {msg.text}
                         </Text>
                       </View>

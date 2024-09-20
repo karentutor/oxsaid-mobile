@@ -1,6 +1,4 @@
-// PostCard.js
-
-import React from "react";
+import React, { useEffect } from "react";
 import {
   Alert,
   StyleSheet,
@@ -11,11 +9,27 @@ import {
   Platform,
 } from "react-native";
 import Icon from "react-native-vector-icons/FontAwesome";
-import tw from "twrnc";
 import useAuth from "../../hooks/useAuth";
 
 const PostCard = ({ post, onDelete }) => {
   const { auth } = useAuth();
+
+  // Debug: Log the full post object to see what's coming through
+  useEffect(() => {
+    console.log("Full post data:", post);
+
+    // Debug: Check if groupId is available
+    if (post.groupId) {
+      console.log("Group ID exists:", post.groupId);
+      console.log("Group name:", post.groupId.name);
+    } else {
+      console.log("No groupId found for this post");
+    }
+
+    // Debug: Check if userId matches the authenticated user
+    console.log("Current user ID:", auth.user._id);
+    console.log("Post user ID:", post.userId);
+  }, [post]);
 
   const handleDelete = () => {
     Alert.alert(
@@ -41,11 +55,15 @@ const PostCard = ({ post, onDelete }) => {
       <View style={styles.shadowContainer}>
         <View style={styles.contentContainer}>
           <View style={styles.userInfoContainer}>
+            {/* Debug: Log the user picture */}
             {post.userPicturePath ? (
-              <Image
-                source={{ uri: post.userPicturePath }}
-                style={styles.userImage}
-              />
+              <>
+                <Image
+                  source={{ uri: post.userPicturePath }}
+                  style={styles.userImage}
+                />
+                {console.log("User picture path:", post.userPicturePath)}
+              </>
             ) : (
               <View style={styles.noImageContainer}>
                 <Text style={styles.noImageText}>No Image</Text>
@@ -59,24 +77,49 @@ const PostCard = ({ post, onDelete }) => {
               <Text style={styles.userLocation}>{post.location}</Text>
             </View>
 
-            {post.userId === auth.user._id && (
-              <TouchableOpacity
-                onPress={handleDelete}
-                style={styles.deleteButton}
-              >
-                <Icon name="trash" size={20} color="red" />
-              </TouchableOpacity>
-            )}
+            {/* Right-side container holding both trash icon and group name */}
+            <View style={styles.rightSideContainer}>
+              {/* Delete button */}
+              {post.userId === auth.user._id && (
+                <>
+                  <TouchableOpacity
+                    onPress={handleDelete}
+                    style={styles.deleteButton}
+                  >
+                    <Icon name="trash" size={20} color="red" />
+                  </TouchableOpacity>
+                  {console.log(
+                    "Delete button displayed for user:",
+                    post.userId
+                  )}
+                </>
+              )}
+
+              {/* Group Name Title and Value */}
+              {post.groupId?.name && (
+                <View style={styles.groupNameSection}>
+                  <Text style={styles.groupNameTitle}>Group Name</Text>
+                  <Text style={styles.groupName}>{post.groupId.name}</Text>
+                  {console.log("Group name displayed:", post.groupId.name)}
+                </View>
+              )}
+            </View>
           </View>
 
           <Text style={styles.description}>{post.description}</Text>
 
-          {post.picturePath && (
-            <Image
-              source={{ uri: post.picturePath }}
-              style={styles.postImage}
-              resizeMode="contain"
-            />
+          {/* Debug: Log if there is a post image */}
+          {post.picturePath ? (
+            <>
+              <Image
+                source={{ uri: post.picturePath }}
+                style={styles.postImage}
+                resizeMode="contain"
+              />
+              {console.log("Post picture path:", post.picturePath)}
+            </>
+          ) : (
+            <Text>No post image</Text>
           )}
         </View>
       </View>
@@ -167,8 +210,27 @@ const styles = StyleSheet.create({
     height: 192,
     borderRadius: 10,
   },
+  rightSideContainer: {
+    flexDirection: "column", // Ensures vertical alignment of trash icon and group name
+    alignItems: "flex-end", // Align to the right
+    justifyContent: "space-between",
+  },
   deleteButton: {
-    padding: 8,
+    paddingBottom: 10,
+  },
+  groupNameSection: {
+    alignItems: "flex-end", // Ensures the text is right aligned
+  },
+  groupNameTitle: {
+    fontSize: 12,
+    fontWeight: "bold",
+    color: "#333",
+    marginBottom: 4, // Adds space between title and group name
+  },
+  groupName: {
+    fontSize: 14,
+    fontWeight: "bold",
+    color: "#1a2a40", // Dark navy color for group name
   },
 });
 

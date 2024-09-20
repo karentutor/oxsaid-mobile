@@ -26,7 +26,7 @@ const GroupsScreen = () => {
           });
           setGroups(response.data.groups);
         } catch (error) {
-          console.error("Error fetching groups:", error);
+          //console.error("Error fetching groups:", error);
         } finally {
           setLoading(false);
         }

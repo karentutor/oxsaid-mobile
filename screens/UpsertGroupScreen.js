@@ -51,7 +51,7 @@ const UpsertGroupScreen = ({ route, navigation }) => {
     if (groupId) {
       const fetchGroupDetails = async () => {
         try {
-          const response = await axiosBase.get(`/groups/group/${groupId}`, {
+          const response = await axiosBase.get(`/groups/${groupId}`, {
             headers: { Authorization: `Bearer ${auth.access_token}` },
           });
           const {
@@ -77,7 +77,6 @@ const UpsertGroupScreen = ({ route, navigation }) => {
       fetchGroupDetails(); // Call the function when groupId is present
     }
   }, [groupId, auth.access_token]);
-
   const handleSelectUser = (selectedUser) => {
     const foundUser = users.find(
       (user) => `${user.firstName} ${user.lastName}` === selectedUser
@@ -111,14 +110,17 @@ const UpsertGroupScreen = ({ route, navigation }) => {
       Alert.alert("Error", "Name and description are required");
       return;
     }
+
     setIsLoading(true);
     const formData = new FormData();
     const groupMembers = selectedUsers.map((user) => user._id).join(",");
+
     formData.append("name", name);
     formData.append("description", description);
     formData.append("country", country);
     formData.append("isPrivate", isPrivate);
     formData.append("groupMembers", groupMembers);
+
     if (groupCoverImage) {
       const fileType = groupCoverImage.split(".").pop();
       formData.append("groupCoverImage", {
@@ -131,7 +133,7 @@ const UpsertGroupScreen = ({ route, navigation }) => {
     try {
       if (groupId) {
         // Update group
-        response = await axiosBase.put(`/groups/${groupId}/update`, formData, {
+        await axiosBase.put(`/groups/update/${groupId}`, formData, {
           headers: {
             "Content-Type": "multipart/form-data",
             Authorization: `Bearer ${auth.access_token}`,
@@ -140,7 +142,7 @@ const UpsertGroupScreen = ({ route, navigation }) => {
         Alert.alert("Success", "Group updated successfully");
       } else {
         // Create group
-        response = await axiosBase.post("/groups", formData, {
+        await axiosBase.post("/groups", formData, {
           headers: {
             "Content-Type": "multipart/form-data",
             Authorization: `Bearer ${auth.access_token}`,
@@ -148,6 +150,7 @@ const UpsertGroupScreen = ({ route, navigation }) => {
         });
         Alert.alert("Success", "Group created successfully");
       }
+
       navigation.goBack(); // Navigate back after success
     } catch (error) {
       console.error("Error submitting group form:", error);
@@ -293,155 +296,6 @@ const UpsertGroupScreen = ({ route, navigation }) => {
       }
     />
   );
-
-  //   return (
-  //     <FlatList
-  //       data={[]}
-  //       ListHeaderComponent={
-  //         <>
-  //           <View style={tw`p-4 bg-gray-100 rounded-lg mt-4`}>
-  //             <Text style={tw`text-2xl font-bold mb-4`}>
-  //               {groupId ? "Edit Group" : "Create New Group"}
-  //             </Text>
-
-  //             {isLoading ? (
-  //               <ActivityIndicator size="large" color="#0000ff" />
-  //             ) : (
-  //               <>
-  //                 <TextInput
-  //                   placeholder="Group Name"
-  //                   value={name}
-  //                   onChangeText={setName}
-  //                   style={tw`border p-2 mb-4`}
-  //                 />
-  //                 <TextInput
-  //                   placeholder="Group Description"
-  //                   value={description}
-  //                   onChangeText={setDescription}
-  //                   style={tw`border p-2 mb-4 h-32`}
-  //                   multiline={true}
-  //                   numberOfLines={5}
-  //                   textAlignVertical="top"
-  //                 />
-  //                 <Text style={tw`mb-2 font-bold`}>Group Cover Image</Text>
-  //                 {groupCoverImage ? (
-  //                   <View style={tw`mb-4`}>
-  //                     <Image
-  //                       source={{ uri: groupCoverImage }}
-  //                       style={{ width: 200, height: 200, resizeMode: "cover" }}
-  //                     />
-  //                     <View style={tw`flex-row justify-between mt-2`}>
-  //                       <TouchableOpacity
-  //                         style={tw`bg-yellow-500 p-2 rounded`}
-  //                         onPress={pickImage}
-  //                       >
-  //                         <Text style={tw`text-white`}>Update Image</Text>
-  //                       </TouchableOpacity>
-  //                       <TouchableOpacity
-  //                         style={tw`bg-red-500 p-2 rounded`}
-  //                         onPress={() => setGroupCoverImage(null)}
-  //                       >
-  //                         <Text style={tw`text-white`}>Delete Image</Text>
-  //                       </TouchableOpacity>
-  //                     </View>
-  //                   </View>
-  //                 ) : (
-  //                   <TouchableOpacity
-  //                     style={tw`border p-2 mb-4`}
-  //                     onPress={pickImage}
-  //                   >
-  //                     <Text>Select Image</Text>
-  //                   </TouchableOpacity>
-  //                 )}
-
-  //                 <Text style={tw`text-xl font-bold mb-4`}>Invite Members</Text>
-  //                 <TouchableOpacity
-  //                   style={tw`bg-blue-500 p-3 mb-4 rounded-lg`}
-  //                   onPress={() => setIsUserModalVisible(true)}
-  //                 >
-  //                   <Text style={tw`text-white text-center`}>
-  //                     Search and Invite Users
-  //                   </Text>
-  //                 </TouchableOpacity>
-  //                 <FilterModal
-  //                   key="user-filter-modal"
-  //                   visible={isUserModalVisible}
-  //                   onClose={() => setIsUserModalVisible(false)}
-  //                   data={users.map(
-  //                     (user) => `${user.firstName} ${user.lastName}`
-  //                   )}
-  //                   onSelect={handleSelectUser}
-  //                   selectedValue={null}
-  //                 />
-  //                 <Text style={tw`text-lg font-bold mb-2`}>Selected Users:</Text>
-  //                 {selectedUsers && selectedUsers.length > 0 ? (
-  //                   <FlatList
-  //                     data={selectedUsers}
-  //                     keyExtractor={(item) => item._id}
-  //                     renderItem={({ item }) => (
-  //                       <View
-  //                         style={tw`flex-row justify-between items-center p-2 border-b`}
-  //                       >
-  //                         <Text>
-  //                           {item.firstName} {item.lastName}
-  //                         </Text>
-  //                         <TouchableOpacity
-  //                           style={tw`bg-red-500 p-2 rounded`}
-  //                           onPress={() => handleRemoveUser(item._id)}
-  //                         >
-  //                           <Text style={tw`text-white`}>Remove</Text>
-  //                         </TouchableOpacity>
-  //                       </View>
-  //                     )}
-  //                   />
-  //                 ) : (
-  //                   <Text style={tw`text-gray-500`}>No users selected</Text>
-  //                 )}
-
-  //                 {/* {selectedUsers.length > 0 ? (
-  //                   <FlatList
-  //                     data={selectedUsers}
-  //                     keyExtractor={(item) => item._id}
-  //                     renderItem={({ item }) => (
-  //                       <View
-  //                         style={tw`flex-row justify-between items-center p-2 border-b`}
-  //                       >
-  //                         <Text>
-  //                           {item.firstName} {item.lastName}
-  //                         </Text>
-  //                         <TouchableOpacity
-  //                           style={tw`bg-red-500 p-2 rounded`}
-  //                           onPress={() => handleRemoveUser(item._id)}
-  //                         >
-  //                           <Text style={tw`text-white`}>Remove</Text>
-  //                         </TouchableOpacity>
-  //                       </View>
-  //                     )}
-  //                   />
-  //                 ) : (
-  //                   <Text style={tw`text-gray-500`}>No users selected</Text>
-  //                 )} */}
-  //                 <TouchableOpacity
-  //                   style={tw`bg-blue-500 p-3 mt-4 rounded-lg`}
-  //                   onPress={handleSubmit}
-  //                 >
-  //                   <Text style={tw`text-white text-center`}>
-  //                     {groupId ? "Update Group" : "Create Group"}
-  //                   </Text>
-  //                 </TouchableOpacity>
-  //                 <TouchableOpacity
-  //                   style={tw`bg-red-500 p-3 mt-4 rounded-lg`}
-  //                   onPress={() => navigation.goBack()}
-  //                 >
-  //                   <Text style={tw`text-white text-center`}>Cancel</Text>
-  //                 </TouchableOpacity>
-  //               </>
-  //             )}
-  //           </View>
-  //         </>
-  //       }
-  //     />
-  //   );
 };
 
 export default UpsertGroupScreen;
