@@ -28,6 +28,7 @@ const GroupProfileScreen = () => {
   const [isMember, setIsMember] = useState(false); // Track if user is a member
   const [isMemberAdmin, setIsMemberAdmin] = useState(false); // Track if user is an admin
   const [isInvited, setIsInvited] = useState(false); // Track if user is invited
+  const [hasRequestedJoin, setHasRequestedJoin] = useState(false);
 
   const { auth } = useAuth();
   const access_token = auth.access_token;
@@ -153,6 +154,9 @@ const GroupProfileScreen = () => {
       setIsMemberAdmin(response.data.isAdmin); // Check if the user is an admin
       setIsInvited(response.data.isInvited); // Check if the user has an invite
       setGroup(response.data.group);
+      setHasRequestedJoin(
+        response.data.group.requestJoinMembers.includes(auth.user._id)
+      );
     } catch (error) {
       console.error("Error fetching group details:", error);
     } finally {
@@ -394,6 +398,15 @@ const GroupProfileScreen = () => {
               >
                 <Text style={tw`text-white text-center text-lg`}>
                   Accept Invitation
+                </Text>
+              </TouchableOpacity>
+            ) : hasRequestedJoin ? (
+              <TouchableOpacity
+                disabled
+                style={tw`bg-gray-500 py-2 px-6 rounded-lg mt-4 mx-auto`}
+              >
+                <Text style={tw`text-white text-center text-lg`}>
+                  Request Join Sent
                 </Text>
               </TouchableOpacity>
             ) : (
