@@ -8,14 +8,14 @@ import { axiosBase } from "../../services/BaseService";
 const UserCard = ({ user }) => {
   const navigation = useNavigation();
 
-  const handleChat = () => {
-    navigation.navigate("ChatScreen", { user });
-  };
+  // const handleChat = () => {
+  //   navigation.navigate("ChatScreen", { user });
+  // };
 
-  const handleEmail = () => {
-    // Navigate to EmailScreen with user details
-    navigation.navigate("EmailScreen", { user });
-  };
+  // const handleEmail = () => {
+  //   // Navigate to EmailScreen with user details
+  //   navigation.navigate("EmailScreen", { user });
+  // };
 
   return (
     <TouchableOpacity
@@ -70,7 +70,7 @@ const UserCard = ({ user }) => {
         </View>
 
         {/* Buttons for Chat and Email */}
-        <View style={tw`flex-row justify-center mt-6`}>
+        {/* <View style={tw`flex-row justify-center mt-6`}>
           <TouchableOpacity
             onPress={handleChat}
             style={tw`bg-blue-500 rounded-lg p-2 w-1/2 mr-2`}
@@ -83,7 +83,7 @@ const UserCard = ({ user }) => {
           >
             <Text style={tw`text-center`}>Email</Text>
           </TouchableOpacity>
-        </View>
+        </View> */}
       </View>
     </TouchableOpacity>
   );

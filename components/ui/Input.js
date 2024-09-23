@@ -25,7 +25,7 @@ function AuthForm({ isLogin, onSubmit, credentialsInvalid }) {
     });
   }, [enteredEmail, enteredPassword, onSubmit]);
 
-  console.log("AuthForm component re-rendered");
+  //S console.log("AuthForm component re-rendered");
 
   return (
     <View style={styles.form}>

@@ -110,7 +110,7 @@ const UserSearchScreen = () => {
     friends,
   ]);
 
-  const resetFilters = () => {
+  const resetFilters = async () => {
     setSearch("");
     setCollege("");
     setMatriculationYear("");
@@ -118,16 +118,32 @@ const UserSearchScreen = () => {
     setLocation(""); // Reset location
     setCity(""); // Reset city
     setOptions([]);
+
+    try {
+      const response = await axiosBase.get(`/users/query?search=all`, {
+        headers: { Authorization: `Bearer ${auth.access_token}` },
+      });
+
+      if (response) {
+        const filteredData = response.data.filter(
+          (item) => item._id !== auth.user._id
+        );
+
+        setOptions(filteredData);
+      }
+    } catch (error) {
+      console.error("Search error:", error);
+    }
   };
 
-  const searchAllUsers = () => {
-    setSearch("");
-    setCollege("");
-    setMatriculationYear("");
-    setIndustry("");
-    setLocation("");
-    setCity("");
-  };
+  // const searchAllUsers = () => {
+  //   setSearch("");
+  //   setCollege("");
+  //   setMatriculationYear("");
+  //   setIndustry("");
+  //   setLocation("");
+  //   setCity("");
+  // };
 
   const openFilterModal = (filterType) => {
     setCurrentFilter(filterType);
@@ -225,12 +241,12 @@ const UserSearchScreen = () => {
         </View>
 
         <View style={tw`flex flex-row justify-start items-center mb-4`}>
-          <TouchableOpacity
+          {/* <TouchableOpacity
             style={tw`border border-gray-300 rounded-lg p-2 mb-2 w-1/2 bg-secondary500 mr-2`}
             onPress={searchAllUsers}
           >
             <Text style={tw`text-black text-center`}>Search All</Text>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
           <TouchableOpacity
             style={tw`border border-gray-300 rounded-lg p-2 mb-2 w-1/2 bg-primary100`}
             onPress={resetFilters}

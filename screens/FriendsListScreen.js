@@ -1,15 +1,23 @@
 import React, { useState, useContext, useCallback } from "react";
-import { View, FlatList, ActivityIndicator, Text } from "react-native";
+import {
+  View,
+  FlatList,
+  ActivityIndicator,
+  Text,
+  TouchableOpacity,
+} from "react-native";
 import { useFocusEffect } from "@react-navigation/native"; // Import useFocusEffect
 import UserCard from "../components/ui/UserCard"; // Adjust the path as necessary
 import tw from "twrnc";
 import { axiosBase } from "../services/BaseService"; // Ensure you have a configured axios instance
 import useAuth from "../hooks/useAuth";
+import { useNavigation } from "@react-navigation/native";
 
 const FriendsListScreen = () => {
   const [friends, setFriends] = useState([]);
   const [loading, setLoading] = useState(true);
   const { auth } = useAuth();
+  const navigation = useNavigation();
 
   // useFocusEffect will run the effect whenever the screen comes into view
   useFocusEffect(
@@ -41,9 +49,12 @@ const FriendsListScreen = () => {
 
   return (
     <View style={tw`flex-1`}>
-      <Text style={tw`text-center font-bold text-xl mb-4 mt-10`}>
-        Go to User Search and then User Profile to Follow
-      </Text>
+      <TouchableOpacity
+        style={tw`border border-gray-300 rounded-lg p-2 w-1/2 bg-red-500 mt-20 self-center`}
+        onPress={() => navigation.navigate("User Search")}
+      >
+        <Text style={tw`text-white text-center`}>Follow Other Users</Text>
+      </TouchableOpacity>
       <FlatList
         data={friends}
         keyExtractor={(item) => item._id.toString()} // Use the _id field as the key
