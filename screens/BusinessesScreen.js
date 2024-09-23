@@ -221,12 +221,12 @@ const BusinessesScreen = () => {
 
       {/* Action Buttons */}
       <View style={tw`flex flex-row justify-start items-center mb-4`}>
-        <TouchableOpacity
+        {/* <TouchableOpacity
           style={tw`border border-gray-300 rounded-lg p-2 mb-2 w-1/2 bg-secondary500 mr-2`}
           onPress={fetchAllBusinesses}
         >
           <Text style={tw`text-black text-center`}>Search All</Text>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
         <TouchableOpacity
           style={tw`border border-gray-300 rounded-lg p-2 mb-2 w-1/2 bg-primary100`}
           onPress={resetFilters}

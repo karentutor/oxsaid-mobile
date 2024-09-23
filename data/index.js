@@ -446,31 +446,31 @@ export const companysizeData = [
 
 export const OCCUPATION_DATA = [
   {
-    name: "arts and entertainment",
+    name: "Arts and Entertainment",
     sublist: [
       {
-        name: "animation and gaming",
+        name: "Animation and Gaming",
       },
       {
-        name: "fine arts",
+        name: "Fine Arts",
       },
       {
-        name: "film and television",
+        name: "Film and Television",
       },
       {
-        name: "graphic design",
+        name: "Graphic Design",
       },
       {
-        name: "music",
+        name: "Music",
       },
       {
-        name: "performing arts",
+        name: "Performing Arts",
       },
       {
-        name: "photography",
+        name: "Photography",
       },
       {
-        name: "writing and editing",
+        name: "Writing and Editing",
       },
     ],
   },
@@ -481,247 +481,247 @@ export const OCCUPATION_DATA = [
         name: "Animation",
       },
       {
-        name: "Graphic design",
+        name: "Graphic Design",
       },
       {
         name: "Photography",
       },
       {
-        name: "Video production",
+        name: "Video Production",
       },
       {
-        name: "Writing and editing",
-      },
-    ],
-  },
-  {
-    name: "customer service",
-    sublist: [
-      {
-        name: "call center operations",
-      },
-      {
-        name: "customer experience",
-      },
-      {
-        name: "customer success",
-      },
-      {
-        name: "technical support",
+        name: "Writing and Editing",
       },
     ],
   },
   {
-    name: "education",
+    name: "Customer Service",
     sublist: [
       {
-        name: "curriculum development",
+        name: "Call Center Operations",
       },
       {
-        name: "education technology",
+        name: "Customer Experience",
       },
       {
-        name: "educational administration",
+        name: "Customer Success",
       },
       {
-        name: "instructional design",
-      },
-      {
-        name: "special education",
-      },
-      {
-        name: "teaching",
+        name: "Technical Support",
       },
     ],
   },
   {
-    name: "engineering",
+    name: "Education",
     sublist: [
       {
-        name: "aerospace engineering",
+        name: "Curriculum Development",
       },
       {
-        name: "biomedical engineering",
+        name: "Education Technology",
       },
       {
-        name: "chemical engineering",
+        name: "Educational Administration",
       },
       {
-        name: "civil engineering",
+        name: "Instructional Design",
       },
       {
-        name: "electrical engineering",
+        name: "Special Education",
       },
       {
-        name: "environmental engineering",
-      },
-      {
-        name: "mechanical engineering",
-      },
-      {
-        name: "software engineering",
+        name: "Teaching",
       },
     ],
   },
   {
-    name: "finance",
+    name: "Engineering",
     sublist: [
       {
-        name: "accounting",
+        name: "Aerospace Engineering",
       },
       {
-        name: "corporate finance",
+        name: "Biomedical Engineering",
       },
       {
-        name: "financial planning",
+        name: "Chemical Engineering",
       },
       {
-        name: "insurance",
+        name: "Civil Engineering",
       },
       {
-        name: "investment banking",
+        name: "Electrical Engineering",
       },
       {
-        name: "taxation",
+        name: "Environmental Engineering",
       },
       {
-        name: "venture capital",
+        name: "Mechanical Engineering",
+      },
+      {
+        name: "Software Engineering",
       },
     ],
   },
   {
-    name: "health and fitness",
+    name: "Finance",
     sublist: [
       {
-        name: "group fitness instruction",
+        name: "Accounting",
       },
       {
-        name: "massage therapy",
+        name: "Corporate Finance",
       },
       {
-        name: "nutrition counseling",
+        name: "Financial Planning",
       },
       {
-        name: "personal training",
+        name: "Insurance",
       },
       {
-        name: "physical therapy",
+        name: "Investment Banking",
       },
       {
-        name: "pilates instruction",
+        name: "Taxation",
       },
       {
-        name: "sports coaching",
-      },
-      {
-        name: "yoga instruction",
+        name: "Venture Capital",
       },
     ],
   },
   {
-    name: "healthcare",
+    name: "Health and Fitness",
     sublist: [
       {
-        name: "healthcare administration",
+        name: "Group Fitness Instruction",
       },
       {
-        name: "medical research",
+        name: "Massage Therapy",
       },
       {
-        name: "nursing",
+        name: "Nutrition Counseling",
       },
       {
-        name: "occupational therapy",
+        name: "Personal Training",
       },
       {
-        name: "pharmacy",
+        name: "Physical Therapy",
       },
       {
-        name: "physical therapy",
+        name: "Pilates Instruction",
       },
       {
-        name: "physician",
+        name: "Sports Coaching",
+      },
+      {
+        name: "Yoga Instruction",
       },
     ],
   },
   {
-    name: "human resources",
+    name: "Healthcare",
     sublist: [
       {
-        name: "compensation and benefits",
+        name: "Healthcare Administration",
       },
       {
-        name: "diversity and inclusion",
+        name: "Medical Research",
       },
       {
-        name: "employee relations",
+        name: "Nursing",
       },
       {
-        name: "organizational development",
+        name: "Occupational Therapy",
       },
       {
-        name: "talent acquisition",
+        name: "Pharmacy",
       },
       {
-        name: "training and development",
+        name: "Physical Therapy",
+      },
+      {
+        name: "Physician",
       },
     ],
   },
   {
-    name: "information technology",
+    name: "Human Resources",
     sublist: [
       {
-        name: "artificial intelligence",
+        name: "Compensation and Benefits",
       },
       {
-        name: "cloud computing",
+        name: "Diversity and Inclusion",
       },
       {
-        name: "cybersecurity",
+        name: "Employee Relations",
       },
       {
-        name: "data analysis",
+        name: "Organizational Development",
       },
       {
-        name: "database administration",
+        name: "Talent Acquisition",
       },
       {
-        name: "network administration",
-      },
-      {
-        name: "software development",
-      },
-      {
-        name: "web development",
+        name: "Training and Development",
       },
     ],
   },
   {
-    name: "legal",
+    name: "Information Technology",
     sublist: [
       {
-        name: "compliance and ethics",
+        name: "Artificial Intelligence",
       },
       {
-        name: "court reporter",
+        name: "Cloud Computing",
       },
       {
-        name: "intellectual property",
+        name: "Cybersecurity",
       },
       {
-        name: "lawyer",
+        name: "Data Analysis",
       },
       {
-        name: "legal consultant",
+        name: "Database Administration",
       },
       {
-        name: "legal secretary",
+        name: "Network Administration",
       },
       {
-        name: "mediation and arbitration",
+        name: "Software Development",
       },
       {
-        name: "paralegal",
+        name: "Web Development",
+      },
+    ],
+  },
+  {
+    name: "Legal",
+    sublist: [
+      {
+        name: "Compliance and Ethics",
+      },
+      {
+        name: "Court Reporter",
+      },
+      {
+        name: "Intellectual Property",
+      },
+      {
+        name: "Lawyer",
+      },
+      {
+        name: "Legal Consultant",
+      },
+      {
+        name: "Legal Secretary",
+      },
+      {
+        name: "Mediation and Arbitration",
+      },
+      {
+        name: "Paralegal",
       },
     ],
   },
@@ -752,25 +752,25 @@ export const OCCUPATION_DATA = [
     ],
   },
   {
-    name: "marketing",
+    name: "Marketing",
     sublist: [
       {
-        name: "brand management",
+        name: "Brand Management",
       },
       {
-        name: "digital marketing",
+        name: "Digital Marketing",
       },
       {
-        name: "market research",
+        name: "Market Research",
       },
       {
-        name: "product management",
+        name: "Product Management",
       },
       {
-        name: "public relations",
+        name: "Public Relations",
       },
       {
-        name: "social media management",
+        name: "Social Media Management",
       },
     ],
   },
@@ -784,13 +784,13 @@ export const OCCUPATION_DATA = [
         name: "Broadcasting",
       },
       {
-        name: "Content creation",
+        name: "Content Creation",
       },
       {
         name: "Journalism",
       },
       {
-        name: "Public relations",
+        name: "Public Relations",
       },
     ],
   },
@@ -804,42 +804,42 @@ export const OCCUPATION_DATA = [
         name: "Procurement",
       },
       {
-        name: "Project management",
+        name: "Project Management",
       },
       {
-        name: "Quality control",
+        name: "Quality Control",
       },
       {
-        name: "Supply chain management",
+        name: "Supply Chain Management",
       },
     ],
   },
   {
-    name: "sales",
+    name: "Sales",
     sublist: [
       {
-        name: "business development",
+        name: "Business Development",
       },
       {
-        name: "channel sales",
+        name: "Channel Sales",
       },
       {
-        name: "inside sales",
+        name: "Inside Sales",
       },
       {
-        name: "key account management",
+        name: "Key Account Management",
       },
       {
-        name: "outside sales",
+        name: "Outside Sales",
       },
       {
-        name: "retail sales",
+        name: "Retail Sales",
       },
       {
-        name: "sales engineering",
+        name: "Sales Engineering",
       },
       {
-        name: "sales operations",
+        name: "Sales Operations",
       },
     ],
   },
