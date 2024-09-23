@@ -107,7 +107,7 @@ const GroupProfileScreen = () => {
     }
   };
 
-  const handleDeleteGroup = async () => {
+  const onDeleteGroup = async () => {
     try {
       const response = await axiosBase.delete(`/groups/${groupId}`, {
         headers: { Authorization: `Bearer ${access_token}` },
@@ -123,6 +123,17 @@ const GroupProfileScreen = () => {
       console.error("Error deleting group:", error.message);
       Alert.alert("Error deleting group", error.message);
     }
+  };
+
+  const handleDeleteGroup = () => {
+    Alert.alert(
+      "Confirm Delete",
+      "Are you sure you want to delete this group?",
+      [
+        { text: "Cancel", style: "cancel" },
+        { text: "Delete", style: "destructive", onPress: onDeleteGroup },
+      ]
+    );
   };
 
   const handleEditGroup = () => {
