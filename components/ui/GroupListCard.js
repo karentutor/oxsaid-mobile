@@ -89,7 +89,7 @@ const GroupListCard = ({ group, onEdit, onDelete }) => {
       </View>
 
       {/* Conditionally render action buttons if the current user is an admin */}
-      {isAdmin && (
+      {/* {isAdmin && (
         <View style={tw`flex-row justify-center mt-8`}>
           <TouchableOpacity
             onPress={onEdit}
@@ -104,7 +104,7 @@ const GroupListCard = ({ group, onEdit, onDelete }) => {
             <Text style={tw`text-white text-lg`}>Delete</Text>
           </TouchableOpacity>
         </View>
-      )}
+      )} */}
     </View>
   );
 };

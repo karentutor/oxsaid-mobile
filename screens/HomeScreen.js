@@ -37,8 +37,13 @@ function HomeScreen() {
   // Fetch groups when the screen is in focus
   // Fetch groups function
   const fetchGroups = async () => {
+    if (!user?._id) {
+      console.log("User ID is not available yet");
+      return; // Exit if user ID is not available
+    }
+
     try {
-      const response = await axiosBase.get(`/groups/${user._id}`, {
+      const response = await axiosBase.get(`/groups/${user._id}/groups`, {
         headers: { Authorization: `Bearer ${access_token}` },
       });
       setGroups(response.data.groups); // Store groups in state
@@ -63,9 +68,17 @@ function HomeScreen() {
   };
 
   // Fetch groups when the screen is in focus
+  // useFocusEffect(
+  //   useCallback(() => {
+  //     if (user && access_token) {
+  //       fetchGroups(); // Call the function to fetch groups when the screen is focused
+  //     }
+  //   }, [user, access_token]) // Dependencies
+  // );
+
   useFocusEffect(
     useCallback(() => {
-      if (user && access_token) {
+      if (user && access_token && user._id) {
         fetchGroups(); // Call the function to fetch groups when the screen is focused
       }
     }, [user, access_token]) // Dependencies
@@ -303,7 +316,9 @@ function HomeScreen() {
         ListHeaderComponent={
           <>
             {/* User Profile Section */}
-            <Text style={tw`text-2xl font-bold mb-4 text-center`}>Home!</Text>
+            <Text style={tw`text-2xl font-bold mb-4 mt-4 text-center`}>
+              Home!
+            </Text>
 
             {user ? (
               <View style={tw`items-center mb-8`}>
@@ -434,7 +449,8 @@ function HomeScreen() {
 
             {/* Contact Preferences Form */}
             {showContactPreferences && (
-              <View style={tw`w-full p-4 bg-gray-100 rounded-lg mb-6`}>
+              <View style={tw`w-full p-4 bg-blue-50 rounded-lg mb-6`}>
+                {/* Changed background to light yellow */}
                 <Text style={tw`text-xl font-bold mb-4 text-center`}>
                   Contact Preferences
                 </Text>

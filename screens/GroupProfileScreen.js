@@ -145,11 +145,9 @@ const GroupProfileScreen = () => {
   const fetchGroup = async () => {
     setLoading(true);
     try {
-      const response = await axiosBase.get(`/groups/${groupId}`, {
+      const response = await axiosBase.get(`/groups/${groupId}/group`, {
         headers: { Authorization: `Bearer ${auth.access_token}` },
       });
-
-      console.log("Group Data:", response.data); // Log the entire group data
       setIsMember(response.data.isMember); // Check if the user is a member
       setIsMemberAdmin(response.data.isAdmin); // Check if the user is an admin
       setIsInvited(response.data.isInvited); // Check if the user has an invite
@@ -338,21 +336,6 @@ const GroupProfileScreen = () => {
         </Text>
       )}
 
-      {/* Events Section
-      {group.events && group.events.length > 0 && (
-        <View>
-          <Text style={tw`text-xl font-bold mb-2 text-center`}>Events</Text>
-          {group.events.map((event, index) => (
-            <Text
-              key={index}
-              style={tw`text-base text-gray-700 mb-2 text-center`}
-            >
-              - {event.name}
-            </Text>
-          ))}
-        </View>
-      )} */}
-
       {/* Created At */}
       <Text style={tw`text-base text-gray-400 mt-4 text-center`}>
         Created on: {new Date(group.createdAt).toLocaleDateString()}
@@ -374,6 +357,43 @@ const GroupProfileScreen = () => {
           </TouchableOpacity>
         </View>
       )}
+      {!isMember ? (
+        isInvited ? (
+          <TouchableOpacity
+            onPress={handleAcceptInvitation}
+            style={tw`bg-green-500 py-2 px-6 rounded-lg mt-4 mx-auto`}
+          >
+            <Text style={tw`text-white text-center text-lg`}>
+              Accept Invitation
+            </Text>
+          </TouchableOpacity>
+        ) : hasRequestedJoin ? (
+          <TouchableOpacity
+            disabled
+            style={tw`bg-gray-500 py-2 px-6 rounded-lg mt-4 mx-auto`}
+          >
+            <Text style={tw`text-white text-center text-lg`}>
+              Request Join Sent
+            </Text>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity
+            onPress={handleRequestToJoin}
+            style={tw`bg-blue-500 py-2 px-6 rounded-lg mt-4 mx-auto`}
+          >
+            <Text style={tw`text-white text-center text-lg`}>
+              Request to Join
+            </Text>
+          </TouchableOpacity>
+        )
+      ) : (
+        <TouchableOpacity
+          onPress={handleLeaveGroup}
+          style={tw`bg-red-500 py-2 px-6 rounded-lg mt-4 mx-auto`}
+        >
+          <Text style={tw`text-white text-center text-lg`}>Leave Group</Text>
+        </TouchableOpacity>
+      )}
       {/* Post Box */}
       {(isMember || isMemberAdmin) && (
         <PostBox onPost={handlePost} onCancel={() => console.log("Canceled")} />
@@ -390,7 +410,7 @@ const GroupProfileScreen = () => {
           {renderGroupDetails()}
 
           {/* Accept Invitation, Leave Group, or Request to Join */}
-          {!isMember ? (
+          {/* {!isMember ? (
             isInvited ? (
               <TouchableOpacity
                 onPress={handleAcceptInvitation}
@@ -428,7 +448,7 @@ const GroupProfileScreen = () => {
                 Leave Group
               </Text>
             </TouchableOpacity>
-          )}
+          )} */}
         </>
       )}
       renderItem={({ item }) => (

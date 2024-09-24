@@ -51,7 +51,7 @@ const UpsertGroupScreen = ({ route, navigation }) => {
     if (groupId) {
       const fetchGroupDetails = async () => {
         try {
-          const response = await axiosBase.get(`/groups/${groupId}`, {
+          const response = await axiosBase.get(`/groups/${groupId}/group`, {
             headers: { Authorization: `Bearer ${auth.access_token}` },
           });
           const {
