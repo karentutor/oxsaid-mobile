@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import {
+  Alert,
   View,
   Text,
   TextInput,
@@ -40,7 +41,7 @@ export default function ChatScreen() {
     });
 
     socket.on("connect", () => {
-      console.log("Socket connected", socket.id);
+      // console.log("Socket connected", socket.id);
       setConnected(true);
     });
 
@@ -113,7 +114,7 @@ export default function ChatScreen() {
           markMessagesAsRead(currentUserId, recipientUserId);
         }
       } else {
-        console.log("No chat history found, starting a new chat.");
+        // console.log("No chat history found, starting a new chat.");
         setMessages([]);
       }
     } catch (error) {
@@ -128,7 +129,7 @@ export default function ChatScreen() {
         otherUserId,
       });
 
-      console.log("Messages marked as read:", response.data);
+      // console.log("Messages marked as read:", response.data);
     } catch (error) {
       console.error("Error marking messages as read:", error);
     }
@@ -149,6 +150,39 @@ export default function ChatScreen() {
       setInputMessage("");
       setErrorMessage(""); // Clear error message if any
     }
+  };
+
+  const handleDeleteMessage = async (messageId) => {
+    try {
+      await axiosBase.delete(`/chats/message/${messageId}`, {
+        headers: { Authorization: `Bearer ${auth.access_token}` }, // Corrected the parentheses
+      });
+      setMessages((prevMessages) =>
+        prevMessages.filter((msg) => msg._id !== messageId)
+      );
+      Alert.alert("Success", "Message deleted successfully.");
+    } catch (error) {
+      Alert.alert("Error", "Could not delete the message.");
+    }
+  };
+
+  const confirmDeleteMessage = (messageId) => {
+    Alert.alert(
+      "Delete Message",
+      "Are you sure you want to delete this message?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: () => handleDeleteMessage(messageId),
+        },
+      ],
+      { cancelable: true }
+    );
   };
 
   if (!auth.user || !recipientUser) {
@@ -200,21 +234,31 @@ export default function ChatScreen() {
                             : "bg-gray-200 self-start"
                         }`}
                       >
-                        {/* Meta Info (Sender Name and Time) */}
-                        <Text style={tw`text-sm text-gray-500`}>
-                          {msg.isSentByCurrentUser ? "You" : msg.from} •{" "}
-                          {messageDate.toLocaleTimeString()}
-                        </Text>
-                        <Text style={tw`text-xs text-gray-400`}>
-                          {messageDate.toLocaleDateString()}
-                        </Text>
-
-                        {/* Adjust message text to handle wrapping */}
-                        <Text
-                          style={tw`text-base text-black mt-1 flex-shrink-0`}
-                        >
-                          {msg.text}
-                        </Text>
+                        <View>
+                          {/* Meta Info (Sender Name and Time) */}
+                          <Text style={tw`text-sm text-gray-500`}>
+                            {msg.isSentByCurrentUser ? "You" : msg.from} •{" "}
+                            {messageDate.toLocaleTimeString()}
+                          </Text>
+                          <Text style={tw`text-xs text-gray-400`}>
+                            {messageDate.toLocaleDateString()}
+                          </Text>
+                          {/* Adjust message text to handle wrapping */}
+                          <Text
+                            style={tw`text-base text-black mt-1 flex-shrink-0`}
+                          >
+                            {msg.text}
+                          </Text>
+                        </View>
+                        {/* Delete Button: New line, bottom right */}
+                        <View style={tw`flex-row justify-end mt-2`}>
+                          <TouchableOpacity
+                            onPress={() => confirmDeleteMessage(msg._id)}
+                            style={tw`p-1`}
+                          >
+                            <Text style={tw`text-red-500 text-xs`}>Delete</Text>
+                          </TouchableOpacity>
+                        </View>
                       </View>
                     );
                   })}

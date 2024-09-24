@@ -46,11 +46,12 @@ const GroupProfileScreen = () => {
       if (response.data.isSuccess) {
         Alert.alert("Group Left", "You have successfully left the group.");
         setIsMember(false); // Update state to reflect that the user is no longer a member
+        fetchGroup();
       } else {
         Alert.alert("Error", response.data.msg);
       }
     } catch (error) {
-      console.error("Error leaving group:", error.message);
+      console.log("Error leaving group:", error.message);
       Alert.alert("Error", "Could not leave the group.");
     }
   };
@@ -80,14 +81,14 @@ const GroupProfileScreen = () => {
         Alert.alert("Error", response.data.msg);
       }
     } catch (error) {
-      console.error("Error requesting to join group:", error.message);
+      console.log("Error requesting to join group:", error.message);
       Alert.alert("Error", "Could not request to join the group.");
     }
   };
 
   const handleAcceptInvitation = async () => {
     try {
-      const response = await axiosBase.post(
+      const response = await axiosBase.put(
         `/groups/${groupId}/accept-invite`,
         {},
         {
@@ -148,6 +149,7 @@ const GroupProfileScreen = () => {
       const response = await axiosBase.get(`/groups/${groupId}/group`, {
         headers: { Authorization: `Bearer ${auth.access_token}` },
       });
+      console.log("groupProfileScreen, fetchGroup", response.data);
       setIsMember(response.data.isMember); // Check if the user is a member
       setIsMemberAdmin(response.data.isAdmin); // Check if the user is an admin
       setIsInvited(response.data.isInvited); // Check if the user has an invite
@@ -405,52 +407,7 @@ const GroupProfileScreen = () => {
     <FlatList
       data={posts}
       keyExtractor={(item) => item._id}
-      ListHeaderComponent={() => (
-        <>
-          {renderGroupDetails()}
-
-          {/* Accept Invitation, Leave Group, or Request to Join */}
-          {/* {!isMember ? (
-            isInvited ? (
-              <TouchableOpacity
-                onPress={handleAcceptInvitation}
-                style={tw`bg-green-500 py-2 px-6 rounded-lg mt-4 mx-auto`}
-              >
-                <Text style={tw`text-white text-center text-lg`}>
-                  Accept Invitation
-                </Text>
-              </TouchableOpacity>
-            ) : hasRequestedJoin ? (
-              <TouchableOpacity
-                disabled
-                style={tw`bg-gray-500 py-2 px-6 rounded-lg mt-4 mx-auto`}
-              >
-                <Text style={tw`text-white text-center text-lg`}>
-                  Request Join Sent
-                </Text>
-              </TouchableOpacity>
-            ) : (
-              <TouchableOpacity
-                onPress={handleRequestToJoin}
-                style={tw`bg-blue-500 py-2 px-6 rounded-lg mt-4 mx-auto`}
-              >
-                <Text style={tw`text-white text-center text-lg`}>
-                  Request to Join
-                </Text>
-              </TouchableOpacity>
-            )
-          ) : (
-            <TouchableOpacity
-              onPress={handleLeaveGroup}
-              style={tw`bg-red-500 py-2 px-6 rounded-lg mt-4 mx-auto`}
-            >
-              <Text style={tw`text-white text-center text-lg`}>
-                Leave Group
-              </Text>
-            </TouchableOpacity>
-          )} */}
-        </>
-      )}
+      ListHeaderComponent={() => <>{renderGroupDetails()}</>}
       renderItem={({ item }) => (
         <PostCard
           post={item}

@@ -65,7 +65,7 @@ const ChatListScreen = () => {
             setChatList([]);
           }
         } catch (error) {
-          console.error("Error fetching chat list:", error); // Log any errors during fetching
+          console.log("Error fetching chat list:", error); // Log any errors during fetching
           setChatList([]);
         }
       };
