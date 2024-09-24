@@ -30,7 +30,7 @@ function MainDrawerNavigator() {
         );
         setUnreadCount(response.data.unreadCount); // Update the unread count
       } catch (error) {
-        console.error("Error fetching unread message count:", error);
+        console.log("Error fetching unread message count:", error);
       }
     };
 

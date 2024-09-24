@@ -24,6 +24,7 @@ const GroupsScreen = () => {
           const response = await axiosBase.get("/groups", {
             headers: { Authorization: `Bearer ${auth.access_token}` }, // Sending token in request
           });
+          console.log("groupscrene, useFocuseffect", response.data.groups);
           setGroups(response.data.groups);
         } catch (error) {
           //console.error("Error fetching groups:", error);

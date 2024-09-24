@@ -60,30 +60,37 @@ const GroupProfileScreen = () => {
     navigation.navigate("UserProfileScreen", { userId }); // Navigate to UserProfile
   };
 
-  const handleRequestToJoin = async () => {
-    try {
-      const response = await axiosBase.post(
-        `/groups/${groupId}/request-join`,
-        {},
-        {
-          headers: { Authorization: `Bearer ${access_token}` },
-        }
-      );
+  // const handleRequestToJoin = async () => {
+  //   try {
+  //     const response = await axiosBase.post(
+  //       `/groups/${groupId}/request-join`,
+  //       {},
+  //       {
+  //         headers: { Authorization: `Bearer ${access_token}` },
+  //       }
+  //     );
 
-      if (response.data.isSuccess) {
-        Alert.alert(
-          "Request Sent",
-          "Your request to join the group has been sent."
-        );
-        // Optionally refresh the group data after sending the request
-        fetchGroup();
-      } else {
-        Alert.alert("Error", response.data.msg);
-      }
-    } catch (error) {
-      console.log("Error requesting to join group:", error.message);
-      Alert.alert("Error", "Could not request to join the group.");
-    }
+  //     if (response.data.isSuccess) {
+  //       Alert.alert(
+  //         "Request Sent",
+  //         "Your request to join the group has been sent."
+  //       );
+  //       // Optionally refresh the group data after sending the request
+  //       fetchGroup();
+  //     } else {
+  //       Alert.alert("Error", response.data.msg);
+  //     }
+  //   } catch (error) {
+  //     console.log("Error requesting to join group:", error.message);
+  //     Alert.alert("Error", "Could not request to join the group.");
+  //   }
+  // };
+
+  const handleRequestToJoin = () => {
+    Alert.alert(
+      "Coming Soon",
+      "The request to join the group feature will be available soon."
+    );
   };
 
   const handleAcceptInvitation = async () => {

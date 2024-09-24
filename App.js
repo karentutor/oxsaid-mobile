@@ -167,7 +167,7 @@ function Root() {
           setBadgeCount(count); // Update local state
           updateBadgeCount(count); // Update badge count on the app icon
         } catch (error) {
-          console.error("Error fetching unread message count:", error);
+          console.log("Error fetching unread message count:", error);
         }
       };
 
