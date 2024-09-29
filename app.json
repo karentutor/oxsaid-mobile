@@ -2,7 +2,7 @@
   "expo": {
     "name": "oxsaid-mobile",
     "slug": "oxsaid-mobile",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "orientation": "portrait",
     "icon": "./assets/oxsaid-i-quadruple-size.png",
     "userInterfaceStyle": "light",
@@ -13,8 +13,8 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.karentutor1.oxsaidmobile",
-      "buildNumber": "1.0.1",
+      "bundleIdentifier": "com.karentutor1.oxsaidmbile",
+      "buildNumber": "0.0.2",
       "icon": "./assets/oxsaid-i-quadruple-size.png"
     },
     "android": {

@@ -29,9 +29,32 @@ const GroupProfileScreen = () => {
   const [isMemberAdmin, setIsMemberAdmin] = useState(false); // Track if user is an admin
   const [isInvited, setIsInvited] = useState(false); // Track if user is invited
   const [hasRequestedJoin, setHasRequestedJoin] = useState(false);
+  const [hasDeclined, setHasDeclined] = useState(false);
 
   const { auth } = useAuth();
   const access_token = auth.access_token;
+
+  const getUserMembershipState = (userId, group) => {
+    if (group.adminMembers.some((admin) => admin._id === userId)) {
+      return "Admin";
+    } else if (group.groupMembers.some((member) => member._id === userId)) {
+      return "Member";
+    } else if (
+      group.declinedMembers.some((declined) => declined._id === userId)
+    ) {
+      return "Declined";
+    } else if (group.invitedMembers.some((invited) => invited._id === userId)) {
+      return "Invited";
+    } else if (
+      group.requestJoinMembers.some((requester) => requester._id === userId)
+    ) {
+      return "Requested to Join";
+    } else if (group.ignoredMembers.some((ignored) => ignored._id === userId)) {
+      return "Ignored";
+    } else {
+      return "Not Involved";
+    }
+  };
 
   const handleLeaveGroup = async () => {
     try {
@@ -60,37 +83,35 @@ const GroupProfileScreen = () => {
     navigation.navigate("UserProfileScreen", { userId }); // Navigate to UserProfile
   };
 
-  // const handleRequestToJoin = async () => {
-  //   try {
-  //     const response = await axiosBase.post(
-  //       `/groups/${groupId}/request-join`,
-  //       {},
-  //       {
-  //         headers: { Authorization: `Bearer ${access_token}` },
-  //       }
-  //     );
+  const handleRequestToJoin = async () => {
+    try {
+      const response = await axiosBase.put(
+        `/groups/${groupId}/request-join`,
+        {},
+        {
+          headers: { Authorization: `Bearer ${access_token}` },
+        }
+      );
 
-  //     if (response.data.isSuccess) {
-  //       Alert.alert(
-  //         "Request Sent",
-  //         "Your request to join the group has been sent."
-  //       );
-  //       // Optionally refresh the group data after sending the request
-  //       fetchGroup();
-  //     } else {
-  //       Alert.alert("Error", response.data.msg);
-  //     }
-  //   } catch (error) {
-  //     console.log("Error requesting to join group:", error.message);
-  //     Alert.alert("Error", "Could not request to join the group.");
-  //   }
-  // };
-
-  const handleRequestToJoin = () => {
-    Alert.alert(
-      "Coming Soon",
-      "The request to join the group feature will be available soon."
-    );
+      if (response.data.isSuccess) {
+        Alert.alert(
+          "Request Sent",
+          "Your request to join the group has been sent."
+        );
+        setHasRequestedJoin(true); // Update state immediately
+        // Remove fetchGroup() to avoid overwriting the state
+      } else {
+        Alert.alert("Error", response.data.msg);
+      }
+    } catch (error) {
+      if (error.response?.status === 400) {
+        Alert.alert("Error", "You have already requested to join this group.");
+        setHasRequestedJoin(true); // Even on error, make sure the state reflects this
+      } else {
+        console.log("Error requesting to join group:", error.message);
+        Alert.alert("Error", "Could not request to join the group.");
+      }
+    }
   };
 
   const handleAcceptInvitation = async () => {
@@ -156,14 +177,25 @@ const GroupProfileScreen = () => {
       const response = await axiosBase.get(`/groups/${groupId}/group`, {
         headers: { Authorization: `Bearer ${auth.access_token}` },
       });
-      console.log("groupProfileScreen, fetchGroup", response.data);
-      setIsMember(response.data.isMember); // Check if the user is a member
-      setIsMemberAdmin(response.data.isAdmin); // Check if the user is an admin
-      setIsInvited(response.data.isInvited); // Check if the user has an invite
-      setGroup(response.data.group);
-      setHasRequestedJoin(
-        response.data.group.requestJoinMembers.includes(auth.user._id)
+
+      const groupData = response.data.group;
+      setGroup(groupData);
+
+      // Determine user membership state
+      const userMembershipState = getUserMembershipState(
+        auth.user._id,
+        groupData
       );
+
+      // Log the user membership state for debugging
+      console.log("User membership state:", userMembershipState);
+
+      // Update state based on membership state
+      setIsMember(userMembershipState === "Member");
+      setIsMemberAdmin(userMembershipState === "Admin");
+      setIsInvited(userMembershipState === "Invited");
+      setHasRequestedJoin(userMembershipState === "Requested to Join");
+      setHasDeclined(userMembershipState === "Declined");
     } catch (error) {
       console.error("Error fetching group details:", error);
     } finally {
@@ -249,10 +281,52 @@ const GroupProfileScreen = () => {
     }
   };
 
-  // const handleEditPost = (postId) => {
-  //   // Navigate to EditPostScreen with postId
-  //   navigation.navigate("EditPostScreen", { postId });
-  // };
+  const handleAcceptJoinRequest = async (userId) => {
+    try {
+      const response = await axiosBase.put(
+        `/groups/${groupId}/accept-join-request/${userId}`,
+        {},
+        {
+          headers: { Authorization: `Bearer ${access_token}` },
+        }
+      );
+
+      if (response.data.isSuccess) {
+        Alert.alert(
+          "Success",
+          "User has been successfully added to the group."
+        );
+        fetchGroup(); // Refresh group data
+      } else {
+        Alert.alert("Error", response.data.msg);
+      }
+    } catch (error) {
+      console.error("Error accepting join request:", error.message);
+      Alert.alert("Error", "Could not accept join request.");
+    }
+  };
+
+  const handleIgnoreJoinRequest = async (userId) => {
+    try {
+      const response = await axiosBase.put(
+        `/groups/${groupId}/ignore-join-request/${userId}`,
+        {},
+        {
+          headers: { Authorization: `Bearer ${access_token}` },
+        }
+      );
+
+      if (response.data.isSuccess) {
+        Alert.alert("Success", "User join request has been ignored.");
+        fetchGroup(); // Refresh group data
+      } else {
+        Alert.alert("Error", response.data.msg);
+      }
+    } catch (error) {
+      console.error("Error ignoring join request:", error.message);
+      Alert.alert("Error", "Could not ignore join request.");
+    }
+  };
 
   if (loading) {
     return (
@@ -273,6 +347,66 @@ const GroupProfileScreen = () => {
   const isAdmin = group.adminMembers.some(
     (admin) => admin._id === auth.user._id
   );
+
+  // Render buttons based on the user’s state
+  const renderButtons = () => {
+    if (isMember || isMemberAdmin) {
+      // If the user is already a member or admin, they should not see join/invite buttons
+      return (
+        !isMemberAdmin && (
+          <TouchableOpacity
+            onPress={handleLeaveGroup}
+            style={tw`bg-red-500 py-2 px-6 rounded-lg mt-4 mx-auto`}
+          >
+            <Text style={tw`text-white text-center text-lg`}>Leave Group</Text>
+          </TouchableOpacity>
+        )
+      );
+    } else {
+      if (hasDeclined) {
+        return (
+          <TouchableOpacity
+            disabled
+            style={tw`bg-gray-500 py-2 px-6 rounded-lg mt-4 mx-auto`}
+          >
+            <Text style={tw`text-white text-center text-lg`}>You Declined</Text>
+          </TouchableOpacity>
+        );
+      }
+      if (isInvited) {
+        return (
+          <TouchableOpacity
+            onPress={handleAcceptInvitation}
+            style={tw`bg-green-500 py-2 px-6 rounded-lg mt-4 mx-auto`}
+          >
+            <Text style={tw`text-white text-center text-lg`}>
+              Accept Invitation
+            </Text>
+          </TouchableOpacity>
+        );
+      }
+      if (hasRequestedJoin) {
+        return (
+          <TouchableOpacity
+            disabled
+            style={tw`bg-gray-500 py-2 px-6 rounded-lg mt-4 mx-auto`}
+          >
+            <Text style={tw`text-white text-center text-lg`}>Request Sent</Text>
+          </TouchableOpacity>
+        );
+      }
+      return (
+        <TouchableOpacity
+          onPress={handleRequestToJoin}
+          style={tw`bg-blue-500 py-2 px-6 rounded-lg mt-4 mx-auto`}
+        >
+          <Text style={tw`text-white text-center text-lg`}>
+            Request to Join
+          </Text>
+        </TouchableOpacity>
+      );
+    }
+  };
 
   const renderGroupDetails = () => (
     <>
@@ -366,49 +500,56 @@ const GroupProfileScreen = () => {
           </TouchableOpacity>
         </View>
       )}
-      {!isMember ? (
-        isInvited ? (
-          <TouchableOpacity
-            onPress={handleAcceptInvitation}
-            style={tw`bg-green-500 py-2 px-6 rounded-lg mt-4 mx-auto`}
-          >
-            <Text style={tw`text-white text-center text-lg`}>
-              Accept Invitation
-            </Text>
-          </TouchableOpacity>
-        ) : hasRequestedJoin ? (
-          <TouchableOpacity
-            disabled
-            style={tw`bg-gray-500 py-2 px-6 rounded-lg mt-4 mx-auto`}
-          >
-            <Text style={tw`text-white text-center text-lg`}>
-              Request Join Sent
-            </Text>
-          </TouchableOpacity>
-        ) : (
-          <TouchableOpacity
-            onPress={handleRequestToJoin}
-            style={tw`bg-blue-500 py-2 px-6 rounded-lg mt-4 mx-auto`}
-          >
-            <Text style={tw`text-white text-center text-lg`}>
-              Request to Join
-            </Text>
-          </TouchableOpacity>
-        )
-      ) : (
-        <TouchableOpacity
-          onPress={handleLeaveGroup}
-          style={tw`bg-red-500 py-2 px-6 rounded-lg mt-4 mx-auto`}
-        >
-          <Text style={tw`text-white text-center text-lg`}>Leave Group</Text>
-        </TouchableOpacity>
-      )}
+
+      {/* Call renderButtons here */}
+      {renderButtons()}
+
+      {/* Render Join Requests */}
+      {renderJoinRequests()}
       {/* Post Box */}
       {(isMember || isMemberAdmin) && (
         <PostBox onPost={handlePost} onCancel={() => console.log("Canceled")} />
       )}
     </>
   );
+
+  const renderJoinRequests = () => {
+    if (!isMemberAdmin || group.requestJoinMembers.length === 0) {
+      return null; // Only show if the user is an admin and there are join requests
+    }
+
+    return (
+      <View style={tw`mt-6`}>
+        <Text style={tw`text-xl font-bold mb-4 text-center`}>
+          Join Requests
+        </Text>
+        {group.requestJoinMembers.map((member, index) => (
+          <View
+            key={index}
+            style={tw`flex-row justify-between items-center mb-4 mx-6`}
+          >
+            <Text style={tw`text-lg`}>
+              {member.firstName} {member.lastName}
+            </Text>
+            <View style={tw`flex-row`}>
+              <TouchableOpacity
+                onPress={() => handleAcceptJoinRequest(member._id)}
+                style={tw`bg-green-500 py-2 px-4 rounded-lg mr-2`}
+              >
+                <Text style={tw`text-white`}>Accept</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => handleIgnoreJoinRequest(member._id)}
+                style={tw`bg-gray-500 py-2 px-4 rounded-lg`}
+              >
+                <Text style={tw`text-white`}>Ignore</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        ))}
+      </View>
+    );
+  };
 
   return (
     <FlatList

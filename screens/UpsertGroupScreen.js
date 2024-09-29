@@ -38,7 +38,12 @@ const UpsertGroupScreen = ({ route, navigation }) => {
         const response = await axiosBase.get("/users", {
           headers: { Authorization: `Bearer ${auth.access_token}` },
         });
-        setUsers(response.data);
+        // Exclude the authenticated user from the list
+        const filteredUsers = response.data.filter(
+          (user) => user._id !== auth.user._id
+        );
+
+        setUsers(filteredUsers);
       } catch (error) {
         console.error("Error fetching users:", error);
       }
@@ -77,6 +82,7 @@ const UpsertGroupScreen = ({ route, navigation }) => {
       fetchGroupDetails(); // Call the function when groupId is present
     }
   }, [groupId, auth.access_token]);
+
   const handleSelectUser = (selectedUser) => {
     const foundUser = users.find(
       (user) => `${user.firstName} ${user.lastName}` === selectedUser

@@ -17,7 +17,7 @@ const ChatListScreen = () => {
         try {
           const response = await axiosBase.get(`/chats/${auth.user._id}`);
 
-          console.log("Full API Response:", response.data); // Log the full response
+          // console.log("Full API Response:", response.data); // Log the full response
 
           if (response.data && response.data.chats.length > 0) {
             const chatsByUser = response.data.chats.reduce((acc, chat) => {
@@ -30,7 +30,7 @@ const ChatListScreen = () => {
                   ? chat.toUser
                   : chat.fromUser;
 
-              console.log("Other User:", otherUser); // Log the other user to inspect its structure
+              // console.log("Other User:", otherUser); // Log the other user to inspect its structure
 
               if (!otherUser || !otherUser._id) {
                 console.error(
@@ -55,17 +55,17 @@ const ChatListScreen = () => {
               return acc;
             }, {});
 
-            console.log("Chats by User after reduce:", chatsByUser); // Log the reduced chat data
+            // console.log("Chats by User after reduce:", chatsByUser); // Log the reduced chat data
 
             const chatList = Object.values(chatsByUser);
             setChatList(chatList);
             setUnreadCount(response.data.unreadCount);
           } else {
-            console.log("No chats found for this user.");
+            // console.log("No chats found for this user.");
             setChatList([]);
           }
         } catch (error) {
-          console.log("Error fetching chat list:", error); // Log any errors during fetching
+          // console.log("Error fetching chat list:", error); // Log any errors during fetching
           setChatList([]);
         }
       };

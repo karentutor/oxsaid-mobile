@@ -29,7 +29,7 @@ function HomeScreen() {
   const navigation = useNavigation();
   const [contactPreferences, setContactPreferences] = useState([]);
   const [showContactPreferences, setShowContactPreferences] = useState(false); // State for toggling Contact Preferences visibility
-  const [showPosts, setShowPosts] = useState(false); // State for toggling Posts visibility
+  const [showPosts, setShowPosts] = useState(true); // State for toggling Posts visibility
   const [showBusinessInfo, setShowBusinessInfo] = useState(false); // State for toggling Business info
   const [groups, setGroups] = useState([]); // State for storing groups
   const [showGroups, setShowGroups] = useState(false); // State for toggling Groups visibility
