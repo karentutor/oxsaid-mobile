@@ -17,20 +17,17 @@ const ChatListScreen = () => {
         try {
           const response = await axiosBase.get(`/chats/${auth.user._id}`);
 
-          // console.log("Full API Response:", response.data); // Log the full response
-
           if (response.data && response.data.chats.length > 0) {
-            const chatsByUser = response.data.chats.reduce((acc, chat) => {
-              // Manually attach user IDs to fromUser and toUser
-              chat.fromUser._id = chat.latestMessage.fromId; // Attach fromId to fromUser
-              chat.toUser._id = chat.latestMessage.toId; // Attach toId to toUser
+            console.log("Chat Data Before Reduce:", response.data.chats);
 
+            const chatsByUser = response.data.chats.reduce((acc, chat) => {
+              // Determine who the other user is
               const otherUser =
-                chat.latestMessage.fromId === auth.user._id
-                  ? chat.toUser
+                chat.fromUser._id === auth.user._id
+                  ? chat.recipients[0] // Assuming it's a one-on-one chat, use the first recipient
                   : chat.fromUser;
 
-              // console.log("Other User:", otherUser); // Log the other user to inspect its structure
+              console.log("Other User Found:", otherUser);
 
               if (!otherUser || !otherUser._id) {
                 console.error(
@@ -45,23 +42,20 @@ const ChatListScreen = () => {
               if (userId && !acc[userId]) {
                 acc[userId] = {
                   user: otherUser, // Now populated with firstName, lastName, and _id
-                  hasUnread: !chat.latestMessage.isRead,
-                  latestMessage: chat.latestMessage.message, // Access the message here
+                  hasUnread: !chat.isReadBy.includes(auth.user._id),
+                  latestMessage: chat.message, // Access the message here
                 };
-              } else if (userId && !chat.latestMessage.isRead) {
+              } else if (userId && !chat.isReadBy.includes(auth.user._id)) {
                 acc[userId].hasUnread = true;
               }
 
               return acc;
             }, {});
 
-            // console.log("Chats by User after reduce:", chatsByUser); // Log the reduced chat data
-
             const chatList = Object.values(chatsByUser);
             setChatList(chatList);
             setUnreadCount(response.data.unreadCount);
           } else {
-            // console.log("No chats found for this user.");
             setChatList([]);
           }
         } catch (error) {
@@ -84,6 +78,11 @@ const ChatListScreen = () => {
 
   return (
     <View style={{ flex: 1, padding: 20 }}>
+      <Button
+        title="Create Chat"
+        onPress={() => navigation.navigate("CreateChatScreen")}
+      />
+
       {chatList.length > 0 ? (
         <FlatList
           data={chatList}
@@ -109,8 +108,8 @@ const ChatListScreen = () => {
             No chats found. Would you like to start one?
           </Text>
           <Button
-            title="Start a New Chat"
-            onPress={() => navigation.navigate("User Search")}
+            title="Create a New Chat"
+            onPress={() => navigation.navigate("CreateChatScreen")}
           />
         </View>
       )}

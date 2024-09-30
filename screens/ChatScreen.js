@@ -141,7 +141,7 @@ export default function ChatScreen() {
         message: inputMessage,
         fromName: currentUsername,
         fromId: currentUserId,
-        toId: recipientUserId,
+        toIds: [recipientUserId], // Update to send recipient ID as an array
         toName: recipientUsername,
       };
 

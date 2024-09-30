@@ -16,6 +16,7 @@ import CreateBusinessScreen from "./screens/CreateBusinessScreen"; // Import Cha
 import EmailScreen from "./screens/EmailScreen"; // Import EmailScreen
 import GroupProfileScreen from "./screens/GroupProfileScreen"; // Import EmailScreen
 import LoginScreen from "./screens/LoginScreen";
+import CreateChatScreen from "./screens/CreateChatScreen";
 import UserProfileScreen from "./screens/UserProfileScreen"; // Import EmailScreen
 import UpsertGroupScreen from "./screens/UpsertGroupScreen"; // Import EmailScreen
 
@@ -135,6 +136,7 @@ function AuthenticatedStack() {
       <Stack.Screen name="UserProfileScreen" component={UserProfileScreen} />
       <Stack.Screen name="GroupProfileScreen" component={GroupProfileScreen} />
       <Stack.Screen name="UpsertGroupScreen" component={UpsertGroupScreen} />
+      <Stack.Screen name="CreateChatScreen" component={CreateChatScreen} />
     </Stack.Navigator>
   );
 }

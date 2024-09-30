@@ -84,10 +84,10 @@ function MainDrawerNavigator() {
         name="ChatList"
         component={ChatListScreen}
         options={{
-          title: "1:1 Chats",
+          title: "Chats",
           drawerLabel: ({ color }) => (
             <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <Text style={{ color }}>1:1 Chats</Text>
+              <Text style={{ color }}>Chats</Text>
               {unreadCount > 0 && (
                 <View
                   style={tw`bg-red-500 rounded-full h-5 w-5 items-center justify-center ml-2`}
