@@ -15,7 +15,7 @@ import {
 } from "react-native";
 import tw from "../lib/tailwind";
 import socket, { connectSocket } from "../services/socket";
-import { useRoute, useFocusEffect } from "@react-navigation/native";
+import { useRoute } from "@react-navigation/native";
 import useAuth from "../hooks/useAuth";
 import { axiosBase } from "../services/BaseService";
 
@@ -62,29 +62,6 @@ export default function ChatScreen() {
       }
     };
 
-    // Function to determine the "other user" in a one-on-one chat
-    const determineOtherUser = (chat) => {
-      if (!chat || !chat.participants) {
-        console.error("Chat data is missing or malformed:", chat);
-        return null;
-      }
-
-      // Filter out the current user from the participants array to find the other participant
-      const otherParticipants = chat.participants.filter(
-        (participant) => participant._id !== currentUserId
-      );
-
-      if (otherParticipants.length !== 1) {
-        console.error(
-          "One-on-One Chat: User data is missing or malformed for this chat:",
-          chat
-        );
-        return null;
-      }
-
-      return otherParticipants[0];
-    };
-
     if (initialChatId && initialChatName) {
       setChatId(initialChatId);
       setChatName(initialChatName);
@@ -106,13 +83,15 @@ export default function ChatScreen() {
       setConnected(true);
     });
 
-    socket.on("message", (data) => {
+    socket.on("privateMessage", (data) => {
       if (data.chatId === chatId) {
+        // Update setMessages to avoid duplicate messages
         setMessages((prevMessages) => {
-          // Prevent duplicate messages
-          if (prevMessages.some((msg) => msg._id === data.messageId)) {
-            return prevMessages;
-          }
+          // Filter out duplicate messages
+          const filteredMessages = prevMessages.filter(
+            (msg) => msg._id !== data.messageId
+          );
+
           return [
             {
               _id: data.messageId,
@@ -122,11 +101,11 @@ export default function ChatScreen() {
               timestamp: data.timestamp,
               fromAvatar: data.fromAvatar,
             },
-            ...prevMessages, // Since FlatList is inverted
+            ...filteredMessages,
           ];
         });
 
-        if (data.senderId !== currentUserId) {
+        if (!data.isSentByCurrentUser) {
           markMessagesAsRead(currentUserId, chatId);
         }
       }
@@ -144,35 +123,24 @@ export default function ChatScreen() {
 
     return () => {
       socket.off("connect");
-      socket.off("message");
+      socket.off("privateMessage");
       socket.off("messageError");
       socket.off("connect_error");
       socket.disconnect();
     };
   }, [chatId, otherUser]);
 
-  useFocusEffect(
-    useCallback(() => {
-      if (chatId) {
-        fetchChatHistory(chatId);
-      }
-    }, [chatId])
-  );
-
   // Updated fetchChatHistory function
   const fetchChatHistory = async (chatId) => {
     try {
-      console.log("Fetching chat history for chatId:", chatId); // Log the chatId being used
+      console.log("Fetching chat history for chatId:", chatId);
 
-      // Making the request
       const response = await axiosBase.get(`/chats/${chatId}/messages`, {
         headers: { Authorization: `Bearer ${auth.access_token}` },
       });
 
-      // Log the successful response data for debugging purposes
       console.log("Chat history fetched successfully:", response.data);
 
-      // Update the state with the fetched messages
       setMessages(
         response.data.messages.map((msg) => ({
           _id: msg._id,
@@ -210,9 +178,7 @@ export default function ChatScreen() {
     try {
       await axiosBase.patch(
         `/chats/${chatId}/messages/read`,
-        {
-          userId,
-        },
+        { userId },
         {
           headers: { Authorization: `Bearer ${auth.access_token}` },
         }
@@ -269,6 +235,11 @@ export default function ChatScreen() {
           }
         }
 
+        console.log("Sending message payload:", {
+          senderId: currentUserId,
+          content: inputMessage.trim(),
+        });
+
         const payload = {
           senderId: currentUserId,
           content: inputMessage.trim(),
@@ -282,19 +253,35 @@ export default function ChatScreen() {
           }
         );
 
+        if (!response || !response.data) {
+          throw new Error("Failed to send message");
+        }
+
         const newMessage = response.data;
 
-        setMessages((prevMessages) => [
-          {
-            _id: newMessage._id,
-            text: newMessage.content,
-            from: currentUsername,
-            isSentByCurrentUser: true,
-            timestamp: newMessage.createdAt,
-            fromAvatar: auth.user.avatar,
-          },
-          ...prevMessages,
-        ]);
+        console.log("Message sent successfully:", newMessage);
+
+        // Add message to the chat only if it has a valid _id
+        if (newMessage && newMessage._id) {
+          setMessages((prevMessages) => {
+            // Filter out duplicate messages
+            const filteredMessages = prevMessages.filter(
+              (msg) => msg._id !== newMessage._id
+            );
+
+            return [
+              {
+                _id: newMessage._id,
+                text: newMessage.content,
+                from: currentUsername,
+                isSentByCurrentUser: true,
+                timestamp: newMessage.createdAt,
+                fromAvatar: auth.user.avatar,
+              },
+              ...filteredMessages,
+            ];
+          });
+        }
 
         socket.emit("sendMessage", {
           chatId: currentChatId,
@@ -345,10 +332,7 @@ export default function ChatScreen() {
       "Delete Message",
       "Are you sure you want to delete this message?",
       [
-        {
-          text: "Cancel",
-          style: "cancel",
-        },
+        { text: "Cancel", style: "cancel" },
         {
           text: "Delete",
           style: "destructive",
@@ -447,9 +431,12 @@ export default function ChatScreen() {
                   </Text>
                 </View>
               ) : (
+                // Ensure keys are unique
                 <FlatList
                   data={messages}
-                  keyExtractor={(item) => item._id}
+                  keyExtractor={(item) =>
+                    item._id ? item._id.toString() : Math.random().toString()
+                  } // Use a fallback value if _id is undefined
                   renderItem={renderItem}
                   contentContainerStyle={tw`flex-grow pt-4`}
                   inverted
