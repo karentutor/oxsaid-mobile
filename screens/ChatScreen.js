@@ -1,19 +1,21 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   Alert,
   View,
   Text,
   TextInput,
   TouchableOpacity,
-  ScrollView,
+  FlatList,
   Keyboard,
   TouchableWithoutFeedback,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
+  Image,
 } from "react-native";
 import tw from "../lib/tailwind";
 import socket, { connectSocket } from "../services/socket";
-import { useRoute } from "@react-navigation/native";
+import { useRoute, useFocusEffect } from "@react-navigation/native";
 import useAuth from "../hooks/useAuth";
 import { axiosBase } from "../services/BaseService";
 
@@ -21,148 +23,320 @@ export default function ChatScreen() {
   const [connected, setConnected] = useState(false);
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState("");
-  const [errorMessage, setErrorMessage] = useState(""); //
+  const [errorMessage, setErrorMessage] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [chatId, setChatId] = useState(null);
+  const [chatName, setChatName] = useState("");
+  const [otherUser, setOtherUser] = useState(null);
 
   const { auth } = useAuth();
   const route = useRoute();
-  const recipientUser = route.params?.user;
-  const hasNewMessages = route.params?.new;
+
+  // Extract data from route params
+  const { initialChatId, initialChatName, initialOtherUser } =
+    route.params || {};
+
   const currentUsername = auth.user.firstName;
   const currentUserId = auth.user._id;
-  const recipientUsername = recipientUser?.firstName;
-  const recipientUserId = recipientUser?._id;
 
   useEffect(() => {
+    const initializeChat = async () => {
+      try {
+        if (!chatId && otherUser && otherUser._id) {
+          // Create a new chat if chatId is not available
+          const createdChat = await createChat();
+          if (createdChat) {
+            setChatId(createdChat._id);
+            setChatName(createdChat.name);
+            fetchChatHistory(createdChat._id); // Fetch history after creating the chat
+          } else {
+            setLoading(false);
+          }
+        } else if (chatId) {
+          fetchChatHistory(chatId);
+        } else {
+          setLoading(false);
+        }
+      } catch (error) {
+        console.error("Error initializing chat:", error);
+      }
+    };
+
+    // Function to determine the "other user" in a one-on-one chat
+    const determineOtherUser = (chat) => {
+      if (!chat || !chat.participants) {
+        console.error("Chat data is missing or malformed:", chat);
+        return null;
+      }
+
+      // Filter out the current user from the participants array to find the other participant
+      const otherParticipants = chat.participants.filter(
+        (participant) => participant._id !== currentUserId
+      );
+
+      if (otherParticipants.length !== 1) {
+        console.error(
+          "One-on-One Chat: User data is missing or malformed for this chat:",
+          chat
+        );
+        return null;
+      }
+
+      return otherParticipants[0];
+    };
+
+    if (initialChatId && initialChatName) {
+      setChatId(initialChatId);
+      setChatName(initialChatName);
+    }
+
+    if (initialOtherUser) {
+      setOtherUser(initialOtherUser);
+    }
+
     connectSocket();
 
+    // Register user when socket connects
     socket.emit("registerUser", {
       username: currentUsername,
       userId: currentUserId,
     });
 
     socket.on("connect", () => {
-      // console.log("Socket connected", socket.id);
       setConnected(true);
     });
 
-    socket.on("privateMessage", (data) => {
-      setMessages((prevMessages) => [
-        {
-          text: data.message,
-          from: data.fromName,
-          isSentByCurrentUser: data.isSentByCurrentUser,
-          _id: data._id,
-          timestamp: validateDate(data.timestamp),
-        },
-        ...prevMessages,
-      ]);
+    socket.on("message", (data) => {
+      if (data.chatId === chatId) {
+        setMessages((prevMessages) => {
+          // Prevent duplicate messages
+          if (prevMessages.some((msg) => msg._id === data.messageId)) {
+            return prevMessages;
+          }
+          return [
+            {
+              _id: data.messageId,
+              text: data.content,
+              from: data.fromName,
+              isSentByCurrentUser: data.senderId === currentUserId,
+              timestamp: data.timestamp,
+              fromAvatar: data.fromAvatar,
+            },
+            ...prevMessages, // Since FlatList is inverted
+          ];
+        });
 
-      if (!data.isSentByCurrentUser) {
-        markMessagesAsRead(currentUserId, recipientUserId);
+        if (data.senderId !== currentUserId) {
+          markMessagesAsRead(currentUserId, chatId);
+        }
       }
     });
 
-    // Listen for message length error
     socket.on("messageError", (error) => {
-      setErrorMessage(error.error); // Set error message in state
+      setErrorMessage(error.error);
     });
 
     socket.on("connect_error", (err) => {
-      //console.error("Connection error:", err.message);
       setConnected(false);
     });
 
-    if (recipientUserId) {
-      fetchChatHistory();
-    } else {
-      setMessages([]); // Reset messages if no recipient
-    }
+    initializeChat();
 
     return () => {
       socket.off("connect");
-      socket.off("privateMessage");
+      socket.off("message");
+      socket.off("messageError");
       socket.off("connect_error");
       socket.disconnect();
     };
-  }, []);
+  }, [chatId, otherUser]);
 
-  const validateDate = (dateString) => {
-    const date = new Date(dateString);
-    return isNaN(date.getTime())
-      ? new Date().toISOString()
-      : date.toISOString(); // If invalid, return current date
-  };
+  useFocusEffect(
+    useCallback(() => {
+      if (chatId) {
+        fetchChatHistory(chatId);
+      }
+    }, [chatId])
+  );
 
-  const fetchChatHistory = async () => {
+  // Updated fetchChatHistory function
+  const fetchChatHistory = async (chatId) => {
     try {
-      const response = await axiosBase.get(
-        `/chats/history/${currentUserId}/${recipientUserId}`
+      console.log("Fetching chat history for chatId:", chatId); // Log the chatId being used
+
+      // Making the request
+      const response = await axiosBase.get(`/chats/${chatId}/messages`, {
+        headers: { Authorization: `Bearer ${auth.access_token}` },
+      });
+
+      // Log the successful response data for debugging purposes
+      console.log("Chat history fetched successfully:", response.data);
+
+      // Update the state with the fetched messages
+      setMessages(
+        response.data.messages.map((msg) => ({
+          _id: msg._id,
+          text: msg.content,
+          isSentByCurrentUser: msg.senderId._id === currentUserId,
+          from: `${msg.senderId.firstName} ${msg.senderId.lastName}`,
+          fromAvatar: msg.senderId.avatar,
+          timestamp: msg.createdAt,
+        }))
       );
 
-      if (response.data && response.data.length > 0) {
-        setMessages(
-          response.data.map((msg) => ({
-            text: msg.message,
-            from: msg.fromId.firstName,
-            isSentByCurrentUser: msg.fromId._id === currentUserId,
-            _id: msg._id,
-            timestamp: validateDate(msg.timestamp),
-          }))
-        );
-
-        if (hasNewMessages) {
-          markMessagesAsRead(currentUserId, recipientUserId);
-        }
-      } else {
-        // console.log("No chat history found, starting a new chat.");
-        setMessages([]);
-      }
+      setLoading(false);
     } catch (error) {
-      //console.error("Error fetching chat history:", error);
+      console.error("Error fetching chat history:", error);
+
+      if (error.response) {
+        console.error("Response data:", error.response.data);
+        console.error("Response status:", error.response.status);
+        console.error("Response headers:", error.response.headers);
+      } else if (error.request) {
+        console.error("Request made but no response received:", error.request);
+      } else {
+        console.error("Error message:", error.message);
+      }
+
+      const errorMsg =
+        error.response?.data?.message || "Failed to load chat history.";
+      Alert.alert("Error", errorMsg);
+      setLoading(false);
     }
   };
 
-  const markMessagesAsRead = async (userId, otherUserId) => {
+  // Updated markMessagesAsRead function
+  const markMessagesAsRead = async (userId, chatId) => {
     try {
-      const response = await axiosBase.post("/chats/mark-p-messages-as-read", {
-        userId,
-        otherUserId,
-      });
-
-      // console.log("Messages marked as read:", response.data);
+      await axiosBase.patch(
+        `/chats/${chatId}/messages/read`,
+        {
+          userId,
+        },
+        {
+          headers: { Authorization: `Bearer ${auth.access_token}` },
+        }
+      );
     } catch (error) {
       console.error("Error marking messages as read:", error);
     }
   };
 
-  const sendMessage = () => {
-    if (inputMessage.trim() && recipientUserId) {
-      const newMessage = {
-        message: inputMessage,
-        fromName: currentUsername,
+  // Updated createChat function
+  const createChat = async () => {
+    if (!otherUser || !otherUser._id) {
+      Alert.alert("Error", "Cannot create chat without a valid user.");
+      return null;
+    }
+
+    try {
+      const payload = {
         fromId: currentUserId,
-        toIds: [recipientUserId], // Update to send recipient ID as an array
-        toName: recipientUsername,
+        toIds: [otherUser._id],
       };
 
-      socket.emit("sendMessage", newMessage);
+      const response = await axiosBase.post("/chats", payload, {
+        headers: { Authorization: `Bearer ${auth.access_token}` },
+      });
 
-      setInputMessage("");
-      setErrorMessage(""); // Clear error message if any
+      if (!response.data || !response.data._id) {
+        throw new Error("Invalid chat data received.");
+      }
+
+      return response.data;
+    } catch (error) {
+      console.error("Error creating chat:", error);
+      const errorMsg = error.message || "Failed to create chat.";
+      Alert.alert("Error", errorMsg);
+      return null;
+    }
+  };
+
+  // Updated sendMessage function
+  const sendMessage = async () => {
+    if (inputMessage.trim()) {
+      try {
+        let currentChatId = chatId;
+
+        if (!currentChatId) {
+          const createdChat = await createChat();
+          if (createdChat) {
+            currentChatId = createdChat._id;
+            setChatId(currentChatId);
+            setChatName(createdChat.name);
+          } else {
+            return; // Failed to create chat
+          }
+        }
+
+        const payload = {
+          senderId: currentUserId,
+          content: inputMessage.trim(),
+        };
+
+        const response = await axiosBase.post(
+          `/chats/${currentChatId}/messages`,
+          payload,
+          {
+            headers: { Authorization: `Bearer ${auth.access_token}` },
+          }
+        );
+
+        const newMessage = response.data;
+
+        setMessages((prevMessages) => [
+          {
+            _id: newMessage._id,
+            text: newMessage.content,
+            from: currentUsername,
+            isSentByCurrentUser: true,
+            timestamp: newMessage.createdAt,
+            fromAvatar: auth.user.avatar,
+          },
+          ...prevMessages,
+        ]);
+
+        socket.emit("sendMessage", {
+          chatId: currentChatId,
+          senderId: currentUserId,
+          content: newMessage.content,
+          fromName: currentUsername,
+          fromAvatar: auth.user.avatar,
+          messageId: newMessage._id,
+          timestamp: newMessage.createdAt,
+        });
+
+        setInputMessage("");
+        setErrorMessage("");
+      } catch (error) {
+        console.error("Error sending message:", error);
+        const errorMsg =
+          error.response?.data?.message || "Failed to send message.";
+        Alert.alert("Error", errorMsg);
+      }
+    } else {
+      Alert.alert("Error", "Cannot send an empty message.");
     }
   };
 
   const handleDeleteMessage = async (messageId) => {
+    if (!chatId) {
+      Alert.alert("Error", "Chat ID is missing. Cannot delete the message.");
+      return;
+    }
+
     try {
-      await axiosBase.delete(`/chats/message/${messageId}`, {
-        headers: { Authorization: `Bearer ${auth.access_token}` }, // Corrected the parentheses
+      await axiosBase.delete(`/chats/${chatId}/messages/${messageId}`, {
+        headers: { Authorization: `Bearer ${auth.access_token}` },
       });
       setMessages((prevMessages) =>
         prevMessages.filter((msg) => msg._id !== messageId)
       );
       Alert.alert("Success", "Message deleted successfully.");
     } catch (error) {
-      Alert.alert("Error", "Could not delete the message.");
+      const errorMsg =
+        error.response?.data?.message || "Could not delete the message.";
+      Alert.alert("Error", errorMsg);
     }
   };
 
@@ -185,12 +359,59 @@ export default function ChatScreen() {
     );
   };
 
-  if (!auth.user || !recipientUser) {
+  const renderItem = useCallback(
+    ({ item }) => {
+      const messageDate = new Date(item.timestamp);
+      const formattedTime = messageDate.toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+      const formattedDate = messageDate.toLocaleDateString();
+
+      return (
+        <View
+          style={[
+            tw`mb-4 p-2 rounded-lg`,
+            item.isSentByCurrentUser
+              ? tw`bg-blue-100 self-end`
+              : tw`bg-gray-200 self-start`,
+          ]}
+        >
+          <View style={tw`flex-row items-center`}>
+            {!item.isSentByCurrentUser && item.fromAvatar && (
+              <Image
+                source={{ uri: item.fromAvatar }}
+                style={tw`w-6 h-6 rounded-full mr-2`}
+              />
+            )}
+            <View>
+              <Text style={tw`text-sm text-gray-500`}>
+                {item.isSentByCurrentUser ? "You" : item.from} • {formattedTime}
+              </Text>
+              <Text style={tw`text-xs text-gray-400`}>{formattedDate}</Text>
+              <Text style={tw`text-base text-black mt-1`}>{item.text}</Text>
+            </View>
+          </View>
+          {item.isSentByCurrentUser && (
+            <View style={tw`flex-row justify-end mt-2`}>
+              <TouchableOpacity
+                onPress={() => confirmDeleteMessage(item._id)}
+                style={tw`p-1`}
+              >
+                <Text style={tw`text-red-500 text-xs`}>Delete</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
+      );
+    },
+    [currentUserId, currentUsername]
+  );
+
+  if (loading) {
     return (
-      <View style={tw`flex-1 items-center justify-center bg-white`}>
-        <Text style={tw`text-2xl font-bold text-red-500`}>
-          User data is missing. Please go back and try again.
-        </Text>
+      <View style={tw`flex-1 justify-center items-center bg-white`}>
+        <ActivityIndicator size="large" color="#0000ff" />
       </View>
     );
   }
@@ -205,11 +426,20 @@ export default function ChatScreen() {
         <View style={tw`flex-1 bg-white`}>
           {connected ? (
             <>
+              {chatName && (
+                <View style={tw`p-4 bg-blue-100`}>
+                  <Text style={tw`text-xl font-bold text-center`}>
+                    {chatName}
+                  </Text>
+                </View>
+              )}
+
               {errorMessage ? (
                 <View style={tw`p-4 bg-red-100`}>
                   <Text style={tw`text-red-500 font-bold`}>{errorMessage}</Text>
                 </View>
               ) : null}
+
               {messages.length === 0 ? (
                 <View style={tw`flex-1 items-center justify-center`}>
                   <Text style={tw`text-xl font-bold text-gray-500`}>
@@ -217,52 +447,17 @@ export default function ChatScreen() {
                   </Text>
                 </View>
               ) : (
-                <ScrollView
-                  style={tw`flex-1`}
+                <FlatList
+                  data={messages}
+                  keyExtractor={(item) => item._id}
+                  renderItem={renderItem}
                   contentContainerStyle={tw`flex-grow pt-4`}
-                  inverted={true}
+                  inverted
                   keyboardShouldPersistTaps="handled"
-                >
-                  {messages.map((msg, index) => {
-                    const messageDate = new Date(msg.timestamp);
-                    return (
-                      <View
-                        key={index}
-                        style={tw`mb-4 p-2 rounded-lg ${
-                          msg.isSentByCurrentUser
-                            ? "bg-blue-100 self-end"
-                            : "bg-gray-200 self-start"
-                        }`}
-                      >
-                        <View>
-                          {/* Meta Info (Sender Name and Time) */}
-                          <Text style={tw`text-sm text-gray-500`}>
-                            {msg.isSentByCurrentUser ? "You" : msg.from} •{" "}
-                            {messageDate.toLocaleTimeString()}
-                          </Text>
-                          <Text style={tw`text-xs text-gray-400`}>
-                            {messageDate.toLocaleDateString()}
-                          </Text>
-                          {/* Adjust message text to handle wrapping */}
-                          <Text
-                            style={tw`text-base text-black mt-1 flex-shrink-0`}
-                          >
-                            {msg.text}
-                          </Text>
-                        </View>
-                        {/* Delete Button: New line, bottom right */}
-                        <View style={tw`flex-row justify-end mt-2`}>
-                          <TouchableOpacity
-                            onPress={() => confirmDeleteMessage(msg._id)}
-                            style={tw`p-1`}
-                          >
-                            <Text style={tw`text-red-500 text-xs`}>Delete</Text>
-                          </TouchableOpacity>
-                        </View>
-                      </View>
-                    );
-                  })}
-                </ScrollView>
+                  initialNumToRender={20}
+                  maxToRenderPerBatch={20}
+                  windowSize={21}
+                />
               )}
 
               <View

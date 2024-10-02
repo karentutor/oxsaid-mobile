@@ -1,3 +1,5 @@
+// UserProfileScreen.js
+
 import React, { useState, useEffect } from "react";
 import {
   View,
@@ -47,7 +49,7 @@ const UserProfileScreen = ({ route }) => {
     };
 
     fetchUser(); // Fetch the user if necessary
-  }, [userId, user, auth.access_token]);
+  }, [userId, auth.access_token]);
 
   // Fetch contact preferences
   useEffect(() => {
@@ -68,7 +70,7 @@ const UserProfileScreen = ({ route }) => {
     };
 
     fetchContactPreferences(); // Call the function inside useEffect
-  }, [auth.user._id, auth.access_token, user]);
+  }, [user, auth.access_token]);
 
   // Check connection with the user and fetch posts
   useEffect(() => {
@@ -167,8 +169,40 @@ const UserProfileScreen = ({ route }) => {
     fetchBusiness(); // Fetch business data when component mounts or dependencies change
   }, [user, auth.access_token]); // Dependency array to rerun the effect if user or access_token changes
 
-  const handleChat = () => {
-    navigation.navigate("ChatScreen", { user });
+  const handleChat = async () => {
+    if (!user || !user._id) {
+      Alert.alert("Error", "User data is missing.");
+      return;
+    }
+
+    try {
+      const payload = {
+        fromId: auth.user._id,
+        toIds: [user._id], // Single recipient for private chat
+      };
+
+      const response = await axiosBase.post("/chats", payload, {
+        headers: { Authorization: `Bearer ${auth.access_token}` },
+      });
+
+      const chat = response.data;
+
+      if (!chat || !chat._id) {
+        throw new Error("Failed to create or retrieve valid chat.");
+      }
+
+      navigation.navigate("ChatScreen", {
+        initialChatId: chat._id,
+        initialChatName: chat.name,
+        initialOtherUser: user, // Add this line to pass the other user's data
+      });
+    } catch (error) {
+      console.error("Error creating or retrieving chat:", error);
+      Alert.alert(
+        "Error",
+        error.response?.data?.message || "Failed to create or retrieve chat."
+      );
+    }
   };
 
   const handleEmail = () => {

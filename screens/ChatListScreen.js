@@ -1,3 +1,5 @@
+// screens/ChatListScreen.js
+
 import React, { useState, useCallback } from "react";
 import { View, Text, FlatList, Button } from "react-native";
 import { axiosBase } from "../services/BaseService";
@@ -18,48 +20,84 @@ const ChatListScreen = () => {
           const response = await axiosBase.get(`/chats/${auth.user._id}`);
 
           if (response.data && response.data.chats.length > 0) {
-            console.log("Chat Data Before Reduce:", response.data.chats);
+            console.log(
+              "Chat Data Before Reduce:",
+              JSON.stringify(response.data.chats, null, 2)
+            );
 
             const chatsByUser = response.data.chats.reduce((acc, chat) => {
-              // Determine who the other user is
-              const otherUser =
-                chat.fromUser._id === auth.user._id
-                  ? chat.recipients[0] // Assuming it's a one-on-one chat, use the first recipient
-                  : chat.fromUser;
+              // Determine if it's a group chat or one-on-one chat
+              if (chat.isGroupChat) {
+                // Group chat logic
+                const chatId = chat._id;
+                if (!acc[chatId]) {
+                  acc[chatId] = {
+                    chatName: chat.chatName || "Unnamed Group", // Group chat name
+                    hasUnread: !chat.isReadBy.includes(auth.user._id),
+                    latestMessage: chat.message,
+                    userIds: chat.recipients
+                      .map((recipient) => {
+                        if (recipient && recipient._id) {
+                          return recipient._id;
+                        } else {
+                          console.error(
+                            "Group Chat: Recipient data is missing or malformed:",
+                            recipient
+                          );
+                          return null;
+                        }
+                      })
+                      .filter(Boolean), // Filter out any null values
+                  };
+                } else if (!chat.isReadBy.includes(auth.user._id)) {
+                  acc[chatId].hasUnread = true;
+                }
+              } else {
+                // One-on-one chat logic
+                const otherUser =
+                  chat.fromUser && chat.fromUser._id === auth.user._id
+                    ? chat.recipients?.[0] // Assuming it's a one-on-one chat, access the first recipient
+                    : chat.fromUser;
 
-              console.log("Other User Found:", otherUser);
+                if (!otherUser || !otherUser._id) {
+                  console.error(
+                    "One-on-One Chat: User data is missing or malformed for this chat:",
+                    chat
+                  );
+                  return acc; // Skip if otherUser is missing or malformed
+                }
 
-              if (!otherUser || !otherUser._id) {
-                console.error(
-                  "Error: User data is missing or malformed for this chat:",
-                  chat
-                );
-                return acc; // Skip if otherUser is missing or malformed
-              }
+                const userId = otherUser._id;
 
-              const userId = otherUser._id;
-
-              if (userId && !acc[userId]) {
-                acc[userId] = {
-                  user: otherUser, // Now populated with firstName, lastName, and _id
-                  hasUnread: !chat.isReadBy.includes(auth.user._id),
-                  latestMessage: chat.message, // Access the message here
-                };
-              } else if (userId && !chat.isReadBy.includes(auth.user._id)) {
-                acc[userId].hasUnread = true;
+                if (userId && !acc[userId]) {
+                  acc[userId] = {
+                    user: otherUser, // One-on-one chat user information
+                    hasUnread: !chat.isReadBy.includes(auth.user._id),
+                    latestMessage: chat.message,
+                  };
+                } else if (userId && !chat.isReadBy.includes(auth.user._id)) {
+                  acc[userId].hasUnread = true;
+                }
               }
 
               return acc;
             }, {});
 
+            // Log the chatsByUser to verify the transformation
+            console.log(
+              "Chats by User After Reduce:",
+              JSON.stringify(chatsByUser, null, 2)
+            );
+
             const chatList = Object.values(chatsByUser);
             setChatList(chatList);
             setUnreadCount(response.data.unreadCount);
           } else {
+            console.log("No chats found for user");
             setChatList([]);
           }
         } catch (error) {
-          // console.log("Error fetching chat list:", error); // Log any errors during fetching
+          console.error("Error fetching chat list:", error); // Log any errors during fetching
           setChatList([]);
         }
       };
@@ -68,37 +106,67 @@ const ChatListScreen = () => {
     }, [auth.user._id])
   );
 
-  const handlePress = (user, hasUnread) => {
-    navigation.navigate("ChatScreen", { user, new: hasUnread }); // Pass unread status
+  const handlePress = (chat) => {
+    if (chat.user) {
+      // One-on-one chat
+      const userIds = [chat.user._id];
+      const chatName = `${chat.user.firstName || "Unknown"} ${
+        chat.user.lastName || "User"
+      }`; // Fallback to avoid undefined values
+      navigation.navigate("ChatScreen", {
+        userIds,
+        chatName,
+        new: chat.hasUnread,
+      });
+    } else if (chat.chatName) {
+      // Group chat
+      const userIds = chat.userIds; // Pass all the user IDs in the group chat
+      const chatName = chat.chatName;
+      navigation.navigate("ChatScreen", {
+        userIds,
+        chatName,
+        new: chat.hasUnread,
+      });
+    } else {
+      console.error("Chat item is missing necessary data:", chat);
+    }
   };
 
   const handleStartChat = () => {
-    navigation.navigate("User Search"); // Navigate to UserSearchScreen to start a new chat
+    navigation.navigate("CreateChatScreen"); // Navigate to CreateChatScreen to start a new chat
   };
 
   return (
     <View style={{ flex: 1, padding: 20 }}>
-      <Button
-        title="Create Chat"
-        onPress={() => navigation.navigate("CreateChatScreen")}
-      />
+      <Button title="Create New Chat" onPress={handleStartChat} />
 
       {chatList.length > 0 ? (
         <FlatList
           data={chatList}
           keyExtractor={(item) =>
-            item.user && item.user._id
+            item.user
               ? item.user._id.toString()
-              : Math.random().toString()
+              : item.chatName || Math.random().toString()
           }
-          renderItem={({ item }) => (
-            <ChatListItem
-              user={item.user}
-              hasUnread={item.hasUnread}
-              latestMessage={item.latestMessage} // Correctly pass the latest message to the item
-              onPress={() => handlePress(item.user, item.hasUnread)}
-            />
-          )}
+          renderItem={({ item }) => {
+            if (!item.user && !item.chatName) {
+              console.error("Chat item is missing user and chat name:", item);
+              return null; // Skip rendering if data is missing
+            }
+
+            const displayName = item.user
+              ? `${item.user.firstName} ${item.user.lastName}`
+              : item.chatName || "Unknown Chat";
+
+            return (
+              <ChatListItem
+                displayName={displayName}
+                hasUnread={item.hasUnread}
+                latestMessage={item.latestMessage}
+                onPress={() => handlePress(item)}
+              />
+            );
+          }}
         />
       ) : (
         <View

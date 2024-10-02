@@ -3,6 +3,7 @@ import {
   View,
   Text,
   FlatList,
+  ScrollView,
   TouchableOpacity,
   Button,
   TextInput,
@@ -28,7 +29,6 @@ const CreateChatScreen = () => {
         const response = await axiosBase.get("/users", {
           headers: { Authorization: `Bearer ${auth.access_token}` },
         });
-        console.log(response);
 
         // Simplify users data before setting state
         const simplifiedUsers = response.data
@@ -59,7 +59,7 @@ const CreateChatScreen = () => {
   };
 
   // Create a new chat
-  const handleCreateChat = async () => {
+  const handleCreateChat = () => {
     if (selectedUsers.length === 0) {
       alert("Please select at least one user.");
       return;
@@ -70,70 +70,93 @@ const CreateChatScreen = () => {
       return;
     }
 
-    try {
-      const response = await axiosBase.post("/chats", {
-        name: selectedUsers.length > 1 ? chatName : null,
-        members: [auth.user._id, ...selectedUsers.map((user) => user._id)],
-        isGroupChat: selectedUsers.length > 1,
-      });
+    // Hand off the selected users and navigate to ChatScreen
+    const userIds = selectedUsers.map((user) => user._id);
+    navigation.navigate("ChatScreen", {
+      userIds,
+      chatName: selectedUsers.length > 1 ? chatName : null,
+    });
 
-      if (response.data.isSuccess) {
-        alert("Chat created successfully!");
-        navigation.goBack(); // Navigate back to the chat list after successful creation
-      } else {
-        alert("Error creating chat: " + response.data.message);
-      }
-    } catch (error) {
-      console.error("Error creating chat:", error);
-      alert("Error creating chat.");
-    }
+    resetState();
+  };
+
+  // Reset all state variables to initial values
+  const resetState = () => {
+    setSelectedUsers([]);
+    setChatName("");
+    setIsModalVisible(false);
   };
 
   return (
-    <View style={tw`flex-1 p-6`}>
-      <Text style={tw`text-lg mb-4`}>Create a New Chat</Text>
+    <View style={tw`flex-1`}>
+      <ScrollView contentContainerStyle={tw`flex-grow p-6`}>
+        {/* Title */}
+        <Text style={tw`text-center font-bold text-lg mb-5`}>
+          Create a New Chat
+        </Text>
 
-      {/* Open FilterModal Button */}
-      <Button title="Select Users" onPress={() => setIsModalVisible(true)} />
-
-      {/* Show selected users */}
-      {selectedUsers.length > 0 && (
-        <View style={tw`mt-4`}>
-          <Text style={tw`text-lg mb-2`}>Selected Users:</Text>
-          {selectedUsers.map((user) => (
-            <View
-              key={user._id}
-              style={tw`flex-row items-center justify-between p-2 bg-gray-100 mb-2 rounded-lg`}
-            >
-              <Text style={tw`text-base`}>{user.name}</Text>
-              {/* Use user.name */}
-              <TouchableOpacity onPress={() => handleRemoveUser(user._id)}>
-                <Text style={tw`text-red-500`}>Remove</Text>
-              </TouchableOpacity>
-            </View>
-          ))}
+        {/* Step 1: Select Users */}
+        <View style={tw`items-start mb-2`}>
+          <Text style={tw`text-base`}>1. Select 1 or Many Users:</Text>
         </View>
-      )}
+        <Button title="Select Users" onPress={() => setIsModalVisible(true)} />
 
-      {/* Group Chat Name Input */}
-      {selectedUsers.length > 1 && (
-        <TextInput
-          style={tw`border border-gray-300 rounded p-2 mt-4`}
-          value={chatName}
-          onChangeText={setChatName}
-          placeholder="Enter Group Chat Name"
-        />
-      )}
+        {/* Show selected users */}
+        {selectedUsers.length > 0 && (
+          <View style={tw`mt-4`}>
+            <Text style={tw`text-lg mb-2`}>Selected:</Text>
+            {selectedUsers.map((user) => (
+              <View
+                key={user._id}
+                style={tw`flex-row items-center justify-between p-2 bg-gray-100 mb-2 rounded-lg`}
+              >
+                <Text style={tw`text-base`}>{user.name}</Text>
+                <TouchableOpacity onPress={() => handleRemoveUser(user._id)}>
+                  <Text style={tw`text-red-500`}>Remove</Text>
+                </TouchableOpacity>
+              </View>
+            ))}
+          </View>
+        )}
 
-      {/* Create Chat Button */}
-      <Button title="Create Chat" onPress={handleCreateChat} style={tw`mt-4`} />
+        {/* Step 2: Enter Group Title */}
+        {selectedUsers.length > 1 && (
+          <View style={tw`items-start mt-4`}>
+            <Text style={tw`text-base mb-1`}>2. Enter Group Title</Text>
+            <TextInput
+              style={tw`border border-gray-300 rounded p-2 w-full`}
+              value={chatName}
+              onChangeText={setChatName}
+              placeholder="Enter Group Chat Name"
+            />
+          </View>
+        )}
 
-      {/* Cancel Button */}
-      <Button
-        title="Cancel"
-        onPress={() => navigation.goBack()}
-        style={tw`mt-4`}
-      />
+        {/* Create Chat Button (Visible only when both step 1 and step 2 are completed) */}
+        {selectedUsers.length > 0 &&
+          (selectedUsers.length === 1 ||
+            (selectedUsers.length > 1 && chatName.trim())) && (
+            <TouchableOpacity
+              onPress={handleCreateChat}
+              style={tw`bg-blue-500 p-3 rounded mt-4`}
+            >
+              <Text style={tw`text-white text-center`}>Create Chat</Text>
+            </TouchableOpacity>
+          )}
+      </ScrollView>
+
+      {/* Cancel Button at the bottom of the screen */}
+      <View style={tw`p-6`}>
+        <TouchableOpacity
+          onPress={() => {
+            resetState(); // Reset state when cancel button is pressed
+            navigation.goBack();
+          }}
+          style={tw`bg-red-500 p-3 rounded`}
+        >
+          <Text style={tw`text-white text-center`}>Cancel</Text>
+        </TouchableOpacity>
+      </View>
 
       {/* Filter Modal for selecting users */}
       <FilterModal

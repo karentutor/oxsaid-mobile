@@ -14,23 +14,6 @@ import useAuth from "../../hooks/useAuth";
 const PostCard = ({ post, onDelete }) => {
   const { auth } = useAuth();
 
-  // Debug: Log the full post object to see what's coming through
-  useEffect(() => {
-    console.log("Full post data:", post);
-
-    // Debug: Check if groupId is available
-    if (post.groupId) {
-      console.log("Group ID exists:", post.groupId);
-      console.log("Group name:", post.groupId.name);
-    } else {
-      console.log("No groupId found for this post");
-    }
-
-    // Debug: Check if userId matches the authenticated user
-    console.log("Current user ID:", auth.user._id);
-    console.log("Post user ID:", post.userId);
-  }, [post]);
-
   const handleDelete = () => {
     Alert.alert(
       "Delete Post",
@@ -62,7 +45,6 @@ const PostCard = ({ post, onDelete }) => {
                   source={{ uri: post.userPicturePath }}
                   style={styles.userImage}
                 />
-                {console.log("User picture path:", post.userPicturePath)}
               </>
             ) : (
               <View style={styles.noImageContainer}>
@@ -88,10 +70,6 @@ const PostCard = ({ post, onDelete }) => {
                   >
                     <Icon name="trash" size={20} color="red" />
                   </TouchableOpacity>
-                  {console.log(
-                    "Delete button displayed for user:",
-                    post.userId
-                  )}
                 </>
               )}
 
@@ -100,7 +78,6 @@ const PostCard = ({ post, onDelete }) => {
                 <View style={styles.groupNameSection}>
                   <Text style={styles.groupNameTitle}>Group Name</Text>
                   <Text style={styles.groupName}>{post.groupId.name}</Text>
-                  {console.log("Group name displayed:", post.groupId.name)}
                 </View>
               )}
             </View>
@@ -116,7 +93,6 @@ const PostCard = ({ post, onDelete }) => {
                 style={styles.postImage}
                 resizeMode="contain"
               />
-              {console.log("Post picture path:", post.picturePath)}
             </>
           ) : (
             <Text>No post image</Text>

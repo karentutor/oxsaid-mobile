@@ -38,7 +38,7 @@ function HomeScreen() {
   // Fetch groups function
   const fetchGroups = async () => {
     if (!user?._id) {
-      console.log("User ID is not available yet");
+      // console.log("User ID is not available yet");
       return; // Exit if user ID is not available
     }
 
@@ -51,18 +51,18 @@ function HomeScreen() {
       if (error.response) {
         // Server responded with a status other than 2xx
         if (error.response.status === 404) {
-          // console.log("No groups found for this user.");
+          console.log("No groups found for this user.");
           setGroups([]); // Clear groups if no groups found
         } else {
-          // console.error(`Error fetching groups: ${error.response.status}`);
+          console.error(`Error fetching groups: ${error.response.status}`);
           // You can handle other specific status codes here (e.g., 500, 403, etc.)
         }
       } else if (error.request) {
         // Request was made but no response was received
-        // console.error("No response from server. Please check your network.");
+        console.error("No response from server. Please check your network.");
       } else {
         // Something happened in setting up the request that triggered an error
-        // console.error("Error setting up request:", error.message);
+        console.error("Error setting up request:", error.message);
       }
     }
   };
