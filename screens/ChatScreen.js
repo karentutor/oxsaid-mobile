@@ -15,7 +15,7 @@ import {
 } from "react-native";
 import tw from "../lib/tailwind";
 import socket, { connectSocket } from "../services/socket";
-import { useRoute } from "@react-navigation/native";
+import { useFocusEffect, useRoute } from "@react-navigation/native";
 import useAuth from "../hooks/useAuth";
 import { axiosBase } from "../services/BaseService";
 
@@ -83,30 +83,39 @@ export default function ChatScreen() {
       setConnected(true);
     });
 
+    // Updated privateMessage handler to prevent duplication
     socket.on("privateMessage", (data) => {
+      console.log("Received privateMessage:", data); // Debugging
+
       if (data.chatId === chatId) {
-        // Update setMessages to avoid duplicate messages
-        setMessages((prevMessages) => {
-          // Filter out duplicate messages
-          const filteredMessages = prevMessages.filter(
-            (msg) => msg._id !== data.messageId
-          );
-
-          return [
-            {
-              _id: data.messageId,
-              text: data.content,
-              from: data.fromName,
-              isSentByCurrentUser: data.senderId === currentUserId,
-              timestamp: data.timestamp,
-              fromAvatar: data.fromAvatar,
-            },
-            ...filteredMessages,
-          ];
-        });
-
         if (!data.isSentByCurrentUser) {
-          markMessagesAsRead(currentUserId, chatId);
+          // Only handle messages from others
+          setMessages((prevMessages) => {
+            // Check if the message already exists to prevent duplication
+            const messageExists = prevMessages.some(
+              (msg) => msg._id === data.messageId
+            );
+
+            if (messageExists) {
+              return prevMessages;
+            }
+
+            return [
+              {
+                _id: data.messageId,
+                text: data.content,
+                from: data.fromName, // Sender's name
+                isSentByCurrentUser: false,
+                timestamp: data.timestamp,
+                fromAvatar: data.fromAvatar,
+              },
+              ...prevMessages,
+            ];
+          });
+
+          if (!data.isSentByCurrentUser) {
+            markMessagesAsRead(currentUserId, chatId);
+          }
         }
       }
     });
@@ -130,10 +139,23 @@ export default function ChatScreen() {
     };
   }, [chatId, otherUser]);
 
+  useFocusEffect(
+    useCallback(() => {
+      if (chatId) {
+        fetchChatHistory(chatId); // Refetch chat history every time the screen is focused
+      }
+    }, [chatId])
+  );
+
   // Fetch chat history function
   const fetchChatHistory = async (chatId) => {
     try {
       console.log("Fetching chat history for chatId:", chatId);
+
+      if (!chatId) {
+        console.warn("Invalid chatId, aborting fetchChatHistory");
+        return;
+      }
 
       const response = await axiosBase.get(`/chats/${chatId}/messages`, {
         headers: { Authorization: `Bearer ${auth.access_token}` },
@@ -141,16 +163,26 @@ export default function ChatScreen() {
 
       console.log("Chat history fetched successfully:", response.data);
 
-      setMessages(
-        response.data.messages.map((msg) => ({
-          _id: msg._id,
-          text: msg.content,
-          isSentByCurrentUser: msg.senderId._id === currentUserId,
-          from: `${msg.senderId.firstName} ${msg.senderId.lastName}`,
-          fromAvatar: msg.senderId.avatar,
-          timestamp: msg.createdAt,
-        }))
-      );
+      if (response.data && Array.isArray(response.data.messages)) {
+        setMessages(
+          response.data.messages.map((msg) => ({
+            _id: msg._id,
+            text: msg.content,
+            from:
+              msg.senderId._id === currentUserId
+                ? chatName // Recipient's name for sent messages
+                : `${msg.senderId.firstName} ${msg.senderId.lastName}`, // Sender's name for received messages
+            isSentByCurrentUser: msg.senderId._id === currentUserId,
+            fromAvatar:
+              msg.senderId._id === currentUserId
+                ? auth.user.avatar
+                : msg.senderId.avatar,
+            timestamp: msg.createdAt,
+          }))
+        );
+      } else {
+        console.warn("Unexpected response format:", response.data);
+      }
 
       setLoading(false);
     } catch (error) {
@@ -178,7 +210,6 @@ export default function ChatScreen() {
     }
   };
 
-  // Create chat function
   const createChat = async () => {
     if (!otherUser || !otherUser._id) {
       Alert.alert("Error", "Cannot create chat without a valid user.");
@@ -195,11 +226,16 @@ export default function ChatScreen() {
         headers: { Authorization: `Bearer ${auth.access_token}` },
       });
 
-      if (!response.data || !response.data._id) {
+      const chatData = response.data;
+
+      if (!chatData || !chatData._id) {
         throw new Error("Invalid chat data received.");
       }
 
-      return response.data;
+      // Set the chat name to the other user's name
+      chatData.name = `${otherUser.firstName} ${otherUser.lastName}`;
+
+      return chatData;
     } catch (error) {
       console.error("Error creating chat:", error);
       const errorMsg = error.message || "Failed to create chat.";
@@ -262,7 +298,7 @@ export default function ChatScreen() {
               {
                 _id: newMessage._id,
                 text: newMessage.content,
-                from: currentUsername,
+                from: chatName, // Recipient's name
                 isSentByCurrentUser: true,
                 timestamp: newMessage.createdAt,
                 fromAvatar: auth.user.avatar,
@@ -276,7 +312,7 @@ export default function ChatScreen() {
           chatId: currentChatId,
           senderId: currentUserId,
           content: newMessage.content,
-          fromName: currentUsername,
+          fromName: currentUsername, // Sender's name
           fromAvatar: auth.user.avatar,
           messageId: newMessage._id,
           timestamp: newMessage.createdAt,
@@ -361,7 +397,10 @@ export default function ChatScreen() {
             )}
             <View>
               <Text style={tw`text-sm text-gray-500`}>
-                {item.isSentByCurrentUser ? "You" : item.from} • {formattedTime}
+                {item.isSentByCurrentUser
+                  ? `To ${item.from}` // Display recipient's name
+                  : `From ${item.from}`}{" "}
+                • {formattedTime}
               </Text>
               <Text style={tw`text-xs text-gray-400`}>{formattedDate}</Text>
               <Text style={tw`text-base text-black mt-1`}>{item.text}</Text>
@@ -380,7 +419,7 @@ export default function ChatScreen() {
         </View>
       );
     },
-    [currentUserId, currentUsername, chatId]
+    [chatId]
   );
 
   if (loading) {
@@ -425,7 +464,7 @@ export default function ChatScreen() {
                 <FlatList
                   data={messages}
                   keyExtractor={(item) =>
-                    item._id ? item._id.toString() : Math.random().toString()
+                    item._id ? item._id.toString() : `temp-${Date.now()}`
                   }
                   renderItem={renderItem}
                   contentContainerStyle={tw`flex-grow pt-4`}

@@ -191,10 +191,13 @@ const UserProfileScreen = ({ route }) => {
         throw new Error("Failed to create or retrieve valid chat.");
       }
 
+      // Set chatName to the other user's full name
+      const chatName = `${user.firstName} ${user.lastName}`;
+
       navigation.navigate("ChatScreen", {
         initialChatId: chat._id,
-        initialChatName: chat.name,
-        initialOtherUser: user, // Add this line to pass the other user's data
+        initialChatName: chatName,
+        initialOtherUser: user,
       });
     } catch (error) {
       console.error("Error creating or retrieving chat:", error);
