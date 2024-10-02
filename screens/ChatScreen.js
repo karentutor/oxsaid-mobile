@@ -130,7 +130,7 @@ export default function ChatScreen() {
     };
   }, [chatId, otherUser]);
 
-  // Updated fetchChatHistory function
+  // Fetch chat history function
   const fetchChatHistory = async (chatId) => {
     try {
       console.log("Fetching chat history for chatId:", chatId);
@@ -156,16 +156,6 @@ export default function ChatScreen() {
     } catch (error) {
       console.error("Error fetching chat history:", error);
 
-      if (error.response) {
-        console.error("Response data:", error.response.data);
-        console.error("Response status:", error.response.status);
-        console.error("Response headers:", error.response.headers);
-      } else if (error.request) {
-        console.error("Request made but no response received:", error.request);
-      } else {
-        console.error("Error message:", error.message);
-      }
-
       const errorMsg =
         error.response?.data?.message || "Failed to load chat history.";
       Alert.alert("Error", errorMsg);
@@ -173,7 +163,7 @@ export default function ChatScreen() {
     }
   };
 
-  // Updated markMessagesAsRead function
+  // Mark messages as read function
   const markMessagesAsRead = async (userId, chatId) => {
     try {
       await axiosBase.patch(
@@ -188,7 +178,7 @@ export default function ChatScreen() {
     }
   };
 
-  // Updated createChat function
+  // Create chat function
   const createChat = async () => {
     if (!otherUser || !otherUser._id) {
       Alert.alert("Error", "Cannot create chat without a valid user.");
@@ -218,7 +208,7 @@ export default function ChatScreen() {
     }
   };
 
-  // Updated sendMessage function
+  // Send message function
   const sendMessage = async () => {
     if (inputMessage.trim()) {
       try {
@@ -228,7 +218,7 @@ export default function ChatScreen() {
           const createdChat = await createChat();
           if (createdChat) {
             currentChatId = createdChat._id;
-            setChatId(currentChatId);
+            setChatId(createdChat._id);
             setChatName(createdChat.name);
           } else {
             return; // Failed to create chat
@@ -264,7 +254,6 @@ export default function ChatScreen() {
         // Add message to the chat only if it has a valid _id
         if (newMessage && newMessage._id) {
           setMessages((prevMessages) => {
-            // Filter out duplicate messages
             const filteredMessages = prevMessages.filter(
               (msg) => msg._id !== newMessage._id
             );
@@ -306,6 +295,7 @@ export default function ChatScreen() {
     }
   };
 
+  // Delete message function
   const handleDeleteMessage = async (messageId) => {
     if (!chatId) {
       Alert.alert("Error", "Chat ID is missing. Cannot delete the message.");
@@ -327,6 +317,7 @@ export default function ChatScreen() {
     }
   };
 
+  // Confirm delete message
   const confirmDeleteMessage = (messageId) => {
     Alert.alert(
       "Delete Message",
@@ -376,7 +367,7 @@ export default function ChatScreen() {
               <Text style={tw`text-base text-black mt-1`}>{item.text}</Text>
             </View>
           </View>
-          {item.isSentByCurrentUser && (
+          {item.isSentByCurrentUser && chatId && (
             <View style={tw`flex-row justify-end mt-2`}>
               <TouchableOpacity
                 onPress={() => confirmDeleteMessage(item._id)}
@@ -389,7 +380,7 @@ export default function ChatScreen() {
         </View>
       );
     },
-    [currentUserId, currentUsername]
+    [currentUserId, currentUsername, chatId]
   );
 
   if (loading) {
@@ -431,12 +422,11 @@ export default function ChatScreen() {
                   </Text>
                 </View>
               ) : (
-                // Ensure keys are unique
                 <FlatList
                   data={messages}
                   keyExtractor={(item) =>
                     item._id ? item._id.toString() : Math.random().toString()
-                  } // Use a fallback value if _id is undefined
+                  }
                   renderItem={renderItem}
                   contentContainerStyle={tw`flex-grow pt-4`}
                   inverted
