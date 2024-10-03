@@ -26,7 +26,10 @@ function MainDrawerNavigator() {
     const fetchUnreadMessagesCount = async () => {
       try {
         const response = await axiosBase.get(
-          `/chats/unread-count/${auth.user._id}`
+          `/chats/unread-count/${auth.user._id}`,
+          {
+            headers: { Authorization: auth.access_token },
+          }
         );
         setUnreadCount(response.data.unreadCount); // Update the unread count
       } catch (error) {

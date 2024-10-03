@@ -162,7 +162,10 @@ function Root() {
       const fetchUnreadMessagesCount = async () => {
         try {
           const response = await axiosBase.get(
-            `/chats/unread-count/${authCtx.user._id}`
+            `/chats/unread-count/${authCtx.user._id}`,
+            {
+              headers: { Authorization: AuthContext.auth.access_token },
+            }
           );
           const count = response.data.unreadCount;
           console.log("app useeffect", count);

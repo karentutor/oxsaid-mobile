@@ -27,11 +27,20 @@ const ChatListScreen = () => {
       const fetchChats = async () => {
         setLoading(true);
         try {
-          const response = await axiosBase.get(`/chats/${auth.user._id}`);
+          // Log the user ID being used
+          console.log("Fetching chats for user ID:", auth.user._id);
+
+          const response = await axiosBase.get(`/chats/${auth.user._id}`, {
+            headers: { Authorization: `Bearer ${auth.access_token}` },
+          });
+
           console.log("Fetched Chats Response:", response.data); // Debugging
 
           if (response.data && Array.isArray(response.data.chats)) {
             setChatList(response.data.chats);
+            console.log(
+              `Setting chat list with ${response.data.chats.length} chats`
+            );
           } else {
             console.warn("No chats found for user or invalid data format.");
             setChatList([]);
@@ -49,7 +58,7 @@ const ChatListScreen = () => {
       };
 
       fetchChats();
-    }, [auth.user._id])
+    }, [auth.user._id, auth.access_token]) // Added auth.access_token as dependency
   );
 
   // Handle navigation to ChatScreen
@@ -57,19 +66,12 @@ const ChatListScreen = () => {
     navigation.navigate("ChatScreen", {
       initialChatId: chat._id,
       initialChatName: chat.name, // Use chat.name directly
-      // initialOtherUser: getOtherUser(chat.participants), // Optional: Remove if not needed
     });
   };
 
   // Navigate to CreateChatScreen
   const handleStartChat = () => {
     navigation.navigate("CreateChatScreen");
-  };
-
-  // Optional: Function to retrieve the other user if needed
-  const getOtherUser = (participants) => {
-    const otherUserId = participants.find((id) => id !== auth.user._id);
-    return otherUserId || null;
   };
 
   // Render each chat item
@@ -88,12 +90,12 @@ const ChatListScreen = () => {
         <View
           style={tw`flex-row items-center justify-between p-4 border-b border-gray-200`}
         >
-          <Text style={tw`text-lg`}>{displayName}</Text>
-          <View
-            style={tw`w-3 h-3 rounded-full ${
-              hasUnread ? "bg-red-500" : "bg-green-500"
-            }`}
-          />
+          <View style={tw`flex-row items-center`}>
+            {/* Optional: Display participant avatars or initials */}
+            {/* <Image source={{ uri: item.avatar }} style={tw`w-10 h-10 rounded-full mr-4`} /> */}
+            <Text style={tw`text-lg`}>{displayName}</Text>
+          </View>
+          {hasUnread && <View style={tw`w-3 h-3 rounded-full bg-red-500`} />}
         </View>
       </TouchableOpacity>
     );
