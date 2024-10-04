@@ -1,23 +1,23 @@
+// screens/ChatScreen.js
 import React, { useEffect, useState, useCallback } from "react";
 import {
   Alert,
   View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  FlatList,
   Keyboard,
   TouchableWithoutFeedback,
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
-  Image,
+  Text,
 } from "react-native";
 import tw from "../lib/tailwind";
 import socket, { connectSocket } from "../services/socket";
 import { useFocusEffect, useRoute } from "@react-navigation/native";
 import useAuth from "../hooks/useAuth";
 import { axiosBase } from "../services/BaseService";
+import ChatHeader from "../components/chat/ChatHeader";
+import MessageList from "../components/chat/MessageList";
+import MessageInput from "../components/chat/MessageInput";
 
 export default function ChatScreen() {
   const [connected, setConnected] = useState(false);
@@ -73,51 +73,64 @@ export default function ChatScreen() {
 
     connectSocket();
 
-    // Register user when socket connects
-    socket.emit("registerUser", {
-      username: currentUsername,
-      userId: currentUserId,
-    });
-
     socket.on("connect", () => {
       setConnected(true);
-    });
 
-    // Updated privateMessage handler to prevent duplication
-    socket.on("privateMessage", (data) => {
-      console.log("Received privateMessage:", data); // Debugging
+      // Register user when socket connects
+      socket.emit("registerUser", {
+        username: currentUsername,
+        userId: currentUserId,
+      });
 
-      if (data.chatId === chatId) {
-        if (!data.isSentByCurrentUser) {
-          // Only handle messages from others
-          setMessages((prevMessages) => {
-            // Check if the message already exists to prevent duplication
-            const messageExists = prevMessages.some(
-              (msg) => msg._id === data.messageId
-            );
+      // Register privateMessage handler only after the socket is connected
+      socket.on("privateMessage", (data) => {
+        console.log("Received privateMessage:", data); // Debugging
 
-            if (messageExists) {
-              return prevMessages;
-            }
+        // Ensure data contains the necessary fields
+        if (
+          !data.chatId ||
+          !data._id ||
+          typeof data.isSentByCurrentUser !== "boolean"
+        ) {
+          console.warn("Received incomplete privateMessage data:", data);
+          return;
+        }
 
-            return [
-              {
-                _id: data.messageId,
-                text: data.content,
-                from: data.fromName, // Sender's name
-                isSentByCurrentUser: false,
-                timestamp: data.timestamp,
-                fromAvatar: data.fromAvatar,
-              },
-              ...prevMessages,
-            ];
-          });
-
+        if (data.chatId === chatId) {
           if (!data.isSentByCurrentUser) {
-            markMessagesAsRead(currentUserId, chatId);
+            // Only handle messages from others
+            setMessages((prevMessages) => {
+              // Check if the message already exists to prevent duplication
+              const messageExists = prevMessages.some(
+                (msg) => msg._id === data._id
+              );
+
+              if (messageExists) {
+                console.log("Message already exists, skipping:", data._id);
+                return prevMessages;
+              }
+
+              return [
+                {
+                  _id: data._id, // Use data._id instead of data.messageId
+                  text: data.content,
+                  from: data.fromName, // Sender's name
+                  isSentByCurrentUser: false,
+                  timestamp: data.createdAt, // Ensure timestamp is correct
+                  fromAvatar: data.fromAvatar,
+                },
+                ...prevMessages,
+              ];
+            });
+
+            console.log("Marking messages as read for chatId:", chatId);
+            if (connected && chatId) {
+              console.log("ChatScreen, calling markMessagesAsRead");
+              markMessagesAsRead(chatId);
+            }
           }
         }
-      }
+      });
     });
 
     socket.on("messageError", (error) => {
@@ -137,7 +150,7 @@ export default function ChatScreen() {
       socket.off("connect_error");
       socket.disconnect();
     };
-  }, [chatId, otherUser]);
+  }, [chatId, otherUser, connected, currentUsername, currentUserId]);
 
   useFocusEffect(
     useCallback(() => {
@@ -180,6 +193,10 @@ export default function ChatScreen() {
             timestamp: msg.createdAt,
           }))
         );
+
+        // Log before marking messages as read
+        console.log("About to mark messages as read for chatId:", chatId);
+        await markMessagesAsRead(chatId);
       } else {
         console.warn("Unexpected response format:", response.data);
       }
@@ -196,14 +213,22 @@ export default function ChatScreen() {
   };
 
   // Mark messages as read function
-  const markMessagesAsRead = async (userId, chatId) => {
+  const markMessagesAsRead = async (chatId) => {
     try {
-      await axiosBase.patch(
+      console.log(
+        "MarkMessagesAsRead: Sending PATCH request for chatId:",
+        chatId
+      );
+      const response = await axiosBase.patch(
         `/chats/${chatId}/messages/read`,
-        { userId },
-        {
-          headers: { Authorization: `Bearer ${auth.access_token}` },
-        }
+        {}, // No body data needed
+        { headers: { Authorization: `Bearer ${auth.access_token}` } }
+      );
+      console.log(
+        "Messages marked as read for chatId:",
+        chatId,
+        "Response:",
+        response.data
       );
     } catch (error) {
       console.error("Error marking messages as read:", error);
@@ -289,33 +314,27 @@ export default function ChatScreen() {
 
         // Add message to the chat only if it has a valid _id
         if (newMessage && newMessage._id) {
-          setMessages((prevMessages) => {
-            const filteredMessages = prevMessages.filter(
-              (msg) => msg._id !== newMessage._id
-            );
-
-            return [
-              {
-                _id: newMessage._id,
-                text: newMessage.content,
-                from: chatName, // Recipient's name
-                isSentByCurrentUser: true,
-                timestamp: newMessage.createdAt,
-                fromAvatar: auth.user.avatar,
-              },
-              ...filteredMessages,
-            ];
-          });
+          setMessages((prevMessages) => [
+            {
+              _id: newMessage._id,
+              text: newMessage.content,
+              from: chatName, // Recipient's name
+              isSentByCurrentUser: true,
+              timestamp: newMessage.createdAt,
+              fromAvatar: auth.user.avatar,
+            },
+            ...prevMessages.filter((msg) => msg._id !== newMessage._id),
+          ]);
         }
 
         socket.emit("sendMessage", {
           chatId: currentChatId,
           senderId: currentUserId,
           content: newMessage.content,
-          fromName: currentUsername, // Sender's name
+          fromName: currentUsername,
           fromAvatar: auth.user.avatar,
-          messageId: newMessage._id,
-          timestamp: newMessage.createdAt,
+          _id: newMessage._id, // Ensure the message ID is correctly sent
+          createdAt: newMessage.createdAt,
         });
 
         setInputMessage("");
@@ -370,58 +389,6 @@ export default function ChatScreen() {
     );
   };
 
-  const renderItem = useCallback(
-    ({ item }) => {
-      const messageDate = new Date(item.timestamp);
-      const formattedTime = messageDate.toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      });
-      const formattedDate = messageDate.toLocaleDateString();
-
-      return (
-        <View
-          style={[
-            tw`mb-4 p-2 rounded-lg`,
-            item.isSentByCurrentUser
-              ? tw`bg-blue-100 self-end`
-              : tw`bg-gray-200 self-start`,
-          ]}
-        >
-          <View style={tw`flex-row items-center`}>
-            {!item.isSentByCurrentUser && item.fromAvatar && (
-              <Image
-                source={{ uri: item.fromAvatar }}
-                style={tw`w-6 h-6 rounded-full mr-2`}
-              />
-            )}
-            <View>
-              <Text style={tw`text-sm text-gray-500`}>
-                {item.isSentByCurrentUser
-                  ? `To ${item.from}` // Display recipient's name
-                  : `From ${item.from}`}{" "}
-                • {formattedTime}
-              </Text>
-              <Text style={tw`text-xs text-gray-400`}>{formattedDate}</Text>
-              <Text style={tw`text-base text-black mt-1`}>{item.text}</Text>
-            </View>
-          </View>
-          {item.isSentByCurrentUser && chatId && (
-            <View style={tw`flex-row justify-end mt-2`}>
-              <TouchableOpacity
-                onPress={() => confirmDeleteMessage(item._id)}
-                style={tw`p-1`}
-              >
-                <Text style={tw`text-red-500 text-xs`}>Delete</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-        </View>
-      );
-    },
-    [chatId]
-  );
-
   if (loading) {
     return (
       <View style={tw`flex-1 justify-center items-center bg-white`}>
@@ -440,13 +407,7 @@ export default function ChatScreen() {
         <View style={tw`flex-1 bg-white`}>
           {connected ? (
             <>
-              {chatName && (
-                <View style={tw`p-4 bg-blue-100`}>
-                  <Text style={tw`text-xl font-bold text-center`}>
-                    {chatName}
-                  </Text>
-                </View>
-              )}
+              {chatName && <ChatHeader chatName={chatName} />}
 
               {errorMessage ? (
                 <View style={tw`p-4 bg-red-100`}>
@@ -461,36 +422,17 @@ export default function ChatScreen() {
                   </Text>
                 </View>
               ) : (
-                <FlatList
-                  data={messages}
-                  keyExtractor={(item) =>
-                    item._id ? item._id.toString() : `temp-${Date.now()}`
-                  }
-                  renderItem={renderItem}
-                  contentContainerStyle={tw`flex-grow pt-4`}
-                  inverted
-                  keyboardShouldPersistTaps="handled"
-                  initialNumToRender={20}
-                  maxToRenderPerBatch={20}
-                  windowSize={21}
+                <MessageList
+                  messages={messages}
+                  confirmDeleteMessage={confirmDeleteMessage}
                 />
               )}
 
-              <View
-                style={tw`flex-row items-center p-4 border-t border-gray-300`}
-              >
-                <TextInput
-                  style={tw`flex-1 border border-gray-300 rounded-full p-2 mr-2 bg-white`}
-                  placeholder="Type your message..."
-                  value={inputMessage}
-                  onChangeText={setInputMessage}
-                  returnKeyType="send"
-                  onSubmitEditing={sendMessage}
-                />
-                <TouchableOpacity onPress={sendMessage} style={tw`p-2`}>
-                  <Text style={tw`text-xl text-blue-500`}>➡️</Text>
-                </TouchableOpacity>
-              </View>
+              <MessageInput
+                inputMessage={inputMessage}
+                setInputMessage={setInputMessage}
+                sendMessage={sendMessage}
+              />
             </>
           ) : (
             <View style={tw`flex-1 items-center justify-center`}>

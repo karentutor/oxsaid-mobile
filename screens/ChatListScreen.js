@@ -95,7 +95,12 @@ const ChatListScreen = () => {
             {/* <Image source={{ uri: item.avatar }} style={tw`w-10 h-10 rounded-full mr-4`} /> */}
             <Text style={tw`text-lg`}>{displayName}</Text>
           </View>
-          {hasUnread && <View style={tw`w-3 h-3 rounded-full bg-red-500`} />}
+          <View
+            style={[
+              tw`w-3 h-3 rounded-full`,
+              hasUnread ? tw`bg-red-500` : tw`bg-green-500`,
+            ]}
+          />
         </View>
       </TouchableOpacity>
     );
