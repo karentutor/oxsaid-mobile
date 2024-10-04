@@ -1,4 +1,5 @@
 // screens/ChatScreen.js
+
 import React, { useEffect, useState, useCallback } from "react";
 import {
   Alert,
@@ -33,7 +34,7 @@ export default function ChatScreen() {
   const route = useRoute();
 
   // Extract data from route params
-  const { initialChatId, initialChatName, initialOtherUser } =
+  const { initialChatId, initialChatName, initialOtherUser, groupId } =
     route.params || {};
 
   const currentUsername = auth.user.firstName;
@@ -42,37 +43,67 @@ export default function ChatScreen() {
   useEffect(() => {
     const initializeChat = async () => {
       try {
-        if (!chatId && otherUser && otherUser._id) {
-          // Create a new chat if chatId is not available
+        if (initialChatId && initialChatName && !chatId) {
+          // Set existing chat
+          setChatId(initialChatId);
+          setChatName(initialChatName);
+          await fetchChatHistory(initialChatId);
+          return;
+        }
+
+        if (groupId && !chatId) {
+          console.log("Initializing group chat with groupId:", groupId);
+
+          // Create or retrieve an existing group chat
+          const response = await axiosBase.post(
+            "/chats/group-chat",
+            { groupId, initialMessage: "Welcome to the group chat!" },
+            {
+              headers: { Authorization: `Bearer ${auth.access_token}` },
+            }
+          );
+
+          if (response.data) {
+            setChatId(response.data._id);
+            setChatName(response.data.name);
+            await fetchChatHistory(response.data._id);
+          }
+        } else if (!chatId && initialOtherUser && initialOtherUser._id) {
+          console.log(
+            "Initializing private chat with otherUser:",
+            initialOtherUser
+          );
+
+          // Create a new private chat if chatId is not available
           const createdChat = await createChat();
           if (createdChat) {
             setChatId(createdChat._id);
             setChatName(createdChat.name);
-            fetchChatHistory(createdChat._id); // Fetch history after creating the chat
+            await fetchChatHistory(createdChat._id);
           } else {
             setLoading(false);
           }
         } else if (chatId) {
-          fetchChatHistory(chatId);
+          console.log("Fetching existing chat history with chatId:", chatId);
+          await fetchChatHistory(chatId);
         } else {
           setLoading(false);
         }
       } catch (error) {
         console.error("Error initializing chat:", error);
+        Alert.alert("Error", `Failed to initialize chat: ${error.message}`);
       }
     };
 
-    if (initialChatId && initialChatName) {
-      setChatId(initialChatId);
-      setChatName(initialChatName);
-    }
-
+    // Set otherUser if provided
     if (initialOtherUser) {
       setOtherUser(initialOtherUser);
     }
 
+    // Connect to Socket.io
     connectSocket();
 
+    // Setup Socket.io event listeners
     socket.on("connect", () => {
       setConnected(true);
 
@@ -82,7 +113,7 @@ export default function ChatScreen() {
         userId: currentUserId,
       });
 
-      // Register privateMessage handler only after the socket is connected
+      // Register privateMessage handler
       socket.on("privateMessage", (data) => {
         console.log("Received privateMessage:", data); // Debugging
 
@@ -112,11 +143,11 @@ export default function ChatScreen() {
 
               return [
                 {
-                  _id: data._id, // Use data._id instead of data.messageId
+                  _id: data._id,
                   text: data.content,
-                  from: data.fromName, // Sender's name
+                  from: data.fromName,
                   isSentByCurrentUser: false,
-                  timestamp: data.createdAt, // Ensure timestamp is correct
+                  timestamp: data.createdAt,
                   fromAvatar: data.fromAvatar,
                 },
                 ...prevMessages,
@@ -131,6 +162,41 @@ export default function ChatScreen() {
           }
         }
       });
+
+      // Register groupMessage handler
+      socket.on("groupMessage", (data) => {
+        console.log("Received groupMessage:", data); // Debugging
+
+        // Ensure data contains the necessary fields
+        if (!data.chatId || !data._id) {
+          console.warn("Received incomplete groupMessage data:", data);
+          return;
+        }
+
+        if (data.chatId === chatId) {
+          setMessages((prevMessages) => {
+            // Check if the message already exists to prevent duplication
+            const messageExists = prevMessages.some(
+              (msg) => msg._id === data._id
+            );
+            if (messageExists) {
+              console.log("Message already exists, skipping:", data._id);
+              return prevMessages;
+            }
+
+            return [
+              {
+                _id: data._id,
+                text: data.content,
+                from: data.from,
+                isSentByCurrentUser: data.senderId === currentUserId,
+                timestamp: data.timestamp,
+              },
+              ...prevMessages,
+            ];
+          });
+        }
+      });
     });
 
     socket.on("messageError", (error) => {
@@ -141,16 +207,29 @@ export default function ChatScreen() {
       setConnected(false);
     });
 
+    // Initialize the chat
     initializeChat();
 
+    // Cleanup on unmount
     return () => {
       socket.off("connect");
       socket.off("privateMessage");
+      socket.off("groupMessage");
       socket.off("messageError");
       socket.off("connect_error");
       socket.disconnect();
     };
-  }, [chatId, otherUser, connected, currentUsername, currentUserId]);
+  }, [
+    chatId,
+    otherUser,
+    groupId,
+    connected,
+    currentUsername,
+    currentUserId,
+    initialChatId,
+    initialChatName,
+    initialOtherUser,
+  ]);
 
   useFocusEffect(
     useCallback(() => {
@@ -183,8 +262,8 @@ export default function ChatScreen() {
             text: msg.content,
             from:
               msg.senderId._id === currentUserId
-                ? chatName // Recipient's name for sent messages
-                : `${msg.senderId.firstName} ${msg.senderId.lastName}`, // Sender's name for received messages
+                ? chatName
+                : `${msg.senderId.firstName} ${msg.senderId.lastName}`,
             isSentByCurrentUser: msg.senderId._id === currentUserId,
             fromAvatar:
               msg.senderId._id === currentUserId
@@ -235,6 +314,7 @@ export default function ChatScreen() {
     }
   };
 
+  // Create a new chat function
   const createChat = async () => {
     if (!otherUser || !otherUser._id) {
       Alert.alert("Error", "Cannot create chat without a valid user.");
@@ -257,7 +337,6 @@ export default function ChatScreen() {
         throw new Error("Invalid chat data received.");
       }
 
-      // Set the chat name to the other user's name
       chatData.name = `${otherUser.firstName} ${otherUser.lastName}`;
 
       return chatData;
@@ -318,7 +397,7 @@ export default function ChatScreen() {
             {
               _id: newMessage._id,
               text: newMessage.content,
-              from: chatName, // Recipient's name
+              from: chatName,
               isSentByCurrentUser: true,
               timestamp: newMessage.createdAt,
               fromAvatar: auth.user.avatar,
@@ -333,7 +412,7 @@ export default function ChatScreen() {
           content: newMessage.content,
           fromName: currentUsername,
           fromAvatar: auth.user.avatar,
-          _id: newMessage._id, // Ensure the message ID is correctly sent
+          _id: newMessage._id,
           createdAt: newMessage.createdAt,
         });
 

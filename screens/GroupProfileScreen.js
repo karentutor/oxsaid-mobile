@@ -1,3 +1,5 @@
+// GroupProfileScreen.js
+
 import React, { useCallback, useState } from "react";
 import {
   Alert,
@@ -79,6 +81,32 @@ const GroupProfileScreen = () => {
     }
   };
 
+  const handleChatWithGroup = async () => {
+    try {
+      // Check if a group chat already exists
+      const response = await axiosBase.post(
+        "/chats/group-chat",
+        { groupId, initialMessage: "Welcome to the group chat!" },
+        {
+          headers: { Authorization: `Bearer ${access_token}` },
+        }
+      );
+
+      if (response.status === 200 || response.status === 201) {
+        const chat = response.data;
+        navigation.navigate("ChatScreen", {
+          initialChatId: chat._id,
+          initialChatName: chat.name,
+        });
+      } else {
+        Alert.alert("Error", "Could not initiate group chat.");
+      }
+    } catch (error) {
+      console.error("Error initializing group chat:", error);
+      Alert.alert("Error", "Failed to initiate group chat.");
+    }
+  };
+
   const handleUserPress = (userId) => {
     navigation.navigate("UserProfileScreen", { userId }); // Navigate to UserProfile
   };
@@ -143,7 +171,7 @@ const GroupProfileScreen = () => {
         headers: { Authorization: `Bearer ${access_token}` },
       });
       if (response.data.isSuccess) {
-        Alert.alert("Group deleted", "The group was deleted successfully.");
+        Alert.alert("Group Deleted", "The group was deleted successfully.");
         navigation.navigate("Groups");
         // fetchGroup(); // Re-fetch the groups after deletion
       } else {
@@ -175,7 +203,7 @@ const GroupProfileScreen = () => {
     setLoading(true);
     try {
       const response = await axiosBase.get(`/groups/${groupId}/group`, {
-        headers: { Authorization: `Bearer ${auth.access_token}` },
+        headers: { Authorization: `Bearer ${access_token}` },
       });
 
       const groupData = response.data.group;
@@ -191,7 +219,9 @@ const GroupProfileScreen = () => {
       console.log("User membership state:", userMembershipState);
 
       // Update state based on membership state
-      setIsMember(userMembershipState === "Member");
+      setIsMember(
+        userMembershipState === "Member" || userMembershipState === "Admin"
+      );
       setIsMemberAdmin(userMembershipState === "Admin");
       setIsInvited(userMembershipState === "Invited");
       setHasRequestedJoin(userMembershipState === "Requested to Join");
@@ -204,7 +234,6 @@ const GroupProfileScreen = () => {
   };
 
   // Fetch group posts
-
   const fetchGroupPosts = async () => {
     try {
       setLoading(true); // Set loading to true before data fetch
@@ -272,7 +301,7 @@ const GroupProfileScreen = () => {
       if (response.status === 200) {
         // Check the status code instead of isSuccess
         fetchGroupPosts(); // Refresh posts after deletion
-        Alert.alert("Post deleted", "The post was deleted successfully.");
+        Alert.alert("Post Deleted", "The post was deleted successfully.");
       } else {
         Alert.alert("Error", response.data.message); // Use response.data.message
       }
@@ -351,16 +380,27 @@ const GroupProfileScreen = () => {
   // Render buttons based on the user’s state
   const renderButtons = () => {
     if (isMember || isMemberAdmin) {
-      // If the user is already a member or admin, they should not see join/invite buttons
       return (
-        !isMemberAdmin && (
+        <View style={tw`flex-row justify-center mt-4`}>
+          {!isMemberAdmin && (
+            <TouchableOpacity
+              onPress={handleLeaveGroup}
+              style={tw`bg-red-500 py-2 px-6 rounded-lg mr-4`}
+            >
+              <Text style={tw`text-white text-center text-lg`}>
+                Leave Group
+              </Text>
+            </TouchableOpacity>
+          )}
           <TouchableOpacity
-            onPress={handleLeaveGroup}
-            style={tw`bg-red-500 py-2 px-6 rounded-lg mt-4 mx-auto`}
+            onPress={handleChatWithGroup}
+            style={tw`bg-green-500 py-2 px-6 rounded-lg`}
           >
-            <Text style={tw`text-white text-center text-lg`}>Leave Group</Text>
+            <Text style={tw`text-white text-center text-lg`}>
+              Chat with Group
+            </Text>
           </TouchableOpacity>
-        )
+        </View>
       );
     } else {
       if (hasDeclined) {
@@ -501,11 +541,12 @@ const GroupProfileScreen = () => {
         </View>
       )}
 
-      {/* Call renderButtons here */}
+      {/* Render Buttons */}
       {renderButtons()}
 
       {/* Render Join Requests */}
       {renderJoinRequests()}
+
       {/* Post Box */}
       {(isMember || isMemberAdmin) && (
         <PostBox onPost={handlePost} onCancel={() => console.log("Canceled")} />
@@ -563,7 +604,7 @@ const GroupProfileScreen = () => {
             if (isMemberAdmin || item.userId === auth.user._id) {
               handleDeletePost(item._id);
             } else {
-              Alert.alert("Permission denied", "You can't delete this post.");
+              Alert.alert("Permission Denied", "You can't delete this post.");
             }
           }}
         />
