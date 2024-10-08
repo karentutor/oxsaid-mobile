@@ -1,15 +1,50 @@
-//notes - Tailwinds does not render this properly
-import React, { useState, useCallback, useEffect } from "react";
-import {
-  StyleSheet,
-  View,
-  TextInput,
-  KeyboardAvoidingView,
-  Alert,
-} from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage"; // Import AsyncStorage
+import React, { useState, useEffect } from "react";
+import { StyleSheet, View, TextInput, Alert } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import Button from "../ui/Button";
 import { Colors } from "../../constants/styles";
+
+// Email Input Component without memo
+const EmailInput = ({
+  email,
+  emailIsInvalid,
+  updateEmailHandler,
+  setEmailFocused,
+}) => (
+  <TextInput
+    style={[styles.input, emailIsInvalid && styles.inputInvalid]}
+    placeholder="Email Address"
+    onChangeText={updateEmailHandler}
+    value={email}
+    keyboardType="email-address"
+    autoCapitalize="none"
+    autoCorrect={false}
+    placeholderTextColor="gray"
+    onFocus={() => setEmailFocused(true)}
+    onBlur={() => setEmailFocused(false)}
+  />
+);
+
+// Password Input Component without memo
+const PasswordInput = ({
+  password,
+  passwordIsInvalid,
+  updatePasswordHandler,
+  setPasswordFocused,
+}) => (
+  <TextInput
+    style={[styles.input, passwordIsInvalid && styles.inputInvalid]}
+    placeholder="Password"
+    onChangeText={updatePasswordHandler}
+    value={password}
+    secureTextEntry={true}
+    autoCapitalize="none"
+    autoCorrect={false}
+    placeholderTextColor="gray"
+    onFocus={() => setPasswordFocused(true)}
+    onBlur={() => setPasswordFocused(false)}
+  />
+);
 
 function AuthForm({ isLogin, onSubmit, credentialsInvalid = {} }) {
   const [enteredEmail, setEnteredEmail] = useState("");
@@ -20,35 +55,38 @@ function AuthForm({ isLogin, onSubmit, credentialsInvalid = {} }) {
   const { email: emailIsInvalid = false, password: passwordIsInvalid = false } =
     credentialsInvalid;
 
-  // Load stored credentials on mount
+  console.log("AuthForm rendered new");
+
+  // Load stored email on mount
   useEffect(() => {
-    const loadStoredCredentials = async () => {
-      const storedEmail = await AsyncStorage.getItem("email");
-      const storedPassword = await AsyncStorage.getItem("password");
-
-      if (storedEmail) {
-        setEnteredEmail(storedEmail);
-      }
-
-      if (storedPassword) {
-        setEnteredPassword(storedPassword);
+    const loadStoredEmail = async () => {
+      try {
+        const storedEmail = await AsyncStorage.getItem("email");
+        if (storedEmail) {
+          setEnteredEmail(storedEmail);
+        }
+      } catch (error) {
+        console.error("Failed to load email:", error);
       }
     };
 
-    loadStoredCredentials();
+    loadStoredEmail();
   }, []);
 
-  const updateEmailHandler = useCallback((value) => {
+  const updateEmailHandler = (value) => {
     setEnteredEmail(value);
-    AsyncStorage.setItem("email", value); // Persist email
-  }, []);
+    try {
+      AsyncStorage.setItem("email", value); // Persist email
+    } catch (error) {
+      console.error("Failed to save email:", error);
+    }
+  };
 
-  const updatePasswordHandler = useCallback((value) => {
-    setEnteredPassword(value);
-    AsyncStorage.setItem("password", value); // Persist password
-  }, []);
+  const updatePasswordHandler = (value) => {
+    setEnteredPassword(value); // Persist password state
+  };
 
-  const submitHandler = useCallback(() => {
+  const submitHandler = () => {
     if (!enteredEmail || !enteredPassword) {
       Alert.alert("Input Error", "Please fill in all fields.");
       return;
@@ -57,41 +95,21 @@ function AuthForm({ isLogin, onSubmit, credentialsInvalid = {} }) {
       email: enteredEmail,
       password: enteredPassword,
     });
-  }, [enteredEmail, enteredPassword, onSubmit]);
+  };
 
   return (
     <View style={styles.form}>
-      <TextInput
-        style={[
-          styles.input,
-          emailIsInvalid && styles.inputInvalid,
-          emailFocused && styles.inputFocused,
-        ]}
-        placeholder="Email Address"
-        onChangeText={updateEmailHandler}
-        value={enteredEmail}
-        keyboardType="email-address"
-        autoCapitalize="none"
-        autoCorrect={false}
-        placeholderTextColor="gray"
-        onFocus={() => setEmailFocused(true)}
-        onBlur={() => setEmailFocused(false)}
+      <EmailInput
+        email={enteredEmail}
+        emailIsInvalid={emailIsInvalid}
+        updateEmailHandler={updateEmailHandler}
+        setEmailFocused={setEmailFocused}
       />
-      <TextInput
-        style={[
-          styles.input,
-          passwordIsInvalid && styles.inputInvalid,
-          passwordFocused && styles.inputFocused,
-        ]}
-        placeholder="Password"
-        onChangeText={updatePasswordHandler}
-        value={enteredPassword}
-        secureTextEntry={true}
-        autoCapitalize="none"
-        autoCorrect={false}
-        placeholderTextColor="gray"
-        onFocus={() => setPasswordFocused(true)}
-        onBlur={() => setPasswordFocused(false)}
+      <PasswordInput
+        password={enteredPassword}
+        passwordIsInvalid={passwordIsInvalid}
+        updatePasswordHandler={updatePasswordHandler}
+        setPasswordFocused={setPasswordFocused}
       />
       <View style={styles.buttons}>
         <Button onPress={submitHandler}>
@@ -102,14 +120,13 @@ function AuthForm({ isLogin, onSubmit, credentialsInvalid = {} }) {
   );
 }
 
-export default AuthForm;
+export default AuthForm; // Export without memo
 
 const styles = StyleSheet.create({
   form: {
     marginTop: 20,
     padding: 16,
-    width: 350, // Changed from "90%" to 350px
-    maxWidth: 350,
+    width: "100%", // Changed from fixed width to percentage
     alignSelf: "center",
     backgroundColor: Colors.primary800,
     borderRadius: 8,
@@ -123,11 +140,7 @@ const styles = StyleSheet.create({
     borderColor: "gray",
     borderWidth: 1,
     borderRadius: 4,
-    flex: 1, // Added to ensure the input takes full width
     backgroundColor: "white",
-  },
-  inputFocused: {
-    borderColor: Colors.primary500,
   },
   inputInvalid: {
     borderColor: "red",
