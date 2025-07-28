@@ -19,6 +19,7 @@ import { AuthContext } from '@/context/AuthContext';
 import { useRouter, useFocusEffect } from 'expo-router';   // ← import useFocusEffect
 import { axiosBase } from '@/services/BaseService';
 import { useChat } from '@/context/ChatContext';
+console.log('[Axios] baseURL =', axiosBase.defaults.baseURL);
 
 import {
   OCCUPATION_DATA,

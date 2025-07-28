@@ -9,8 +9,22 @@ const API_URL =
 
 export const axiosBase = axios.create({
   baseURL: API_URL,
-  timeout: 10_000,
+  timeout: 20_000,
 })
+/* DEBUGGING */
+axiosBase.interceptors.request.use((config) => {
+  console.log('[axios] →', config.method?.toUpperCase(), config.url);
+  return config;
+});
+axiosBase.interceptors.response.use(
+  (res) => res,
+  (err) => {
+    console.error('[axios] error', err.config?.method, err.config?.url, err.message);
+    return Promise.reject(err);
+  },
+);
+
+/* END FOR DEBUGGING */
 
 axiosBase.interceptors.request.use(
   async (config) => {

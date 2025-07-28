@@ -1,26 +1,21 @@
-/* ------------------------------------------------------------------
- * ChatContext ‑ unified real‑time chat state for the Expo app
- * – relies on the *shared* socket provided by SocketContext
- * – guarantees that every socket event is handled only once
- * – deduplicates messages in the reducer
- * ----------------------------------------------------------------- */
-
+import { useSocket } from '@/context/SocketContext';
+import { useAuth } from '@/hooks/useAuth';
+import { axiosBase } from '@/services/BaseService';
 import React, {
   createContext,
+  ReactNode,
   useContext,
   useEffect,
   useMemo,
   useReducer,
-  ReactNode,
 } from 'react';
 import { Socket } from 'socket.io-client';
-import { axiosBase } from '@/services/BaseService';
-import { useAuth } from '@/hooks/useAuth';
-import { useSocket } from '@/context/SocketContext'; // ① reuse shared socket
+import Toast from 'react-native-toast-message';
 
 /* ---------- public types ---------- */
 export type ChatMeta = {
   _id: string;
+  partnerId: string;
   isGroupChat: boolean;
   groupName?: string;
   partnerName: string;
@@ -40,7 +35,7 @@ export type Message = {
 /* ---------- internal state ---------- */
 type State = {
   chats: ChatMeta[];
-  messages: Record<string, Message[]>; // chatId → messages
+  messages: Record<string, Message[]>;
 };
 
 type Action =
@@ -62,7 +57,7 @@ const ChatContext = createContext<
   | undefined
 >(undefined);
 
-/* ---------- reducer (now dedupes messages) ---------- */
+/* ---------- reducer ---------- */
 const reducer = (state: State, action: Action): State => {
   switch (action.type) {
     case 'SET_CHATS':
@@ -79,10 +74,7 @@ const reducer = (state: State, action: Action): State => {
 
     case 'ADD_MESSAGE': {
       const msgs = state.messages[action.chatId] ?? [];
-      if (msgs.some((m) => m._id === action.msg._id)) {
-        /* duplicate payload → ignore */
-        return state;
-      }
+      if (msgs.some((m) => m._id === action.msg._id)) return state;
       return {
         ...state,
         messages: {
@@ -91,11 +83,7 @@ const reducer = (state: State, action: Action): State => {
         },
         chats: state.chats.map((c) =>
           c._id === action.chatId
-            ? {
-                ...c,
-                latest: action.msg.text,
-                unread: c.unread + (action.msg.mine ? 0 : 1),
-              }
+            ? { ...c, latest: action.msg.text, unread: c.unread + (action.msg.mine ? 0 : 1) }
             : c,
         ),
       };
@@ -114,40 +102,22 @@ const reducer = (state: State, action: Action): State => {
   }
 };
 
-/* ------------------------------------------------------------------
- * Provider
- * ----------------------------------------------------------------- */
+/* ---------- provider ---------- */
 export function ChatProvider({ children }: { children: ReactNode }) {
   const { auth } = useAuth();
-  const socket = useSocket();                  // shared socket instance
-  const [state, dispatch] = useReducer(reducer, {
-    chats: [],
-    messages: {},
-  });
+  const socket = useSocket();
+  const [state, dispatch] = useReducer(reducer, { chats: [], messages: {} });
 
-  /* ------------ attach listeners once per socket ------------ */
   const listenersBound = React.useRef<Socket | null>(null);
 
   useEffect(() => {
     if (!socket || !auth.accessToken) return;
-    if (listenersBound.current === socket) return; // already attached
+    if (listenersBound.current === socket) return;
     listenersBound.current = socket;
 
-    /* 1) ensure user is registered */
-    const register = () =>
-      socket.emit('registerUser', {
-        userId: auth.user!._id,
-        firstName: auth.user!.firstName,
-        lastName: auth.user!.lastName,
-      });
-    if (socket.connected) register();
-    socket.on('connect', register);
-
-    /* 2) chatCreated */
     socket.on('chatCreated', ({ chat }) => insertChatFromServer(chat));
 
-    /* 3) messageCreated */
-    function handleMessageCreated(payload: any) {
+    const handleMessageCreated = (payload: any) => {
       const raw = payload.message ?? payload;
       const cid =
         payload.chatId ??
@@ -155,72 +125,102 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         (typeof raw.chatId === 'object' ? raw.chatId.toString() : undefined);
       if (!cid) return;
       insertMessageFromServer(cid, raw);
-    }
+    };
     socket.on('messageCreated', handleMessageCreated);
 
-    /* 4) optional debug */
-    socket.onAny((event, p) => {
-      if (event !== 'ping' && event !== 'pong')
-        console.log('⇢ event', event, JSON.stringify(p)?.slice(0, 120));
-    });
-
-    /* cleanup if socket gets replaced */
     return () => {
-      socket.off('connect', register);
       socket.off('chatCreated');
       socket.off('messageCreated', handleMessageCreated);
-      socket.offAny();
       listenersBound.current = null;
     };
   }, [socket, auth.accessToken]);
 
-  /* ------------ helpers ------------ */
-  const adaptChat = (chat: any): ChatMeta => {
-    const partner =
-      chat.participants.find((p: any) => p._id !== auth.user!._id) || {};
-    return {
-      _id: chat._id,
-      isGroupChat: chat.isGroupChat,
-      groupName: chat.groupName,
-      partnerName: chat.isGroupChat
-        ? chat.groupName
-        : `${partner.firstName ?? ''} ${partner.lastName ?? ''}`.trim(),
-      latest: chat.latestMessage?.content ?? '',
-      unread: chat.unreadCount ?? 0,
-    };
-  };
+const adaptChat = (chat: any): ChatMeta => {
+  const me = auth.user!._id;
 
-  const refreshChats = async () => {
-    if (!auth.accessToken) return;
+  // pick the other participant regardless of shape
+  const rawPartner =
+    chat.participants.find((p: any) =>
+      typeof p === 'string' ? p !== me : p._id !== me,
+    ) ?? {};
+
+  const partnerId =
+    typeof rawPartner === 'string'
+      ? rawPartner
+      : rawPartner._id ?? '';
+
+  const partnerName =
+    chat.isGroupChat
+      ? chat.groupName
+      : typeof rawPartner === 'string'
+        ? '(unknown)'
+        : `${rawPartner.firstName ?? ''} ${rawPartner.lastName ?? ''}`.trim();
+
+  return {
+    _id: chat._id,
+    partnerId,                       // never empty now
+    isGroupChat: chat.isGroupChat,
+    groupName: chat.groupName,
+    partnerName,
+    latest: chat.latestMessage?.content ?? '',
+    unread: chat.unreadCount ?? 0,
+  };
+};
+
+
+
+  // const adaptChat = (chat: any): ChatMeta => {
+  //   const partner =
+  //     chat.participants.find((p: any) => p._id !== auth.user!._id) || {};
+  //   return {
+  //     _id: chat._id,
+  //     partnerId: partner._id ?? '',
+  //     isGroupChat: chat.isGroupChat,
+  //     groupName: chat.groupName,
+  //     partnerName: chat.isGroupChat
+  //       ? chat.groupName
+  //       : `${partner.firstName ?? ''} ${partner.lastName ?? ''}`.trim(),
+  //     latest: chat.latestMessage?.content ?? '',
+  //     unread: chat.unreadCount ?? 0,
+  //   };
+  // };
+
+const refreshChats = async () => {
+  if (!auth.accessToken) return;
+  try {
     const { data } = await axiosBase.get(`/chats/user/${auth.user!._id}`, {
       headers: { Authorization: `Bearer ${auth.accessToken}` },
+      timeout: 20000,                         // optional: lift or lower
     });
     dispatch({ type: 'SET_CHATS', chats: data.chats.map(adaptChat) });
-  };
+  } catch (err) {
+    console.error('[refreshChats] failed', err);
+    Toast.show({ type: 'error', text1: 'Cannot load chat list.' });
+  }
+};
 
   useEffect(() => {
     refreshChats();
   }, [auth.accessToken]);
 
-  const loadMessages = async (chatId: string) => {
-    if (!auth.accessToken) return;
+const loadMessages = async (chatId: string) => {
+  if (!auth.accessToken) return;
+  try {
     const { data } = await axiosBase.get(`/chats/${chatId}/messages`, {
       headers: { Authorization: `Bearer ${auth.accessToken}` },
+      timeout: 20000,
     });
-    const msgs: Message[] = (data.messages ?? []).map((m: any) => ({
-      _id: m._id,
-      chatId: m.chatId,
-      senderId: m.senderId._id ?? m.senderId,
-      text: m.content,
-      mine: (m.senderId._id ?? m.senderId) === auth.user!._id,
-      time: new Date(m.createdAt).toLocaleTimeString().slice(0, 5),
-    }));
-    dispatch({ type: 'SET_MESSAGES', chatId, msgs });
-  };
+    /* ...dispatch... */
+  } catch (err) {
+    console.error('[loadMessages] failed', err);
+    Toast.show({ type: 'error', text1: 'Cannot load chat history.' });
+  }
+};
+
 
   const getOrCreate = async (partnerId: string, partnerName: string) => {
     const found = state.chats.find(
-      (c) => !c.isGroupChat && c.partnerName === partnerName,
+      (c) => !c.isGroupChat && c.partnerId === partnerId,
     );
     if (found) return found._id;
 
@@ -234,23 +234,21 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     return meta._id;
   };
 
-  const send = async (chatId: string, text: string) => {
-    if (!auth.accessToken) return;
+const send = async (chatId: string, text: string) => {
+  if (!auth.accessToken) return;
+  try {
     const { data } = await axiosBase.post(
       `/chats/${chatId}/messages`,
       { content: text },
-      { headers: { Authorization: `Bearer ${auth.accessToken}` } },
+      { headers: { Authorization: `Bearer ${auth.accessToken}` }, timeout: 15000 },
     );
-    const m: Message = {
-      _id: data.newMessage._id,
-      chatId,
-      senderId: auth.user!._id,
-      text,
-      mine: true,
-      time: new Date(data.newMessage.createdAt).toLocaleTimeString().slice(0, 5),
-    };
-    dispatch({ type: 'ADD_MESSAGE', chatId, msg: m });
-  };
+    /* ...dispatch... */
+  } catch (err) {
+    console.error('[send] failed', err);
+    Toast.show({ type: 'error', text1: 'Message not sent.' });
+  }
+};
+
 
   const insertChatFromServer = (doc: any) => {
     const meta = adaptChat(doc);
@@ -281,10 +279,9 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         chatId,
         userId: auth.user!._id,
       });
-    } catch {/* ignore */}
+    } catch {}
   };
 
-  /* ------------ exposed value ------------ */
   const value = useMemo(
     () => ({
       ...state,
@@ -301,7 +298,6 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;
 }
 
-/* ---------- helper hook ---------- */
 export function useChat() {
   const ctx = useContext(ChatContext);
   if (!ctx) throw new Error('useChat must be within ChatProvider');

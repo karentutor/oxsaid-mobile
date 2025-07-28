@@ -1,14 +1,16 @@
 // src/context/SocketRegistrationProvider.tsx
 // src/context/SocketRegistrationProvider.tsx
-import React, { createContext, useContext, useEffect } from 'react';
+import { useAuth } from '@/hooks/useAuth';
+import React, { createContext, useEffect } from 'react';
 import { useSocket } from './SocketContext';
-import { useAuth } from '@/hooks/useAuth';  
 
 export const SocketRegistrationContext = createContext({});
 
 export const SocketRegistrationProvider: React.FC<React.PropsWithChildren> = ({ children }) => {
   const { auth } = useAuth();
   const socket = useSocket();
+
+
 
   useEffect(() => {
     if (!socket) return;
@@ -26,6 +28,8 @@ export const SocketRegistrationProvider: React.FC<React.PropsWithChildren> = ({ 
 
     if (socket.connected) {
       handleConnect();
+        console.log('SocketProvider mounting');
+
     } else {
       socket.on('connect', handleConnect);
     }

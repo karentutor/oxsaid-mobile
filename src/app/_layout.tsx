@@ -1,17 +1,17 @@
-// src/app/_layout.tsx
 import React, { useContext } from 'react';
 import { Stack } from 'expo-router';
-import { Pressable, Text } from 'react-native';
+import { Pressable, Text, LogBox, Platform } from 'react-native';
 import { Provider as PaperProvider } from 'react-native-paper';
-import { Ionicons } from '@expo/vector-icons';
-
 import { AuthContextProvider, AuthContext } from '@/context/AuthContext';
 import { SocketProvider } from '@/context/SocketContext';
 import { SocketRegistrationProvider } from '@/context/SocketRegistrationProvider';
 import { RealTimeContextProvider } from '@/context/RealTimeContext';
 import { ChatProvider } from '@/context/ChatContext';
+import { VideoCallProvider } from '@/context/VideoCallContext';
 import Toast from 'react-native-toast-message';
 import HeaderMenu from '@/components/HeaderMenu';
+
+LogBox.ignoreAllLogs();
 
 export default function RootLayout() {
   return (
@@ -20,14 +20,17 @@ export default function RootLayout() {
         <SocketProvider>
           <SocketRegistrationProvider>
             <RealTimeContextProvider>
-                <ChatProvider>          
-                <RootStack />
-                <Toast />
-              </ChatProvider>         
+              <ChatProvider>
+                <VideoCallProvider>
+                  <RootStack />
+   
+                </VideoCallProvider>
+              </ChatProvider>
             </RealTimeContextProvider>
           </SocketRegistrationProvider>
         </SocketProvider>
       </AuthContextProvider>
+                     <Toast />
     </PaperProvider>
   );
 }
@@ -40,8 +43,7 @@ function RootStack() {
       screenOptions={{
         headerStyle: { backgroundColor: '#0066CC' },
         headerTintColor: '#FFF',
-        headerLeft: () =>
-          isAuthenticated ? <HeaderMenu /> : null,          // ← NEW
+        headerLeft: () => (isAuthenticated ? <HeaderMenu /> : null),
         headerRight: () =>
           isAuthenticated ? (
             <Pressable

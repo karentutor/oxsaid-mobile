@@ -38,18 +38,19 @@ export const RealTimeContextProvider: React.FC<React.PropsWithChildren> = ({
   const updateUnreadCount = (n: number) => setTotalUnread(n);
 
   /** 1 ▸ fetch once */
-  const fetchUnread = useCallback(async () => {
-    const userId = auth.user?._id;
-    if (!userId) return;
-    try {
-      const { data } = await axiosBase.get<{ unreadCount: number }>(
-        `${API_URL}/chats/unread-count/${userId}`
-      );
-      if (typeof data.unreadCount === 'number') setTotalUnread(data.unreadCount);
-    } catch (e) {
-      console.error(e);
-    }
-  }, [API_URL, auth.user?._id]);
+const fetchUnread = useCallback(async () => {
+  const userId = auth.user?._id;
+  if (!userId) return;
+  try {
+    const { data } = await axiosBase.get<{ unreadCount: number }>(
+      `${API_URL}/chats/unread-count/${userId}`,
+      { timeout: 15000 },
+    );
+    if (typeof data.unreadCount === 'number') setTotalUnread(data.unreadCount);
+  } catch (err) {
+    console.error('[fetchUnread] failed', err);
+  }
+}, [API_URL, auth.user?._id]);
 
   useEffect(() => { fetchUnread(); }, [fetchUnread]);
 

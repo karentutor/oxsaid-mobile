@@ -10,7 +10,11 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.karentutor1.oxsaidmobile"
+      "bundleIdentifier": "com.karentutor1.oxsaidmobile",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Video calls",
+        "NSMicrophoneUsageDescription": "Voice in video calls"
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -18,7 +22,12 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.karentutor1.oxsaidmobile"
+      "package": "com.karentutor1.oxsaidmobile",
+      "permissions": [
+        "CAMERA",
+        "RECORD_AUDIO",
+        "MODIFY_AUDIO_SETTINGS"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -39,14 +48,11 @@
       "expo-font",
       "expo-web-browser"
     ],
-    "experiments": {
-      "typedRoutes": true
-    },
+    "experiments": { "typedRoutes": true },
     "extra": {
       "router": {},
-      "eas": {
-        "projectId": "6c876c6b-c0bc-41df-8d73-b2fa04770c57"
-      }
-    }
+      "eas": { "projectId": "6c876c6b-c0bc-41df-8d73-b2fa04770c57" }
+    },
+    "owner": "karentutor"
   }
 }

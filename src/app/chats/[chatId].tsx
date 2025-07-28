@@ -1,3 +1,11 @@
+//src/app/chats/[chatId].tsx
+import { Message, useChat } from '@/context/ChatContext';
+import { Ionicons } from '@expo/vector-icons';
+import {
+  useFocusEffect,
+  useLocalSearchParams,
+  useNavigation,
+} from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   FlatList,
@@ -5,17 +13,10 @@ import {
   Platform,
   Pressable,
   StyleSheet,
+  Text,
   TextInput,
   View,
-  Text,
 } from 'react-native';
-import {
-  useLocalSearchParams,
-  useNavigation,
-  useFocusEffect,
-} from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { useChat, Message } from '@/context/ChatContext';
 
 const PRIMARY = '#0066CC';
 
