@@ -257,7 +257,7 @@
 					"-ObjC",
 					"-lc++",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "com.karentutor1.oxsaidmobile";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.karentutor1.oxsaidmobile2";
 				PRODUCT_NAME = "oxsaidmobile";
 				SWIFT_OBJC_BRIDGING_HEADER = "oxsaidmobile/oxsaidmobile-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
@@ -286,7 +286,7 @@
 					"-ObjC",
 					"-lc++",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "com.karentutor1.oxsaidmobile";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.karentutor1.oxsaidmobile2";
 				PRODUCT_NAME = "oxsaidmobile";
 				SWIFT_OBJC_BRIDGING_HEADER = "oxsaidmobile/oxsaidmobile-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
