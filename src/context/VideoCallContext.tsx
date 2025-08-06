@@ -1,34 +1,27 @@
-/* ------------------------------------------------------------------
- *  Centralised WebRTC logic + socket signalling  (FIXED VERSION)
- * ----------------------------------------------------------------- */
-import { useAuth }   from '@/hooks/useAuth';
-import { useSocket } from './SocketContext';
-import { router }    from 'expo-router';
+// src/context/VideoCallContext.tsx
 import React, {
   createContext, useContext, useEffect, useMemo,
-  useRef, useState,
+  useRef, useState
 } from 'react';
+import { router } from 'expo-router';
 import InCallManager from 'react-native-incall-manager';
-
 import {
-  mediaDevices,
-  MediaStream,
-  RTCIceCandidate,
-  RTCPeerConnection,
-  RTCSessionDescription,
+  mediaDevices, MediaStream,
+  RTCIceCandidate, RTCPeerConnection,
+  RTCSessionDescription
 } from 'react-native-webrtc';
-
 import { Camera } from 'expo-camera';
 import { Audio }  from 'expo-av';
 import Toast      from 'react-native-toast-message';
 
-/* ---------- local types ---------- */
-type CallState = 'idle' | 'calling' | 'ringing' | 'in-call';
+import RNCallKeep from 'react-native-callkeep';
+import { PermissionsAndroid, Platform } from 'react-native';
+import uuid from 'react-native-uuid';  // default export has .v4()
 
-interface PeerWithHandlers extends RTCPeerConnection {
-  onicecandidate: ((e: { candidate: RTCIceCandidate | null }) => void) | null;
-  ontrack:        ((e: { streams: MediaStream[] }) => void) | null;
-}
+import { useAuth }   from '@/hooks/useAuth';
+import { useSocket } from './SocketContext';
+
+type CallState = 'idle' | 'calling' | 'ringing' | 'in-call';
 
 interface VideoCtx {
   state: CallState;
@@ -37,203 +30,209 @@ interface VideoCtx {
   currentChatId: string | null;
   incomingSdp:   any | null;
 
-  startCall(chatId: string, partnerId: string): Promise<void>;
+  startCall(chatId: string, partnerId: string, partnerName: string): Promise<void>;
   acceptIncoming(): Promise<void>;
   declineIncoming(): void;
   endCall(): void;
 }
 
 const ICE = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
-
-/* ---------- context scaffold ---------- */
 const VideoCallContext = createContext<VideoCtx>(null!);
 export const useVideoCall = () => useContext(VideoCallContext);
 
-/* ==================================================================
- *  Provider
- * =================================================================*/
-export const VideoCallProvider: React.FC<React.PropsWithChildren> = ({
-  children,
-}) => {
+export const VideoCallProvider: React.FC<React.PropsWithChildren> = ({ children }) => {
   const { auth } = useAuth();
-  const socket   = useSocket();
+  const socket    = useSocket();
 
-  const pc        = useRef<PeerWithHandlers | null>(null);
-  const destRef   = useRef<string | null>(null);
+  const pc           = useRef<RTCPeerConnection|null>(null);
+  const destRef      = useRef<string|null>(null);
+  const callUUIDRef  = useRef<string|null>(null);
 
-  const [state,        setState]        = useState<CallState>('idle');
-  const [incomingSdp,  setIncomingSdp]  = useState<any | null>(null);
-  const [localStream,  setLocal]        = useState<MediaStream | null>(null);
-  const [remoteStream, setRemote]       = useState<MediaStream | null>(null);
-  const [currentChatId,setChatId]       = useState<string | null>(null);
+  const [state,        setState]       = useState<CallState>('idle');
+  const [incomingSdp,  setIncomingSdp] = useState<any|null>(null);
+  const [localStream,  setLocal]       = useState<MediaStream|null>(null);
+  const [remoteStream, setRemote]      = useState<MediaStream|null>(null);
+  const [currentChatId,setChatId]      = useState<string|null>(null);
 
-  /* ------------ helper: ask for camera & mic, then open ------------ */
+  // --- ask for cam + mic, fall back to audio-only ---
   const obtainMedia = async () => {
     if (localStream) return localStream;
-
-    /* 1 ▸ ask permissions (camera + audio) */
-    const [{ status: cam }, { status: mic }] = await Promise.all([
+    const [camP, micP] = await Promise.all([
       Camera.requestCameraPermissionsAsync(),
       Audio.requestPermissionsAsync(),
     ]);
-    if (cam !== 'granted' || mic !== 'granted') {
-      throw new Error('Permissions not granted for camera / microphone');
+    if (micP.status !== 'granted') {
+      throw new Error('Microphone permission denied');
     }
-
-    /* 2 ▸ open media */
-    const s = await mediaDevices.getUserMedia({ video: true, audio: true });
-    setLocal(s);
-    return s;
+    try {
+      const s = await mediaDevices.getUserMedia({
+        video: camP.status === 'granted',
+        audio: true,
+      });
+      setLocal(s);
+      return s;
+    } catch {
+      const s = await mediaDevices.getUserMedia({ video: false, audio: true });
+      setLocal(s);
+      Toast.show({ type: 'info', text1: 'Camera unavailable – audio only' });
+      return s;
+    }
   };
 
-  /* ------------ helper: prepare RTCPeerConnection -- */
+  // --- request only the runtime Android permissions that exist ---
+  const requestAndroidCallPermissions = async () => {
+    if (Platform.OS !== 'android') return;
+    const perms = await PermissionsAndroid.requestMultiple([
+      PermissionsAndroid.PERMISSIONS.READ_PHONE_STATE,
+      PermissionsAndroid.PERMISSIONS.CALL_PHONE,
+      PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS,
+    ]);
+    const ok = Object.values(perms).every(status => status === 'granted');
+    if (!ok) console.warn('Not all call permissions granted', perms);
+  };
+
+  // --- set up peer connection & wire ICE / tracks, using ts‑safe casts for events ---
   const initPC = (chatId: string) => {
-    const peer = new RTCPeerConnection(ICE) as PeerWithHandlers;
+    const peer = new RTCPeerConnection(ICE);
     pc.current = peer;
 
-    peer.onicecandidate = (e) => {
+    // TS defs for react-native-webrtc omit these, so cast to any:
+    (peer as any).onicecandidate = (e: { candidate: RTCIceCandidate | null }) => {
       if (e.candidate && auth.user && destRef.current) {
         socket?.emit('video-ice-candidate', {
-          chatId,
-          from: auth.user._id,
-          to:   destRef.current,
-          candidate: e.candidate,
+          chatId, from: auth.user._id, to: destRef.current, candidate: e.candidate
         });
       }
     };
 
-    peer.ontrack = (e) => {
-      if (e.streams?.[0]) setRemote(e.streams[0]);
+    (peer as any).ontrack = (e: { streams: MediaStream[] }) => {
+      if (e.streams[0]) setRemote(e.streams[0]);
     };
 
     return peer;
   };
 
-  /* =================================================================
-   *  1. Outgoing call
-   * =================================================================*/
-  const startCall = async (chatId: string, partnerId: string) => {
-    console.log('[startCall]', { chatId, partnerId,
-                                 socketConnected: socket?.connected });
-
+  // --- outgoing call ---
+  const startCall = async (chatId: string, partnerId: string, partnerName: string) => {
     if (!auth.user) return;
     destRef.current = partnerId;
+    await requestAndroidCallPermissions();
 
-    /* ensure socket is hand‑shaken */
-    if (!socket?.connected) {
-      socket?.once('connect', () => startCall(chatId, partnerId));
-      socket?.connect();
-      return;
-    }
+    // generate a UUID
+    const uuidStr = uuid.v4() as string;
+    callUUIDRef.current = uuidStr;
+
+    // tell CallKeep to show the native outgoing UI
+    // signature: startCall(callUUID, handle, handleType?, localizedCallerName?, hasVideo?)
+  // ✅ correct order:
+ RNCallKeep.startCall(
+   uuidStr,        // call UUID
+   partnerId,      // the “handle” (phone number or id)
+   partnerName,    // localizedCallerName (what the user sees)
+   'number',       // handleType – use 'number' if it’s a numeric handle
+   true            // hasVideo
+ );
+
 
     setChatId(chatId);
     setState('calling');
-    InCallManager.start({ media: 'audio' });
+    try { InCallManager.start({ media: 'audio' }); } catch {}
 
-    try {
-      const stream = await obtainMedia();
-      const peer   = initPC(chatId);
-      stream.getTracks().forEach((t) => peer.addTrack(t, stream));
-
-      await peer.setLocalDescription(await peer.createOffer({}));
-      console.log('[startCall] → emit video-offer');
-
-      socket.emit('video-offer', {
-        chatId,
-        from: auth.user._id,
-        to:   partnerId,
-        sdp:  peer.localDescription,
-      });
-    } catch (err: any) {
-      console.error('[startCall] failed', err);
-      Toast.show({ type: 'error', text1: err.message ?? 'Cannot start call' });
-      setState('idle');
-      cleanup();
-    }
+    const stream = await obtainMedia();
+    const peer   = initPC(chatId);
+    stream.getTracks().forEach(t => peer.addTrack(t, stream));
+    await peer.setLocalDescription(await peer.createOffer());
+    socket?.emit('video-offer', {
+      chatId,
+      from: auth.user._id,
+      to:   partnerId,
+      sdp:  peer.localDescription,
+      callUUID: uuidStr,
+    });
   };
 
-  /* =================================================================
-   *  2. Incoming offer
-   * =================================================================*/
+  // --- incoming offer ---
   const handleOffer = (d: any) => {
     if (!auth.user || d.to !== auth.user._id) return;
-    console.log('[handleOffer] offer received for me', d.chatId);
 
-    destRef.current = d.from;
+    const uuidStr = uuid.v4() as string;
+    callUUIDRef.current = uuidStr;
+    destRef.current     = d.from;
     setChatId(d.chatId);
     setIncomingSdp(d.sdp);
     setState('ringing');
 
+    // show native incoming UI
+    // signature: displayIncomingCall(callUUID, handle, localizedCallerName?, handleType?, hasVideo?)
+    RNCallKeep.displayIncomingCall(
+      uuidStr,
+      d.from,       // handle
+      d.fromName,   // localizedCallerName
+      'generic',
+      true
+    );
+
     router.push(`/video/${d.chatId}`);
   };
 
-  /* =================================================================
-   *  3. Callee actions
-   * =================================================================*/
+  // --- accept / decline ---
   const acceptIncoming = async () => {
-    if (!incomingSdp || !currentChatId || !destRef.current || !auth.user)
-      return;
-
+    const uuidStr = callUUIDRef.current!;
+    RNCallKeep.answerIncomingCall(uuidStr);
     setState('in-call');
-    InCallManager.start({ media: 'audio' });
+    try { InCallManager.start({ media: 'audio' }); } catch {}
 
-    try {
-      const stream = await obtainMedia();
-      const peer   = initPC(currentChatId);
-      stream.getTracks().forEach(t => peer.addTrack(t, stream));
+    const stream = await obtainMedia();
+    const peer   = initPC(currentChatId!);
+    stream.getTracks().forEach(t => peer.addTrack(t, stream));
+    await peer.setRemoteDescription(new RTCSessionDescription(incomingSdp!));
+    await peer.setLocalDescription(await peer.createAnswer());
 
-      await peer.setRemoteDescription(new RTCSessionDescription(incomingSdp));
-      await peer.setLocalDescription(await peer.createAnswer());
+    socket?.emit('video-answer', {
+      chatId: currentChatId,
+      from: auth.user!._id,
+      to:   destRef.current!,
+      sdp:  peer.localDescription,
+    });
 
-      socket?.emit('video-answer', {
-        chatId: currentChatId,
-        from:   auth.user._id,
-        to:     destRef.current,
-        sdp:    peer.localDescription,
-      });
-
-      setIncomingSdp(null);
-    } catch (err: any) {
-      console.error('[acceptIncoming] failed', err);
-      Toast.show({ type: 'error', text1: err.message ?? 'Cannot answer call' });
-      endCall();
-    }
+    setIncomingSdp(null);
+  };
+  const declineIncoming = () => {
+    RNCallKeep.rejectCall(callUUIDRef.current!);
+    endCall();
   };
 
-  const declineIncoming = () => endCall();
-
-  /* =================================================================
-   *  4. Caller receives answer + ICE exchange
-   * =================================================================*/
+  // --- handle remote answer + ICE ---
   const handleAnswer = async (d: any) => {
     if (!auth.user || d.to !== auth.user._id) return;
+    // correct method name:
+    RNCallKeep.reportConnectedOutgoingCallWithUUID(callUUIDRef.current!);
     await pc.current?.setRemoteDescription(new RTCSessionDescription(d.sdp));
     setState('in-call');
   };
-
   const handleICE = async (d: any) => {
     if (!auth.user || d.to !== auth.user._id) return;
-    try { await pc.current?.addIceCandidate(new RTCIceCandidate(d.candidate)); }
-    catch {}
+    try { await pc.current?.addIceCandidate(new RTCIceCandidate(d.candidate)); } catch {}
   };
 
-  /* =================================================================
-   *  5. Hang‑up
-   * =================================================================*/
+  // --- hang up + cleanup ---
   const cleanup = () => {
     pc.current?.close();
     pc.current = null;
-
-    setRemote(null);
     if (localStream) {
       localStream.getTracks().forEach(t => t.stop());
       setLocal(null);
     }
+    setRemote(null);
     setIncomingSdp(null);
-    InCallManager.stop();
+    try { InCallManager.stop(); } catch {}
   };
-
   const endCall = () => {
+    const uuidStr = callUUIDRef.current;
+    if (uuidStr) {
+      RNCallKeep.endCall(uuidStr);
+      callUUIDRef.current = null;
+    }
     if (auth.user && currentChatId && destRef.current) {
       socket?.emit('video-end', {
         chatId: currentChatId,
@@ -241,25 +240,18 @@ export const VideoCallProvider: React.FC<React.PropsWithChildren> = ({
         to:     destRef.current,
       });
     }
-
-    /* leave the video screen so its useEffect won’t redial */
     router.canGoBack() && router.back();
-
     setState('idle');
     cleanup();
   };
 
-  /* =================================================================
-   *  6. Socket wiring
-   * =================================================================*/
+  // --- socket wiring ---
   useEffect(() => {
     if (!socket) return;
-
     socket.on('video-offer',         handleOffer);
     socket.on('video-answer',        handleAnswer);
     socket.on('video-ice-candidate', handleICE);
     socket.on('video-end',           endCall);
-
     return () => {
       socket.off('video-offer',         handleOffer);
       socket.off('video-answer',        handleAnswer);
@@ -268,12 +260,9 @@ export const VideoCallProvider: React.FC<React.PropsWithChildren> = ({
     };
   }, [socket, auth.user?._id]);
 
-  /* =================================================================
-   *  7. Provide context
-   * =================================================================*/
   const value = useMemo(() => ({
     state, localStream, remoteStream, currentChatId, incomingSdp,
-    startCall, acceptIncoming, declineIncoming, endCall,
+    startCall, acceptIncoming, declineIncoming, endCall
   }), [state, localStream, remoteStream, currentChatId, incomingSdp]);
 
   return (

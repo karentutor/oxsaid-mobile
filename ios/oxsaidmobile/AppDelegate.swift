@@ -1,11 +1,12 @@
-import ExpoModulesCore          // exposes ExpoAppDelegate
-import PushKit                 // VoIP pushes
+import UIKit
+import ExpoModulesCore        // gives access to ExpoAppDelegate
+import PushKit               // VoIP pushes
 
-@UIApplicationMain
+@UIApplicationMain           // Expo template uses this
 class AppDelegate: ExpoAppDelegate,
-                   PKPushRegistryDelegate {   // ✔ inherits & conforms
+                   PKPushRegistryDelegate {
 
-  // MARK: App launch --------------------------------------------------
+  // MARK: App launch -----------------------------------------------
 
   override func application(
     _ application: UIApplication,
@@ -15,35 +16,38 @@ class AppDelegate: ExpoAppDelegate,
     // Register for VoIP pushes
     RNVoipPushNotificationManager.voipRegistration()
 
-    // Let Expo finish its normal set‑up
+    // Continue normal Expo initialisation
     return super.application(
       application,
       didFinishLaunchingWithOptions: launchOptions
     )
   }
 
-  // MARK: PushKit delegate -------------------------------------------
+  // MARK: PushKit delegate -----------------------------------------
 
-  /// VoIP token received (Xcode 15+ signature)
+  /// VoIP token received
   func pushRegistry(
     _ registry: PKPushRegistry,
     didUpdate pushCredentials: PKPushCredentials,
     for type: PKPushType
   ) {
-    RNVoipPushNotificationManager.didUpdate(pushCredentials, forType: type.rawValue)
+    RNVoipPushNotificationManager.didUpdate(
+      pushCredentials,
+      forType: type.rawValue
+    )
   }
 
-  /// Incoming VoIP push (iOS 11+ signature)
+  /// Incoming VoIP push
   func pushRegistry(
     _ registry: PKPushRegistry,
     didReceiveIncomingPushWith payload: PKPushPayload,
     for type: PKPushType,
-    completion: @escaping () -> Void
+    withCompletionHandler completion: @escaping () -> Void
   ) {
     RNVoipPushNotificationManager.didReceiveIncomingPush(
       with: payload,
-      forType: type.rawValue,
-      completion: completion
+      forType: type.rawValue
     )
+    completion()      // <- call the system completion handler
   }
 }

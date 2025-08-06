@@ -87,9 +87,9 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace 'com.karentutor1.oxsaidmobile'
+    namespace 'com.karentutor1.oxsaidmobile2'
     defaultConfig {
-        applicationId 'com.karentutor1.oxsaidmobile'
+        applicationId 'com.karentutor1.oxsaidmobile2'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

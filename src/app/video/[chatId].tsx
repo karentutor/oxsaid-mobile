@@ -1,5 +1,8 @@
-/* ------------------------------------------------------------------
- *  UI for a single video call
+/* src/screens/VideoScreen.tsx
+ * ------------------------------------------------------------------
+ *  UI for a single one‑to‑one WebRTC call
+ *  • Dials exactly once per mount
+ *  • Shows incoming/connecting/calling banners
  * ----------------------------------------------------------------- */
 import { useChat }      from '@/context/ChatContext';
 import { useVideoCall } from '@/context/VideoCallContext';
@@ -10,56 +13,71 @@ import {
   useLocalSearchParams,
   useNavigation,
 } from 'expo-router';
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import {
   Pressable, StyleSheet, Text, View,
 } from 'react-native';
 import { RTCView } from 'react-native-webrtc';
 
 export default function VideoScreen() {
-  const { chatId }  = useLocalSearchParams<{ chatId: string }>();
-  const { chats }   = useChat();
-  const { auth }    = useAuth();
+  /* ---------- route + state look‑ups ---------- */
+  const { chatId }   = useLocalSearchParams<{ chatId: string }>();
+  const { chats }    = useChat();
+  const { auth }     = useAuth();
+  const navigation   = useNavigation();
 
   const {
     localStream, remoteStream, state, incomingSdp,
     startCall,   acceptIncoming, declineIncoming, endCall,
   } = useVideoCall();
 
-  const navigation  = useNavigation();
   const chat        = chats.find(c => c._id === chatId);
   const partnerId   = chat?.partnerId;
   const partnerName = chat?.partnerName ?? '';
 
-  /* caller dials exactly once ---------------------------------- */
-  useEffect(() => {
-    const shouldDial =
-         state === 'idle' &&
-         incomingSdp === null &&
-         !!chatId && !!partnerId && !!auth.user;
+  /* ---------- dial exactly once per mount ---------- */
+  const hasDialled = useRef(false);
 
-    if (shouldDial) {
+  useEffect(() => {
+    if (
+      !hasDialled.current &&
+      state === 'idle' &&
+      incomingSdp === null &&
+      chatId && partnerId && auth.user
+    ) {
+      hasDialled.current = true;
       console.log('[VideoScreen] → startCall');
-      startCall(chatId!, partnerId!);
+      startCall(chatId, partnerId, partnerName);
     }
-    console.log('[VideoScreen] guard',
-      { state, chatId, partnerId, incomingSdp });
 
     navigation.setOptions({ title: partnerName || 'Video Call' });
-  }, [state, incomingSdp, chatId, partnerId, auth.user, startCall]);
+  }, [state, incomingSdp, chatId, partnerId, auth.user, navigation, startCall, partnerName]);
 
-  if (!chatId) return null;
+  /* reset the flag when we leave the screen */
+  useEffect(() => () => { hasDialled.current = false; }, []);
 
-  /* ---------------- view ---------------- */
+  if (!chatId || !partnerId) return null;      // chat list still loading
+
+  /* ---------- layout ---------- */
   return (
     <View style={styles.container}>
-      {remoteStream &&
-        <RTCView streamURL={remoteStream.toURL()}
-                 style={styles.remote} objectFit="cover" />}
-      {localStream &&
-        <RTCView streamURL={localStream.toURL()}
-                 style={styles.local} objectFit="cover" />}
+      {remoteStream && (
+        <RTCView
+          streamURL={remoteStream.toURL()}
+          style={styles.remote}
+          objectFit="cover"
+        />
+      )}
 
+      {localStream && (
+        <RTCView
+          streamURL={localStream.toURL()}
+          style={styles.local}
+          objectFit="cover"
+        />
+      )}
+
+      {/* Call‑control buttons */}
       {state === 'ringing' ? (
         <View style={styles.btnRow}>
           <Pressable style={[styles.circle, styles.accept]}
@@ -78,12 +96,14 @@ export default function VideoScreen() {
         </Pressable>
       )}
 
-      {state !== 'in-call' &&
+      {/* Status banner */}
+      {state !== 'in-call' && (
         <Text style={styles.banner}>
           {state === 'calling'  ? 'Calling…'
            : state === 'ringing' ? 'Incoming call…'
            :                       'Connecting…'}
-        </Text>}
+        </Text>
+      )}
     </View>
   );
 }

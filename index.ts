@@ -1,6 +1,7 @@
-// Import side effects first and services
+import { NativeModules } from 'react-native';
 
-// Initialize services
+console.log('💡 InCallManager:', NativeModules.InCallManager);
+console.log('💡 WebRTCModule:',   NativeModules.WebRTCModule);
 
-// Register app entry through Expo Router
+// now hand off to Expo Router
 import 'expo-router/entry';

@@ -1,4 +1,4 @@
-package com.karentutor1.oxsaidmobile
+package com.karentutor1.oxsaidmobile2
 import expo.modules.splashscreen.SplashScreenManager
 
 import android.os.Build
